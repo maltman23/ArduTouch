@@ -1,7 +1,7 @@
 /*
     Phonic.h  
 
-    Declaration of the Phonic, MonoPhonic and StereoPhonic classes.
+    Declaration of the Phonic, MonoPhonic, and Stereophonic classes.
 
     ---------------------------------------------------------------------------
  
@@ -27,13 +27,13 @@ class Phonic : public Control
 {
    public:
 
-   void charEv( char code )
-   {
-      Control::charEv( code );
+   boolean charEv( char );       // process a character event
+   boolean evHandler( obEvent ); // handle an onboard event
+   virtual void setVol( byte );  // set the volume level (0-255)
 
-      if ( code == '!' )                  // reset
-         setMute( false );
-   }
+   protected:
+
+   byte    vol;                  // volume level (0-255)  
 
 } ;
 
@@ -41,7 +41,10 @@ class MonoPhonic : public Phonic
 {
    public:
 
-   virtual void  generate(char*) {};      // generate one buffer of audio
+   virtual void output( char* ) 
+   {
+      // write output to one (mono) audio buffer
+   };     
 
 } ;
 
@@ -49,7 +52,12 @@ class StereoPhonic : public Phonic
 {
    public:
 
-   virtual void generate(char*, char*) {}; // generate one stereo buffer of audio
-} ;
+   virtual void output( char*, char* ) 
+   {
+      // write output to a left-right pair of audio buffers
+   };  
+
+} ; 
+   
 
 #endif   // ifndef PHONIC_H_INCLUDED

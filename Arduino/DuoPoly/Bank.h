@@ -1,7 +1,7 @@
 /*
     Bank.h  
 
-    Declaration of the Bank class.
+    Declaration of the Bank and MacroBank classes.
 
     ---------------------------------------------------------------------------
  
@@ -24,11 +24,31 @@
 #include "Arduino.h"
 #include "Mode.h"
 
-struct bankmem
-{
-   PROGMEM const char *name;           // ptr to member name 
-   PROGMEM const void *data;           // ptr to member data  
-} ;
+#define begin_bank(x)     const bankmem x[] PROGMEM = {
+
+#ifdef CONSOLE_OUTPUT
+
+   #define _member(x,y)      { x, y },
+   #define end_bank()        { NULL, NULL } };
+
+   struct bankmem
+   {
+      PROGMEM const void *data;        // ptr to member data  
+      PROGMEM const char *name;        // ptr to member name 
+   } ;
+
+#else
+
+   #define _member(x,y)      x,
+   #define end_bank()        NULL };
+
+   struct bankmem
+   {
+      PROGMEM const void *data;        // ptr to member data  
+   } ;
+
+#endif
+
 
 class Bank : public Mode
 {
@@ -41,16 +61,18 @@ class Bank : public Mode
    const void* dataPtr();              // return addr of chosen member's data
    const void* dataPtr( byte );        // return addr of nth member's data
 
-   void    charEv( char );             // handle a character event
-   void    info();                     // display object info to console
+   boolean charEv( char );             // handle a character event
    void    load( const bankmem *p );   // load a list of members
-   char    menu( key );                // map key event to character 
    const char* name( byte );           // return name of nth member
    virtual void onChoice() {};         // execute this when member is chosen
 
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // map key event to character 
+   #endif
+
    protected:
 
-   static  const byte Max = 8;         // max permitted # of members
+   static  const byte Max = 10;        // max permitted # of members
    byte    num;                        // # of members in bank
 
    private:
@@ -60,6 +82,18 @@ class Bank : public Mode
    byte    idx;                        // idx # of chosen member
    boolean chosen;                     // if true, a member was chosen
 
+} ;
+
+
+class MacroBank : public Bank
+{
+   public:
+
+   void   onChoice();                  // execute this when member is chosen
+
+   #ifdef CONSOLE_OUTPUT
+   const  char *prompt();              // return object's prompt string
+   #endif
 } ;
 
 #endif   // ifndef BANK_H_INCLUDED

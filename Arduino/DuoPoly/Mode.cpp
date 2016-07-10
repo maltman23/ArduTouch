@@ -20,54 +20,101 @@
 
 #include "Console_.h"
 #include "Mode.h"
+#include "System.h"     
 
 Mode::Mode() 
 { 
-   flags = ECHO | MENU;          // echo char input; menu() pre-empts keyEv()
+   flags = ECHO | MENU;          // echo char input; menu() pre-empts KEY_DOWN
 }
 
-void Mode::butEv( but b )
-{
-   if ( b.num() == 0 && b.type() == butDOUBLE_TAP ) 
-      charEv( chrESC );
-}
-
-void Mode::charEv( char code )
+boolean Mode::charEv( char code )
 {
    switch ( code )
    {
+      #ifdef CONSOLE_OUTPUT
       case '?':
 
-         newline_info_prompt();
+         inform();
          break;
+
+      case chrBrief:
+
+         console.romprint( prompt() );
+         break;
+      #endif
 
       case chrESC:
 
          console.popMode();
          break;
+
+      default:
+
+         return false;
+   }
+   return true;
+}
+
+boolean Mode::evHandler( obEvent ev )
+{
+   switch ( ev.type() )
+   {
+      case BUT0_DTAP:
+
+         charEv( chrESC );
+         return true;
+
+      case META_OCTUP:
+
+         system::bumpOctave( 1 );
+         return true;
+
+      case META_OCTDN:
+
+         system::bumpOctave( -1 );
+         return true;
+
+      case META_ONESHOT:
+
+         console.oneShotMenu();      // menu() pre-empts KEY_DOWN for next key
+         return true;
+
+      default:
+
+         return false;              // "event not handled"
    }
 }
 
-boolean Mode::keyEv( key )
+void Mode::brief()
 {
-   return false;              // "event not handled"
+   #ifdef CONSOLE_OUTPUT
+   console.print('[');
+   charEv( chrBrief );
+   console.romprint( CONSTR("] ") );
+   #endif
 }
 
+void Mode::inform()
+{
+   #ifdef CONSOLE_OUTPUT
+   console.newline();
+   charEv( chrInfo );
+   console.newprompt();
+   #endif
+}
+
+#ifdef KEYBRD_MENUS
 char Mode::menu( key )
 {
-   return 0;                  // "no character"
+   return 0;                  // "no character was mapped"
 }
+#endif
 
-void Mode::newline_info_prompt()
+#ifdef CONSOLE_OUTPUT
+const char *Mode::prompt()
 {
-   console.newline();
-   info();
-   console.newprompt();
+   return CONSTR("");
 }
-
-char *Mode::prompt()
-{
-   return "";
-}
+#endif
 
 

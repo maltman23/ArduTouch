@@ -40,11 +40,12 @@ void EffectsLoop::append( Effect *x )     // append an effect to the effects loo
       loop = x;
 }
 
-void EffectsLoop::charEv( char code )
+boolean EffectsLoop::charEv( char code )
 {
    boolean found = false;
    Effect *e = loop;
 
+   #ifdef INTERN_CONSOLE
    if ( code >= '0' && code <= '8' )  // code is a 0-based ordinal
    {
       signed char nth = code - '0';
@@ -72,14 +73,18 @@ void EffectsLoop::charEv( char code )
          e = e->next;
       }
    }
+   #endif
 
-   if ( ! found ) 
+   if ( found ) 
+      return true;
+   else
    {
       switch ( code )
       {
          case '.':
          case '<':
          case '!':
+
          {
             Effect *e = loop;
             while ( e )
@@ -89,27 +94,48 @@ void EffectsLoop::charEv( char code )
             }
             break;
          }
+
+         #ifdef CONSOLE_OUTPUT
+         case chrBrief:
+         {
+            console.romprint( CONSTR(" effects ") );
+            Effect *e = loop;
+            while ( e )
+            {
+               e->brief();
+               e = e->next;
+            }
+            break;
+         }
+         #endif
+
+         #ifdef CONSOLE_OUTPUT
+         case chrInfo:
+         {
+            console.rtab();
+            Effect *e = loop;
+            while ( e )
+            {
+               console.print( e->shortcut );
+               console.print(':');
+               e->brief();
+               console.space();
+               e = e->next;
+            }
+            break;
+         }
+         #endif
+
          default:
-            Mode::charEv( code );
+
+            return Mode::charEv( code );
       }
+      return true;
    }
 
 }
 
-void EffectsLoop::info()
-{
-   console.rtab();
-   Effect *e = loop;
-   while ( e )
-   {
-      console.print( e->shortcut );
-      console.print( ": " );
-      console.print( e->prompt() );
-      console.space(2);
-      e = e->next;
-   }
-}
-
+#ifdef KEYBRD_MENUS
 char EffectsLoop::menu( key k )
 {
    switch ( k.position() )
@@ -120,6 +146,7 @@ char EffectsLoop::menu( key k )
       default: return ( '0' + k.position() );
    }
 }
+#endif
 
 void EffectsLoop::process( char *buf )
 {
@@ -132,9 +159,11 @@ void EffectsLoop::process( char *buf )
    }
 }
 
-char *EffectsLoop::prompt() 
+#ifdef CONSOLE_OUTPUT
+const char *EffectsLoop::prompt() 
 { 
    return CONSTR("effects"); 
 }
+#endif
 
 

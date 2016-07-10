@@ -30,35 +30,37 @@ class Chnl : public Voice        // a Voice, considered as one of a pair
 
    Chnl   *other;                // other channel (for latching)
 
-   Chnl();
+   byte   led;                   // led # for channel
 
    boolean amFreqLatching();     // returns true if currently freq latching 
-   void    butEv( but );         // handle a button event
-   void    charEv( char );       // handle a character event
-   boolean keyEv( key );         // handle a key event
+   boolean charEv( char );       // handle a character event
+   void    dynamics();           // update dynamics
+   boolean evHandler( obEvent ); // handle an onboard event
    char    latchIcon();          // return char denoting current freq latching
-   char    menu( key );          // map key event to character 
-   char   *prompt();             // return object's prompt string
+   void    onFocus( focus f );   // execute on change in console focus
+
+   #ifdef CONSOLE_OUTPUT
+   const char *prompt();         // return object's prompt string
+   #endif
 
    void setFreqDiff( double );   // latch frequency as difference to other chnl's
    void setFreqLatch( boolean ); // set frequency latching on/off
    void setFreqRatio( double );  // latch frequency as ratio to other chnl's
-   void setName( char* name );   //        
+   void setName( const char* );  // set display name
 
    protected:
 
-   void propFreq( double );      // set playback freq & propagate to other chnl
+   void propFreq();              // propagate freq change to other chnl
 
    private:
 
-   char    *name;                // name for display to console
+   const char *name;             // name for display to console
    boolean latched;              // if true, channel frequency is latched
    boolean arithmetic;           // if true, frequency latching is arithmetic
                                  //    else, frequency latching is geometric
    double  freqOffset;           // frequency difference between channels
                                  // if ! arithmetic the freqOffset is a ratio
 
-   boolean promptDouble( char ); // display prompt char and get a double 
    void setArithmetic(boolean);  // set latching to Arithmetic or Geometic (t/f)
 
 } ;  
@@ -69,11 +71,13 @@ class ChnlSqnc : public Chnl, public StepSqnc  // Chnl with dedicated sequencer
 
    ChnlSqnc();
 
-   void   butEv( but );          // handle a button event
-   void   charEv( char );        // handle a character event
-   void   generate( char * );    // generate one buffer of audio
-   void   info();                // display object info to console
-   char   menu( key );           // map key event to character 
+   boolean charEv( char );       // handle a character event
+   boolean evHandler( obEvent ); // handle an onboard event
+   void    output( char * );     // write output to an audio buffer
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );          // map key event to character 
+   #endif
 
 } ;
 

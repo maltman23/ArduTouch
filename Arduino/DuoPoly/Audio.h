@@ -44,8 +44,7 @@ namespace audio
 {
    extern void disable();              // disable audio output
    extern void enable();               // enable audio output
-   extern void pause();                // pause audio output
-   extern void resume();               // resume audio output
+   extern void wait( byte );           // wait for buffers to be rendered
 }
 
 

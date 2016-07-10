@@ -46,11 +46,16 @@ class EffectsLoop : public Mode
    public:
 
    void    append( Effect* );       // append an effect to loop
-   void    charEv( char );          // process a character event 
-   void    info();                  // display object info to console
-   char    menu( key );             // map key event to character 
+   boolean charEv( char );          // process a character event 
    void    process( char* );        // process audio buffer through loop
-   char*   prompt();                // return object's prompt string
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );             // map key event to character 
+   #endif
+
+   #ifdef CONSOLE_OUTPUT
+   const   char* prompt();          // return object's prompt string
+   #endif
 
 } ;
 

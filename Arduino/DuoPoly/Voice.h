@@ -1,7 +1,7 @@
 /*
     Voice.h  
 
-    Declaration of the Voice class.
+    Declaration of the Voice, and auxillary classes.
 
     ---------------------------------------------------------------------------
  
@@ -21,61 +21,101 @@
 #ifndef VOICE_H_INCLUDED
 #define VOICE_H_INCLUDED
 
-#include "WaveOsc.h"
+#include "types.h"
+#include "Phonic.h"
+#include "Osc.h"
 #include "Effect.h"
+#include "Envelope.h"
+#include "LFO.h"
+#include "Scroller.h"
 
-class Voice : public WaveOsc
+
+class Tremolo : public TrigLFO
 {
    public:
 
-   EffectsLoop effects;  
+   boolean charEv( char );       // process a character event
+   void   evaluate();            // set output val (as a function of LFO pos)
 
-   char   vNum;                        // character code for "voice #'
+   #ifdef CONSOLE_OUTPUT
+   const char*  prompt();        // return object's prompt string
+   #endif
 
-   void   charEv( char code )          // process a character event
-   {
-      switch ( code )
-      {
-         case cmdTrigger:
-      
-            tremolo.trigger();
-            vibrato.trigger();
-            break;
+} ;
 
-         case 'e':
 
-            console.pushMode( &this->effects );
-            break;
+class Vibrato : public FadeLFO
+{
+   public:
 
-         case '!':
+   void   evaluate();            // set output val (as a function of LFO pos)
+   void   iniPos();              // set initial osc position
 
-            effects.charEv( code );    // fall thru to WaveOsc handler
-            
-         default:
+   #ifdef CONSOLE_OUTPUT
+   const char*  prompt();        // return object's prompt string
+   #endif
 
-             WaveOsc::charEv( code );
-      }
-   }
+} ;
 
-   void   generate( char *buf )        // generate one buffer of audio
-   {
-      if ( amMute() )
-      {
-         byte icnt = audio::bufSz;     
-         while ( icnt-- ) *buf++ = 0;
-         return;
-      }
+class Voice : public MonoPhonic, public Scroller
+{
+   public:
 
-      WaveOsc::generate( buf );
-      effects.process( buf );
-   }
+   enum {  // use these bits in the flags byte: 
 
-   char*  prompt()                     // return object's prompt string
-   {
-      static char* pStr = "voice  ";
-      pStr[6] = vNum;
-      return pStr;
-   }
+           TRIG    = _RESERVE1,   // a trigger is pending 
+
+        } ;
+
+   Osc    *osc;                  // ptr to raw oscillator
+
+   EffectsLoop effects;          // effects loop 
+
+   Voice();
+
+   boolean charEv( char );       // process a character event
+   void    dynamics();           // update dynamics
+   boolean evHandler( obEvent ); // handle an onboard event
+   void    output( char * );     // write output to an audio buffer
+   void    setFreq( double );    // set the ideal playback frequency
+   void    setGlide( byte );     // set portamento speed
+   void    setGlobVol( byte );   // set the global volume level
+   void    setVol( byte );       // set the volume level
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );          // map key event to character 
+   #endif
+
+   #ifdef CONSOLE_OUTPUT
+   const char *prompt();         // return object's prompt string
+   #endif
+
+   protected:
+
+   key     pendNote;             // play this note at next dynamic update
+
+   byte    globVol;              // global volume level
+   Word    effVol;               // effective volume (msb: integral part,
+                                 //                   lsb: fractional part)
+   Int     instVol;              // instantaneous volume (msb: integral part,
+                                 //                       lsb: fractional part)
+   Int     segVol;               // if segue in process, ultimate instVol 
+
+   Envelope envAmp;              // amplitude envelope
+
+   Tremolo tremolo;              // built-in tremolo effect
+   Vibrato vibrato;              // built-in vibrato effect
+
+   private:
+
+   byte    glide;                // portamento speed (0 = off)
+   char    dirGlide;             // portamento direction +/-/0
+   double  instGlide;            // instantaneous portamento coefficient
+   double  multGlide;            // instGlide *= multGlide each dynamic update
+
+   void    calcEffVol();         // calculate the effective volume level
+   void    calcMultGlide();      // calculate dynamic glide multiplier
+   void    doneGlide();          // set real-time glide params to "done"
 
 } ;
 

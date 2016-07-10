@@ -21,58 +21,62 @@
 #include "Audio.h"
 #include "ConKeyBrd.h"
 #include "Chnl.h"
-#include "Tuning.h"
+#include "System.h"
 
 /* ---------------------------------- Chnl ---------------------------------- */
-
-Chnl::Chnl()
-{
-   flags &= ~MENU;            // do not use menu by default
-}
 
 boolean Chnl::amFreqLatching()
 {
    return ( latched && ! arithmetic );
 }
 
-void Chnl::butEv( but b )
-{
-   if ( b.num() == 1 && b.type() == butDOUBLE_TAP )
-      flags |= ONESHOT|MENU;
-   else
-      Voice::butEv( b );
-}
-
-void Chnl::charEv( char code )
+boolean Chnl::charEv( char code )
 {
    switch ( code )
    {
-      case 'f':               // input a playback frequency
+      case chrTrigger:              // perform a trigger
 
-         Voice::charEv( 'f' );
-         propFreq( getFreq() );
+         flags |= TRIG;             // set flag (to be processed in dynamics())      
+         if ( latched )             // trigger latched voice
+            other->flags |= TRIG;                
          break;
 
-      case 'k':               // push console "piano keyboard" mode
+      case 'f':                     // input a playback frequency
+
+         Voice::charEv( 'f' );
+         if ( latched ) propFreq();
+         break;
+
+      case 'k':                     // push console "piano keyboard" mode
 
          console.pushMode( &keybrd );
          break;
 
-      case '+':               // latch freq arithmetically
+      case '+':                     // latch freq arithmetically
+
+         if ( console.getDouble( CONSTR("+") ) )
+            setFreqDiff( lastDouble );
+         break;
+
       case '-':
 
-         if ( promptDouble( code ) )
-            setFreqDiff( code == '+' ? lastDouble : -lastDouble );
+         if ( console.getDouble( CONSTR("-") ) )
+            setFreqDiff( -lastDouble );
          break;
 
-      case '*':               // latch freq geometrically
+      case '*':                     // latch freq geometrically
+
+         if ( console.getDouble( CONSTR("*") ) )
+            setFreqRatio( lastDouble );
+         break;
+
       case '/':
 
-         if ( promptDouble( code ) )
-            setFreqRatio( code == '*' ? lastDouble : 1.0/lastDouble );
+         if ( console.getDouble( CONSTR("*") ) )
+            setFreqRatio( 1.0 / lastDouble );
          break;
 
-      case '!':               // reset
+      case '!':                     // reset
 
          latched    = false;
          arithmetic = false;
@@ -80,16 +84,47 @@ void Chnl::charEv( char code )
 
       default:
 
-         Voice::charEv( code );
+         return Voice::charEv( code );
    }
+   return true;
 }
 
-boolean Chnl::keyEv( key k )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Chnl::dynamics
+ *
+ *  Desc:  Update channel dynamics.
+ *
+ *  Args:  -- none --
+ *
+ *  Memb:   latched          - if true, channel frequency is latched
+ *          pendNote         - pending note
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Chnl::dynamics()
 {
-   propFreq( masterTuning->pitch( k ) );
-   trigger();
-   if ( latched ) other->trigger();
-   return true;
+   boolean newNote = pendNote.val ? true : false;
+
+   Voice::dynamics();
+
+   if ( newNote & latched )
+      propFreq();
+}
+
+boolean Chnl::evHandler( obEvent ev )
+{
+   switch ( ev.type() )
+   {
+      case BUT1_DTAP:
+               
+         console.oneShotMenu();
+         return true;
+
+      default:
+
+         return Voice::evHandler( ev );
+   }
 }
 
 char Chnl::latchIcon()
@@ -101,47 +136,36 @@ char Chnl::latchIcon()
 #endif
 }
 
-char Chnl::menu( key k )
+void Chnl::onFocus( focus f )
 {
-   switch ( k.position() )
+   switch ( f )
    {
-      case  0: return 'v';
-      case  1: return 'V';
-      case  2: return 'w';
-      case  3: return 'T';
-      case  4: return 'e';
-      default: return Control::menu( k );
+      case focusPUSH:
+      case focusRESTORE:
+         system::onLED( led );
    }
 }
 
-char* Chnl::prompt()
+#ifdef CONSOLE_OUTPUT
+const char* Chnl::prompt()
 {
    return name;
 }
+#endif
 
-boolean Chnl::promptDouble( char chrPrompt )
+void Chnl::propFreq()
 {
-   static char strPrompt[2];
-   strPrompt[0] = chrPrompt;
-   return console.getDouble( strPrompt );
-}
-
-void Chnl::propFreq( double x )
-{
-   setFreq( x );
-   if ( latched )
-   {
-      if ( arithmetic )
-         other->setFreq( x - freqOffset );
-      else
-         other->setFreq( x / freqOffset );
-   }
+   double x = osc->getFreq();
+   if ( arithmetic )
+      other->setFreq( x - freqOffset );
+   else
+      other->setFreq( x / freqOffset );
 }
 
 void Chnl::setFreqDiff( double x )
 {
    freqOffset = x;
-   setFreq( other->getFreq() + freqOffset );
+   setFreq( other->osc->getFreq() + freqOffset );
    other->freqOffset = -x;
    setArithmetic( true );
 }
@@ -149,12 +173,12 @@ void Chnl::setFreqDiff( double x )
 void Chnl::setFreqRatio( double x )
 {
    freqOffset = x;
-   setFreq( other->getFreq() * freqOffset );
+   setFreq( other->osc->getFreq() * freqOffset );
    other->freqOffset = 1.0 / x;
    setArithmetic( false );
 }
 
-void Chnl::setName( char* name )
+void Chnl::setName( const char* name )
 {
 #ifdef CONSOLE_OUTPUT
    this->name = name;
@@ -181,39 +205,47 @@ ChnlSqnc::ChnlSqnc()
    subject = this;
 }
 
-void ChnlSqnc::butEv( but b )
+boolean ChnlSqnc::charEv( char code )
 {
-   byte      butNum  = b.num();
-   butEvType butType = b.type();
+   #ifdef CONSOLE_OUTPUT
+   if ( code == chrInfo )
+   {
+      Chnl::charEv( chrInfo );
+      console.newline();
+      StepSqnc::info();
+      return true;
+   }
+   #endif
 
-   if ( butNum == 1 && butType == butPRESS )
-
-      StepSqnc::_charEv('S');             // push step programmer
-
+   if ( StepSqnc::_charEv( code ) )  
+      return true;
    else
-
-      Chnl::butEv( b );
+      return Chnl::charEv( code );
 }
 
-void ChnlSqnc::charEv( char code )
+boolean ChnlSqnc::evHandler( obEvent ev )
 {
-   if ( ! StepSqnc::_charEv( code ) )  
-      Chnl::charEv( code );
+   switch ( ev.type() )
+   {
+      case BUT1_TPRESS:                 // push step programmer
+
+         system::blinkLED( led );
+         StepSqnc::_charEv('S');       
+         return true;
+
+      default:
+
+         return Chnl::evHandler( ev );
+   }
 }
 
-void ChnlSqnc::generate( char *buf )
+void ChnlSqnc::output( char *buf )
 {
    StepSqnc::cont();
-   Chnl::generate( buf );
+   Chnl::output( buf );
 }
 
-void ChnlSqnc::info()
-{
-   Chnl::info();
-   console.newline();
-   StepSqnc::info();
-}
-
+#ifdef KEYBRD_MENUS
 char ChnlSqnc::menu( key k )
 {
    switch ( k.position() )
@@ -225,5 +257,5 @@ char ChnlSqnc::menu( key k )
       default: return Chnl::menu( k );
    }
 }
-
+#endif
 

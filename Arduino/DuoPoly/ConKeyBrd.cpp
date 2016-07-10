@@ -21,6 +21,7 @@
 #include "Arduino.h"
 #include "Console_.h"
 #include "ConKeyBrd.h"
+#include "System.h"
 
 ConKeyBrd keybrd;
 
@@ -54,89 +55,75 @@ const char ConKeyBrd::adental_[] PROGMEM =
 
 ConKeyBrd::ConKeyBrd()
 {
-   flags  &= ~(ECHO|MENU);
-   octave  = 4;
+   flags &= ~(ECHO|MENU);
+   flags |= PLAYTHRU;
 }
 
-void ConKeyBrd::bumpOctave( boolean up )
+boolean ConKeyBrd::charEv( char code )
 {
-   byte newOctave = getOctave();
-   if ( up )
-      ++newOctave;
-   else if ( newOctave )
-      -- newOctave;
-   setOctave( newOctave );
-}
-
-void ConKeyBrd::butEv( but b )
-{
-   byte      butNum  = b.num();
-   butEvType butType = b.type();
-
-   switch ( butType )
-   {
-      case butTAP:               // bump keybrd up(but 1) - down(but 0) 1 octave 
-
-         bumpOctave( butNum );
-         console.newprompt();
-         break;
-
-      default:                 
-
-         Mode::butEv( b );
-   }
-}
-
-void ConKeyBrd::charEv( char code )
-{
+   #ifdef INTERN_CONSOLE
    if ( whichNote( code ) )            // if code maps to a key, create key event
    {
-      console.postKey( position, octave );
-      return;
+      console.postKeyDn( position, system::getOctave() );
+      return true;
    }
 
    if ( isDigit( code ) )
    {
-      setOctave( code - '0' );
-      return;
+      system::setOctave( code - '0' );
+      return true;
    }
+   #endif
 
-   Mode::charEv( code );
+   #ifdef CONSOLE_OUTPUT
+   if ( code == chrInfo )
+   {
+      console.rtab();
+      console.print( (int )system::getOctave() );
+      return true;
+   }
+   else
+   #endif
+      return Mode::charEv( code );
 }
 
-void ConKeyBrd::info()
+boolean ConKeyBrd::evHandler( obEvent ev )
 {
-   console.rtab();
-   console.print( (int )octave );
+   switch ( ev.type() )
+   {
+      case KEY_DOWN:
+
+         #ifdef CONSOLE_OUTPUT
+         {
+            key k = ev.getKey();
+            
+            // echo the key to console
+
+            byte pos = k.position();
+            console.print( (char )pgm_read_byte_near( letter_ + pos ) );
+            console.print( (char )pgm_read_byte_near( adental_ + pos ) );
+            console.newprompt();
+         }
+         #endif
+
+         return false;
+
+      case META_ONESHOT:
+
+         return false;
+      
+      default:                 
+
+         return Mode::evHandler( ev );
+   }
 }
 
-boolean ConKeyBrd::keyEv( key k )
-{
 #ifdef CONSOLE_OUTPUT
-
-   // echo the key to console
-
-   byte pos = k.position();
-   console.print( (char )pgm_read_byte_near( letter_ + pos ) );
-   console.print( (char )pgm_read_byte_near( adental_ + pos ) );
-   console.newprompt();
-
-#endif
-
-   return false;                       // allow parent mode(s) to respond
-}
-
-char *ConKeyBrd::prompt()
+const char *ConKeyBrd::prompt()
 {
    return CONSTR("kybd");
 }
-
-void ConKeyBrd::setOctave( byte o )
-{
-   if ( o > maxOctave ) o = maxOctave;
-   if ( o < minOctave ) o = minOctave;
-   octave = o;
-}
+#endif
 
 boolean ConKeyBrd::whichNote( char code )
 {

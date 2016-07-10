@@ -19,26 +19,47 @@
 */
 
 #include "Console_.h"
-#include "System.h"
+#include "System.h"                          
+#include "Audio.h"
 
-/* ----------------------     public instances    -------------------------- */
+/* ----------------------     public variables    -------------------------- */
 
 Console  console;
 double   lastDouble;              // last gotten double
 
+/* ----------------------    private variables    -------------------------- */
+
+#ifdef CONSOLE_OUTPUT
+   char buf[16];                  // buffer for conversions to string
+#else
+   char buf[1];
+#endif
 
 /* ----------------------     public functions    -------------------------- */
 
-void console_setup( Config *c )
+void console_setup( Mode *iniMode )
 {
-   Serial.begin( c->baudrate );
+   #ifdef USE_SERIAL_PORT
+      extern const unsigned long __BAUDRATE__;        \
+      Serial.begin( __BAUDRATE__ );
+   #endif
 
-   console.rprint( c->title );
-   console.print( " [" );
-   console.print( c->version );
-   console.print( "]\r\n" );
+   console.enable();
 
-   console.init( c->matrix, &device_io );
+   #ifdef CONSOLE_OUTPUT
+
+      extern const char __PROGNAME__[];               
+      extern const char __PROGVER__[];                
+
+      console.rtab();
+      console.romprint( __PROGNAME__ );
+      console.romprint( CONSTR( " [" ) );
+      console.romprint( __PROGVER__ );
+      console.print( ']');
+
+   #endif
+
+   console.init( iniMode, &device_io );
 }
 
 void exit_sketch()
@@ -104,44 +125,56 @@ void toStr( double val, char *str )
 char *toStr( double val )
 {
 #ifdef CONSOLE_OUTPUT
-   static char buf[16];
    toStr( val, &buf[0] );
-#else
-   static char buf[1];
 #endif
    return &buf[0];
 }
 
-/* ----------------------     MacroBank class      -------------------------- */
+/* ----------------------    InputMode classes      -------------------------- */
 
-char *MacroBank::prompt()
-{
-   return CONSTR("macro");
-}
-
-void MacroBank::onChoice()
-{
-   console.exe( (const char *)dataPtr() );
-}
-
-/* ----------------------      StrMode class       -------------------------- */
+#ifdef INTERN_CONSOLE
 
 class InputMode : public Mode
 {
+   static char priorDelim;             // console delimiter prior to push
+
    public:
 
-   char *_prompt;                      // ptr to prompt str
+   const char *_prompt;                // ptr to prompt str
 
-   InputMode() { flags |= COLON; }
+   InputMode() {}
 
+   #ifdef KEYBRD_MENUS
    char menu( key k )
    {
       return ( k.position() <= 9 ? '0' + k.position() : 0 );
    }
+   #endif
 
-   char   *prompt()  { return _prompt; }
+   void onFocus( focus f )
+   {
+      switch ( f )
+      {
+         case focusPUSH:
+
+            priorDelim = console.delim;
+            console.delim = ':';
+            break;
+
+         case focusPOP:
+
+            console.delim = priorDelim;
+            break;
+      }
+   }
+
+   #ifdef CONSOLE_OUTPUT
+      const char *prompt()  { return _prompt; }
+   #endif
 
 } ;
+
+char InputMode::priorDelim;
 
 class DigitMode : public InputMode
 {
@@ -152,7 +185,7 @@ class DigitMode : public InputMode
    char  result;                       // result of input (0 = no input)
    byte  max;                          // max allowable digit
 
-   void charEv( char code )
+   boolean charEv( char code )
    {
       if ( isDigit( code ) )
       {
@@ -161,12 +194,13 @@ class DigitMode : public InputMode
          console.print( code );
          result = code;
          console.popMode();
+         return true;
       }
       else
-         InputMode::charEv( code );
+         return InputMode::charEv( code );
    }
 
-   void init( char *prompt, byte max )
+   void init( const char *prompt, byte max )
    {
       _prompt   = prompt;
       this->max = max;     
@@ -185,15 +219,7 @@ class StrMode : public InputMode
 
    public:
 
-   void butEv( but b )
-   {
-      if ( b.num() == 1 && ( b.type() & butPRESS+butTAP ) )
-         charEv( chrCR );
-      else 
-         Mode::butEv( b );
-   }
-
-   void charEv( char code )
+   boolean charEv( char code )
    {
       switch ( code )
       {
@@ -214,15 +240,35 @@ class StrMode : public InputMode
                buffer[ pos ]   = 0;
             }
       }
+      return true;
    }
   
-   void init( char * x )
+   boolean evHandler( obEvent ev ) 
+   {
+      // map the pressing or tapping of button 1 to a carriage return
+
+      switch ( ev.type() )
+      {
+         case BUT1_PRESS:
+         case BUT1_TAP:
+
+            charEv( chrCR );
+            return true;
+
+         default:
+
+            return Mode::evHandler( ev );
+       }
+   }
+
+   void init( const char * x )
    {
       _prompt   = x;
       pos       = 0;
       buffer[0] = 0;
    }
 
+   #ifdef KEYBRD_MENUS
    char menu( key k )
    {
       byte keypos = k.position();
@@ -237,10 +283,13 @@ class StrMode : public InputMode
 
       return keychr;
    }
+   #endif
 
    char   *result()  { return &buffer[0]; }
 
 } strMode ;  
+
+#endif  // ifdef INTERN_CONSOLE
 
 /* ----------------------      Console class       -------------------------- */
 
@@ -249,29 +298,78 @@ class StrMode : public InputMode
 
 Mode nullMode;                         // default mode when none is specified
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::disable
+ *
+ *  Desc:  Disable output to the console.
+ *
+ *  Memb: +output           - if set, console output is enabled
+ *
+ *----------------------------------------------------------------------------*/ 
+      
+void Console::disable()
+{
+   output = false;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::done
+ *
+ *  Desc:  Flush console output at sketch end.
+ *
+ *----------------------------------------------------------------------------*/ 
+      
 void Console::done()
 {
 #ifdef CONSOLE_OUTPUT
    newline();
-   rprint( "Done." );
+   rtab();
+   romprint( CONSTR("Done.") );
    Serial.flush();
 #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::enable
+ *
+ *  Desc:  Enable output to the console.
+ *
+ *  Memb: +output           - if set, console output is enabled
+ *
+ *  Note:  This routine has no effect if console output has been permanently
+ *         disabled at compile time by not defining the symbolic constant
+ *         CONSOLE_OUTPUT.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Console::enable()
+{
+   output = true;
 }
 
 void Console::exe( const char *m )
 {
    atMacro = m;
+   disable();
 }
 
-char Console::getDigit( char *prompt, byte max )
+char Console::getDigit( const char *prompt, byte max )
 {
-   digitMode.init( prompt, max );
-   runMode( &digitMode );
-   return digitMode.result;
+   #ifdef INTERN_CONSOLE
+      digitMode.init( prompt, max );
+      runMode( &digitMode );
+      return digitMode.result;
+   #else
+      return false;
+   #endif
 }
 
-boolean Console::getDouble( char *prompt )
+boolean Console::getDouble( const char *prompt )
 {
+   #ifdef INTERN_CONSOLE
    boolean status = getStr( prompt );
 
    if ( status )
@@ -320,9 +418,12 @@ boolean Console::getDouble( char *prompt )
    }
 
    return status;
+   #else
+   return false;
+   #endif
 }
 
-boolean Console::getByte( char* prompt, byte* val )
+boolean Console::getByte( const char* prompt, byte* val )
 {
    int temp;
    boolean status = getInt( prompt, &temp );
@@ -336,37 +437,80 @@ boolean Console::getByte( char* prompt, byte* val )
    return status;
 }
 
-boolean Console::getInt( char *prompt, int *val )
+boolean Console::getSByte( const char* prompt, char* val )
 {
-   boolean status = getStr( prompt );
-
+   int temp;
+   boolean status = getInt( prompt, &temp );
    if ( status )
-      *val = (int ) atoi( strMode.result() );
-
+   {
+      if ( temp < -128 || temp > 127 )
+         status = false;
+      else
+         *val = temp; 
+   }
    return status;
 }
 
-boolean Console::getStr( char *prompt ) 
+boolean Console::getInt( const char *prompt, int *val )
 {
-   strMode.init( prompt );
-   runMode( &strMode );
-   return ( strMode.result()[0] != 0 );
+   boolean status = getStr( prompt );
+
+   #ifdef INTERN_CONSOLE
+      if ( status )
+         *val = (int ) atoi( strMode.result() );
+      return status;
+   #else
+      return false;
+   #endif
 }
 
-void Console::infoByte( char* name, byte val )
+boolean Console::getStr( const char *prompt ) 
 {
-   space();
-   print( name );
-   print( ": " );
-   print( int(val) );
+   #ifdef INTERN_CONSOLE
+      strMode.init( prompt );
+      runMode( &strMode );
+      return ( strMode.result()[0] != 0 );
+   #else
+      return false;
+   #endif
 }
 
-void Console::infoDouble( char* name, double val )
+void Console::begInfo( const char* name )
 {
+   print('{');
+   romprint( name );
    space();
-   print( name );
-   print( ": " );
+}
+
+void Console::endInfo()
+{
+   romprint( CONSTR("} ") );
+}
+
+void Console::infoByte( const char* name, byte val )
+{
+   infoInt( name, val );
+}
+
+void Console::infoInt( const char* name, int val )
+{
+   begInfo( name );
+   print( val );
+   endInfo();
+}
+
+void Console::infoDouble( const char* name, double val )
+{
+   begInfo( name );
    print( toStr(val) );
+   endInfo();
+}
+
+void Console::infoStr( const char* name, const char* val )
+{
+   begInfo( name );
+   romprint( val );
+   endInfo();
 }
 
 void Console::init( Mode *mode, void (*idle_routine)() )
@@ -388,14 +532,17 @@ void Console::input()
       if ( ! chr )
       {
          atMacro = NULL;
+         enable();
          return;
       }
    }
    else 
    {
+      #ifdef USE_SERIAL_PORT
       if ( Serial.available() > 0 )
          chr = Serial.read();
       else
+      #endif
          return;
    }
 
@@ -406,24 +553,70 @@ void Console::input()
    else if ( chr == alphaESC )
       chr = chrESC;
 
-   if ( (_modeStk[ modeSP ]->flags & Mode::ECHO) && chr != chrCR && chr != chrESC )  
-      Serial.print( chr );
+   #ifdef CONSOLE_OUTPUT
+      if ( (_modeStk[ modeSP ]->flags & Mode::ECHO) && chr != chrCR 
+                                                    && chr != chrESC 
+                                                    && output 
+                                                    )  
+         Serial.print( chr );
+   #endif
 
    _modeStk[ modeSP ]->charEv( chr );
    
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::newline
+ *
+ *  Desc:  Send a carriage-return and new-line character to the console.
+ *
+ *  Memb:  output           - if set, console output is enabled
+ *
+ *  Note:  Inorder to avoid a timing conflict between the serial port and audio
+ *         interrupt which can arise when too many characters are sent to the
+ *         serial port in too short a time, this routine incorporates an 
+ *         implicit "wait" period during which the audio engine continues to 
+ *         run. A wait of 25 output buffers has proven effective at a baud rate 
+ *         of 115200. If the baud rate is reduced the number of buffers to wait
+ *         will probably have to be increased.
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::newline()
 {
 #ifdef CONSOLE_OUTPUT
-   Serial.print( "\r\n" );
+   romprint( CONSTR("\r\n") );
+   if ( output )
+      audio::wait( 25 );
 #endif
 }
 
 void Console::newprompt()
 {
+#ifdef CONSOLE_OUTPUT
    newline();
-   prompt();
+   const char * p = _modeStk[ modeSP ]->prompt();
+   space( SEAM - romstrlen( p ) - 2 );
+   romprint( p );
+   print( delim );
+   space(1);
+#endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::oneShotMenu
+ *
+ *  Desc:  Interpret next posted key event as a one-shot menu selection. 
+ *
+ *  Memb:  +oneShot         - interpret next key event as a menu selection.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Console::oneShotMenu()                     
+{
+   oneShot = true;
 }
 
 boolean Console::ongoing( Mode *x )
@@ -440,80 +633,122 @@ boolean Console::ongoing( Mode *x )
 
 void Console::popMode()
 {
+   oneShot = false;
    _modeStk[ modeSP ]->onFocus( focusPOP ); 
    if ( modeSP > 0 ) 
    {
-      newline();
-      setMode( _modeStk[ --modeSP ] );
+      --modeSP;
       _modeStk[ modeSP ]->onFocus( focusRESTORE ); 
+      setMode( _modeStk[ modeSP ] );
    }
    else
       exit_sketch();
 }
 
-void Console::postBut( byte num, butEvType type )  
+void Console::postBut( byte num, butAction action )  
 {
-   but b( num, type );
-   _modeStk[ modeSP ]->butEv( b ); 
+   obEvent o;
+
+   oneShot = false;
+   o.setType( ( num ? BUT1_PRESS : BUT0_PRESS ) + action );   
+   if ( _modeStk[ modeSP ]->flags&Mode::PLAYTHRU )
+   {
+      if ( o.type() == BUT0_TAP )
+         o.setType( META_OCTDN );
+      else if ( o.type() == BUT1_TAP )
+         o.setType( META_OCTUP );
+      else if ( o.type() == BUT1_DTAP )
+         o.setType( META_ONESHOT );
+   }
+   _modeStk[ modeSP ]->evHandler( o ); 
 }
 
-void Console::postKey( byte pos, byte oct )  
+void Console::postKeyDn( byte pos, byte oct )  
 {
    key k( pos, oct );
 
-   if ( _modeStk[ modeSP ]->flags & Mode::MENU )
+   #ifdef KEYBRD_MENUS
+   byte menuFlags = _modeStk[ modeSP ]->flags&( Mode::MENU | Mode::PLAYTHRU );
+   if ( oneShot || ( menuFlags == Mode::MENU ) )
    {
-      if ( _modeStk[ modeSP ]->flags & Mode::ONESHOT )
-         _modeStk[ modeSP ]->flags &= ~( Mode::ONESHOT | Mode::MENU );
+      menuKeyDn = true;
+      oneShot   = false;
 
       char keychr = _modeStk[ modeSP ]->menu( k );
       if ( keychr )
       {
-         if ( _modeStk[ modeSP ]->flags & Mode::ECHO )
-            Serial.print( keychr );
+         #ifdef CONSOLE_OUTPUT
+            if ( _modeStk[ modeSP ]->flags & Mode::ECHO )
+               Serial.print( keychr );
+         #endif
          _modeStk[ modeSP ]->charEv( keychr );
       }
    }
    else
+   #endif
    {
+      obEvent o;
+      o.setKeyDn( k );
       signed char stkptr = modeSP;
-      while ( stkptr >= 0 && ! _modeStk[ stkptr ]->keyEv( k ) ) 
+      while ( stkptr >= 0 && ! _modeStk[ stkptr ]->evHandler( o ) ) 
          --stkptr;
    }
+}
+
+void Console::postKeyUp( byte pos, byte oct )  
+{
+   key k( pos, oct );
+
+   #ifdef KEYBRD_MENUS
+   if ( menuKeyDn )
+   {
+      menuKeyDn = false;
+   }
+   else
+   #endif
+   {
+      obEvent o;
+      o.setKeyUp( k );
+      signed char stkptr = modeSP;
+      while ( stkptr >= 0 && ! _modeStk[ stkptr ]->evHandler( o ) ) 
+         --stkptr;
+   }
+}
+
+void Console::postPot( byte num, byte val )  
+{
+   obEvent o;
+
+   oneShot = false;
+   o.setPotVal( val );
+   o.setType( POT0 + num );   
+   _modeStk[ modeSP ]->evHandler( o ); 
 }
 
 void Console::print( char c )
 {
 #ifdef CONSOLE_OUTPUT
-   static char buf[2];                 // buffer for null-terminated str
-                                       // buf[1] zeroed by compiler :)
-   buf[0] = c;
-   Serial.print( buf );
+   if ( output )
+      Serial.print( c );
 #endif
 }
 
 void Console::print( char *str )
 {
 #ifdef CONSOLE_OUTPUT
-   Serial.print( str );
+   if ( output )
+      Serial.print( str );
 #endif
 }
 
 void Console::print( int i )
 {
 #ifdef CONSOLE_OUTPUT
-   Serial.print( i, DEC );
-#endif
-}
-
-void Console::prompt()
-{
-#ifdef CONSOLE_OUTPUT
-   char * p = _modeStk[ modeSP ]->prompt();
-   space( SEAM - strlen( p ) - 2 );
-   Serial.print( p );
-   print( _modeStk[ modeSP ]->flags & Mode::COLON ? ':' : '>' );
-   space(1);
+   if ( output )
+   {
+      itoa( i, buf, 10 );
+      Serial.print( buf );
+   }
 #endif
 }
 
@@ -521,16 +756,11 @@ void Console::pushMode( Mode *x )
 {
    if ( modeSP < MAX_MODE-1 ) 
    {
-      newline();
+      oneShot = false;
       ++modeSP;
-      setMode( x );
       x->onFocus( focusPUSH );
+      setMode( x );
    }
-}
-
-char *Console::result()
-{  
-   return strMode.result();
 }
 
 void Console::romprint( const char *str )
@@ -545,12 +775,18 @@ void Console::romprint( const char *str )
 #endif
 }
 
-void Console::rprint( char *str )
+byte Console::romstrlen( const char *str )
 {
+   byte len = 0;
 #ifdef CONSOLE_OUTPUT
-   rtab();
-   Serial.print( str );
+   char romChar = pgm_read_byte_near( str++ );
+   while ( romChar )
+   {
+      ++len;
+      romChar = pgm_read_byte_near( str++ );
+   }
 #endif
+   return len;
 }
 
 void Console::rtab()
@@ -578,19 +814,40 @@ void Console::setIdle( void (*x)() )
 void Console::setMode( Mode *x )
 {
    _modeStk[ modeSP ] = x;
-   prompt();
+   newprompt();
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::space
+ *
+ *  Desc:  Print a space.
+ *
+ *  Args:  -- none --
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::space()
 {
    space(1);
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::space
+ *
+ *  Desc:  Print a specified number of spaces.
+ *
+ *  Args:  count            - # of spaces to print
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::space( byte repeatCount )
 {
 #ifdef CONSOLE_OUTPUT
    for ( byte i = 0; i < repeatCount; i++ )
-      Serial.print(' ');
+      if ( output )
+         Serial.print(' ');
 #endif
 }
 

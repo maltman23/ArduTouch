@@ -1,7 +1,7 @@
 /*
     WaveOsc.cpp  
 
-    Implementation of the WaveOsc and auxillary classes.
+    Implementation of the WaveOsc class (wavetable-based oscillator).
 
     ---------------------------------------------------------------------------
  
@@ -18,206 +18,238 @@
    ---------------------------------------------------------------------------
 */
 
-#include "Audio.h"
-#include "ConKeyBrd.h"
 #include "WaveOsc.h"
 #include "WaveBank.h"
 
-                        /*--------------------
-                                 WaveOsc
-                         --------------------*/
-
-void WaveOsc::butEv( but b )
-{
-   byte      butNum  = b.num();
-   butEvType butType = b.type();
-
-   switch ( butType )
-   {
-      case butTAP:               // bump keybrd up(but 1) - down(but 0) 1 octave 
-
-         keybrd.bumpOctave( butNum );
-         break;
-
-      default:                 
-
-         MonoPhonic::butEv( b );
-   }
-}
-
-void WaveOsc::charEv( char code )
+boolean WaveOsc::charEv( char code )
 {
    switch ( code )
    {
-      case 'f':                  // input a playback frequency
-
-         if ( console.getDouble( "freq" ) )
-            setFreq( lastDouble );
-         break;
-
-      case 'T':                  // push tremolo control
-
-         console.pushMode( &this->tremolo );
-         break;
-
-      case 'v':                  // input a volume level
-
-         if ( console.getDouble( "vol" ) )
-            setVol( lastDouble );
-         break;
-
-      case 'V':                  // push vibrato control
-
-         console.pushMode( &this->vibrato );
-         break;
-
+      #ifdef INTERN_CONSOLE
       case 'w':                  // select a waveform
 
          if ( wavebank.choose() )
-            setWave( wavebank.choice() );
+            setTableFromBank( wavebank.choice() );
          break;
+      #endif
 
-      case '!':                  // reset
+      #ifdef CONSOLE_OUTPUT
+      case chrInfo:              // display object info to console
 
-         tremolo.reset();
-         vibrato.reset();
-         setVol( 1.0 );
-         // fall thru to MonoPhonic handler
+         console.infoStr( CONSTR("waveform"), name );
+         Osc::charEv( chrInfo );
+         break;
+      #endif
 
       default:
 
-         MonoPhonic::charEv( code );
+         return Osc::charEv( code );
+   }
+   return true;
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::evaluate
+ *
+ *  Desc:  Interpolate an audio value at the wave table index.
+ *
+ *  Args:  -- none --
+ *
+ *  Rets:  value            - interpolated value
+ *
+ *  Memb:  idx              - accumulated index into wave table 
+ *         table            - ptr to wave table 
+ *
+ *  Note:  Linear interpolation is used.
+ *
+ *-------------------------------------------------------------------------*/      
+
+byte WaveOsc::evaluate() 
+{
+   Int  aft;               // value of sample at table[(integral) idx]
+   Int  fore;              // value of sample at table[(integral) idx+1]
+   Int  interp;            // interpolated value
+
+   word tabptr = (word )table + idx._.msw.val;  
+
+   /* ----- interpolate an audio value based on neighboring samples ----- */
+
+   /* fetch aft and fore values from wave table array */
+
+   aft.val  = (char )pgm_read_byte_near( tabptr++ );
+   fore.val = (char )pgm_read_byte_near( tabptr );
+
+   /* use high byte of fractional component of idx as a proxy (x parts in 
+      255) for the interpolation coeff (this is the distance between the 
+      actual index and it's integral component). 
+   */
+
+   aft.val   *= 255 - idx._.lsw._.msb;
+   fore.val  *= idx._.lsw._.msb;
+   interp.val = aft.val + fore.val;
+
+   if ( interp._.lsb & 0x80 )    // round interpolated value
+      ++interp._.msb;
+
+   return interp._.msb;    
+}
+
+#ifdef KEYBRD_MENUS
+char WaveOsc::menu( key k )
+{
+   switch ( k.position() )
+   {
+      case  2: return 'w';
+      default: return Osc::menu( k );
+   }
+}
+#endif
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::modFreq
+ *
+ *  Desc:  Modify the instantaneous frequency by applying a factor to 
+ *         the effective frequency.
+ *
+ *  Args:  factor           - factor to apply
+ *
+ *  Memb:  coeff            - step = freq * coeff
+ *         effFreq          - effective frequency (includes detuning)
+ *        +step             - amount to increment idx per tick
+ *
+ *----------------------------------------------------------------------------*/      
+
+void WaveOsc::modFreq( double factor )
+{
+   step = effFreq * coeff * factor;
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audio::bufSz     - size of system audio buffers
+ *
+ *  Memb: +idx              - accumulated idx into wave table 
+ *         length           - # of samples in wave table 
+ *         step             - amount to increment idx per tick
+ *
+ *-------------------------------------------------------------------------*/      
+
+void WaveOsc::output( char *buf ) 
+{
+   byte icnt = audio::bufSz;     // write this many ticks of output
+
+   while ( icnt-- )
+   {
+      idx.val += step;                      
+      if ( idx._.msw.val >= length )
+         idx._.msw.val -= length;
+   
+      *buf++ = evaluate();
    }
 }
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  WaveOsc::dynamics
+ *  Name:  WaveOsc::setFreq
  *
- *  Desc:  Perform a dynamic update of the tremolo and vibrato controls,
- *         and propagate changes to instantaneous volume and frequency.
+ *  Desc:  Set the (ideal) frequency.
  *
- *  Args:  -- none --
+ *  Args:  freq             - new frequency
  *
- *  Memb:  coeff            - step = freq * coeff
- *         freq             - ideal playback frequency
- *        +instVol          - instantaneous volume
- *        +step             - amount to increment idx per tick
- *         vol              - volume level (0.0 - 1.0)
+ *  Memb: +step             - amount to increment idx per tick
  *
  *----------------------------------------------------------------------------*/      
 
-void WaveOsc::dynamics()
+void WaveOsc::setFreq( double newFreq )
 {
-   /* manage instantaneous volume 
-   
-      evScalar is an 8-bit fraction (0 - 0.5) that accounts for both volume
-      level and tremolo. It is pre-divided by 2 for use in WaveOsc::evaluate() 
-      -- see further comments there. 
-   */
-
-   tremolo.dynamics();
-   instVol.val = vol * tremolo.val * 128.0;
-
-   /* manage instantaneous frequency */
-
-   vibrato.dynamics();
-   step = freq * vibrato.val * coeff;
+   Osc::setFreq( newFreq );
+   step = effFreq * coeff;
 }
 
-double WaveOsc::getFreq()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::setTable
+ *
+ *  Desc:  Set the wavetable.
+ *
+ *  Args:  descriptor       - wavetable descriptor
+ *
+ *----------------------------------------------------------------------------*/      
+
+void WaveOsc::setTable( const desWavTab *d ) 
 {
-   return freq;
+   setTable( d, NULL );
 }
 
-void WaveOsc::info()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::setTable
+ *
+ *  Desc:  Set the wavetable.
+ *
+ *  Args:  descriptor       - wavetable descriptor
+ *         name             - wavetable name
+ *
+ *  Memb: +coeff            - step = freq * coeff
+ *        +idx              - current accumulated idx into table
+ *        +length           - # of samples in table 
+ *        +name             - wacetable name
+ *        +period           - # of samples per wavelength
+ *        +step             - amount to increment idx per tick
+ *        +table            - ptr to table of samples
+ * 
+ *----------------------------------------------------------------------------*/      
+
+void WaveOsc::setTable( const desWavTab *d, const char *n ) 
 {
-   MonoPhonic::info();
-   printNameFreq();
-   console.infoDouble( " vol", vol );
-}
+   desWavTab desc;
 
+   /* copy descriptor from progmem */
 
-void WaveOsc::printNameFreq()
-{
-   console.romprint( name );
-   console.space();
-   console.print( toStr( getFreq()) );
-}
+   byte* rombyt = (byte *)d;
+   byte* rambyt = (byte *)&desc;
 
-void WaveOsc::setFreq( double x )
-{
-   freq = x;
-   step = x * vibrato.val * coeff;
-}
+   for ( byte z = 0; z < sizeof( desWavTab ); z++ )
+      *rambyt++ = pgm_read_byte_near( rombyt++ );
 
-void WaveOsc::setVol( double x )
-{
-   if ( x >= 1.0 )
-      x = 1.0;
-   else if ( x <= 0.0 )
-      x = 0.0;
-   vol = x;
-   instVol.val = x * tremolo.val * 128.0;
-}
+   /* set local fields */
 
-void WaveOsc::setWave( byte i ) 
-{
-   desWavTab &d = wavebank[i];
+   table   = desc.table;
+   period  = desc.period;
+   length  = desc.length;
 
-   name    = wavebank.name(i);
-   table   = d.table;
-   period  = d.period;
-   length  = d.length;
+   name    = n;
    idx.val = 0;
+
+   /* compute dependent fields */
+
    coeff   = pow(2, 16) * (period / audioRate);
-   step    = freq * coeff;
+   step    = effFreq * coeff;
 }
 
-                        /*--------------------
-                                Tremolo
-                         --------------------*/
 
-void Tremolo::evaluate()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::setTable
+ *
+ *  Desc:  Set table to a given member of the wavebank.
+ *
+ *  Args:  nth              - index of wavebank member
+ *
+ *  Glob:  wavebank         - bank of wave tables.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void WaveOsc::setTableFromBank( byte i ) 
 {
-   val = 1.0 - pos;
+   setTable( (const desWavTab* )wavebank.dataPtr(i), wavebank.name(i) );
 }
 
-char* Tremolo::prompt()
-{
-   return CONSTR("tremolo");
-}
-
-void Tremolo::charEv( char code )
-{
-   if ( code == '!' )         // reset
-      iniOsc( .4, 2.5 );  
-
-   TrigLFO::charEv( code );
-}
-
-                        /*--------------------
-                                Vibrato
-                         --------------------*/
-
-#define RATIO_SEMITONE   1.059463 // frequency ratio between adjacent pitches
-#define INVERT_SEMITONE   .943874 // 1 / RATIO_SEMITONE
-
-void Vibrato::evaluate()
-{
-   double spos = fader * ((2.0 * pos) - depth);
-   if ( spos >= 0 )
-      val = 1.0 + (spos * (RATIO_SEMITONE-1.0) );
-   else
-      val = 1.0 + (spos * (1.0 - INVERT_SEMITONE));
-}
-
-void Vibrato::iniPos()
-{
-   pos = depth * 0.5;
-}
-
-char* Vibrato::prompt()
-{
-   return CONSTR("vibrato");
-}

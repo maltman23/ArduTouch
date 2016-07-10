@@ -1,7 +1,7 @@
 /*
     Bank.cpp  
 
-    Implementation of the Bank class.
+    Implementation of the Bank and MacroBank classes.
 
     ---------------------------------------------------------------------------
  
@@ -22,12 +22,18 @@
 #include "Bank.h"
 #include "Console_.h"
 
+/* ------------------------      Bank class      ---------------------------- */
+
 boolean Bank::choose()
 {
    chosen = false;
+
+   #ifdef INTERN_CONSOLE
    console.runMode( this );
    if ( chosen )
       onChoice();
+   #endif
+
    return chosen;
 }
 
@@ -44,71 +50,112 @@ const void* Bank::dataPtr()
 const void* Bank::dataPtr( byte nth )
 {
    Word   dataSlot;
-   const byte* cur = base + nth * sizeof( bankmem ) + sizeof( char* );
+   const byte* cur = base + nth * sizeof( bankmem );
    dataSlot._.lsb  = pgm_read_byte_near( cur++ );
    dataSlot._.msb  = pgm_read_byte_near( cur );
    return (const void *)dataSlot.val;
 }
 
-void Bank::info()
-{
-   console.rtab();
-   for ( byte i = 0; i < num; i++ )
-   {
-      console.print( (char )('0' + i) );   
-      console.print( ": " );
-      console.romprint( name(i) );
-      console.print( "  " );
-   }   
-}
+#ifdef INTERN_CONSOLE
 
-void Bank::charEv( char code )
+boolean Bank::charEv( char code )
 {
-   if ( code >= '0' && code < '0' + num )
+   if ( code >= '0' && code < '0' + Max )
    {
       idx    = code - '0';
-      chosen = true;
+      chosen = idx < num;
       console.popMode();
    }
+   #ifdef CONSOLE_OUTPUT
+   else if ( code == chrInfo )
+   {
+      console.rtab();
+      for ( byte i = 0; i < num; i++ )
+      {
+         console.print( (char )('0' + i) );   
+         console.romprint( CONSTR(": ") );
+         console.romprint( name(i) );
+         console.space(2);
+      }
+   }
+   #endif      
    else
-      Mode::charEv( code );
+      return Mode::charEv( code );
+
+   return true;
 }
+
+#else
+
+boolean Bank::charEv( char code )
+{
+   return Mode::charEv( code );
+}
+
+#endif
 
 void Bank::load( const bankmem *p )
 {
-   Word nameSlot;
+   Word slot;
 
    base = (byte *)p;
 
    /* determine number of members in null-terminated list */
 
    const byte* cur = base;                   
-   nameSlot._.lsb  = pgm_read_byte_near( cur++ ); // set nameSlot = bankmem[0].name
-   nameSlot._.msb  = pgm_read_byte_near( cur++ ); 
+   slot._.lsb  = pgm_read_byte_near( cur++ ); // set slot = bankmem[0].data
+   slot._.msb  = pgm_read_byte_near( cur++ ); 
 
    num = 0;
-   while ( num < Max && nameSlot.val )       // loop till null name ptr, or Max
+   while ( num < Max && slot.val )           // loop till null data ptr, or Max
    {
-      cur += sizeof(void *);                 // skip over bankmem[num].data 
       num++;                                 // bump num
 
-      nameSlot._.lsb = pgm_read_byte_near( cur++ ); // set nameSlot = bankmem[num].name
-      nameSlot._.msb = pgm_read_byte_near( cur++ ); 
+      #ifdef CONSOLE_OUTPUT
+      cur += sizeof(char *);                 // skip over bankmem[num].name 
+      #endif
+
+      slot._.lsb = pgm_read_byte_near( cur++ ); // set slot = bankmem[num].name
+      slot._.msb = pgm_read_byte_near( cur++ ); 
    }
 }
 
+#ifdef KEYBRD_MENUS
 char Bank::menu( key k )
 {
    return ( k.position() <= 9 ? '0' + k.position() : 0 );
 }
+#endif
 
 const char* Bank::name( byte ith )
 {
-   Word   nameSlot;
-   const byte* cur = base + ith * sizeof( bankmem );
-   nameSlot._.lsb  = pgm_read_byte_near( cur++ );
-   nameSlot._.msb  = pgm_read_byte_near( cur );
-   return (const char *)nameSlot.val;
+   #ifdef CONSOLE_OUTPUT
+   if ( base )
+   {
+      Word  nameSlot;
+      const byte* cur = base + ith * sizeof( bankmem ) + sizeof(void *);
+      nameSlot._.lsb  = pgm_read_byte_near( cur++ );
+      nameSlot._.msb  = pgm_read_byte_near( cur );
+      return (const char *)nameSlot.val;
+   }
+   else
+   #endif
+      return CONSTR("");
 }
 
+
+/* ----------------------     MacroBank class      -------------------------- */
+
+void MacroBank::onChoice()
+{
+   console.exe( (const char *)dataPtr() );
+}
+
+
+#ifdef CONSOLE_OUTPUT
+const char *MacroBank::prompt()
+{
+   return CONSTR("macro");
+}
+#endif
 

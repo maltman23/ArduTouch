@@ -22,30 +22,28 @@
 #define WAVEBANK_H_INCLUDED
 
 #include "Bank.h"
-#include "Console_.h"
+#include "WaveTable.h"
 
-typedef struct {                 // desWavTab : WaveTable descriptor
-
-   const signed char* table;     // ptr to table of waveform pts
-   unsigned long      length;    // # of samples in table 
-   double             period;    // # of samples per wavelen
-
-   }  desWavTab;
+#define _wavetable(x) _member( &wavtabDesc##x, wavtabName##x )
 
 class WaveBank : public Bank           // bank of wave tables
 {                                      
    public:
 
-   WaveBank();
-
-   desWavTab&  operator[]( byte );     // return descriptor of nth wave table   
-   char*       prompt();               // return object's prompt string
-
+   #ifdef CONSOLE_OUTPUT
+   const char *prompt() { return CONSTR("waveform"); }
+   #endif
 } ;
 
 /* ------------------------      public vars      -------------------------- */
 
 extern WaveBank wavebank;              // bank of all instantiable wave tables
+
+extern_wavetable( Sine )
+extern_wavetable( dVox )
+extern_wavetable( Rood )
+extern_wavetable( Ether )
+extern_wavetable( SynStr )
 
 /* ----------------------     public functions     ------------------------- */
 

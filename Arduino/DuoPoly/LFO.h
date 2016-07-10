@@ -23,21 +23,25 @@
 
 #include "Control.h"
 
-class LFO : public Control
+class LFO : public TControl
 {
    public:
 
    double  val;                  // current output value 
 
-   void    charEv( char );       // process a character event
+   boolean charEv( char );       // process a character event
    void    dynamics();           // update object dynamics
+   boolean evHandler( obEvent ); // handle an onboard event
    virtual void evaluate();      // compute output value from osc position
-   void    info();               // display object info to console
    virtual void iniPos();        // set initial osc position
-   char    menu( key );          // map key event to character 
+   void    iniVal();             // set initial osc position and evaluate
    void    iniOsc(double,double);// initialize oscillator
    void    setDepth( double );   // set oscillation depth
    void    setFreq( double );    // set oscillation frequency
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );          // map key event to character 
+   #endif
 
    protected:
 
@@ -58,18 +62,28 @@ class FadeLFO : public LFO       // LFO with fade capability
 {
    public:
 
-   enum { FADEOUT = _RESERVE1 }; // flags.FADEOUT = 1 if LFO fades out
+   enum {  // use these bits in the flags byte: 
 
-   void    charEv( char );       // process a character event
+         DONE    = _RESERVE2,    // LFO is done fading
+         FADEOUT = _RESERVE3     // flags.FADEOUT is set if LFO fades out
+
+        } ;
+
+   boolean charEv( char );       // process a character event
    void    dynamics();           // update object dynamics
-   void    info();               // display object info to console
+   boolean ready();              // returns trigger status
+
+   #ifdef KEYBRD_MENUS
    char    menu( key );          // map key event to character 
+   #endif
 
    protected:
 
    byte     time;                // fade time in 1/8th secs (0-255)
    double   fader;               // current fader value
    double   fadeStep;            // increment fader this much per dynamic upd
+
+   void iniFader();              // initialize fader
 
 } ;
 
@@ -80,16 +94,19 @@ class TrigLFO : public LFO       // Triggered LFO
 
    enum {  // use these bits in the flags byte: 
 
-           PEAK    = _RESERVE1,   // trigger LFO starting at peak value 
-           LEGATO  = _RESERVE2    // ignore trigger if LFO is still running
+           DONE  = _RESERVE2,    // LFO is done traversing
+           PEAK  = _RESERVE3     // trigger LFO starting at peak value 
 
         } ;
 
-   void    charEv( char );       // process a character event
+   boolean charEv( char );       // process a character event
    void    dynamics();           // update object dynamics
-   void    info();               // display object info to console
    void    iniPos();             // set initial osc position
+   boolean ready();              // returns trigger status
+
+   #ifdef KEYBRD_MENUS
    char    menu( key );          // map key event to character 
+   #endif
 
    protected:
 

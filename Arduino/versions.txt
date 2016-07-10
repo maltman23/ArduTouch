@@ -1,5 +1,285 @@
 Versions:
 
+   2.05  system issues both key-down and key-up events
+         4-stage envelopes
+         ----
+         Envelope scrolls pots over Att-Dec-Sus-Rel
+         Voice scrolls pots over Vol-Detune-Glide
+         in Voice mode BUT0_PRESS/BUT1_PRESS Scroll up/down
+         in DuoPoly mode, button taps no longer enter respective panels
+         in ChnlSqnc mode BUT1_TPRESS enters step programmer
+         [31958 / 1305] 
+   2.04  Mode::charEv() has a return type of boolean
+         [31532 / 1295] 
+   2.03  Voice becomes a container for an Osc*
+         Voice derives from MonoPhonic
+         add Osc *Voice::osc 
+         Osc derives from Mode
+         WaveOsc::output() ::evaluate() no longer defined inline in header
+         [31726 / 1295] 
+   2.02  LED support
+         add Chnl::led
+         DuoSynth() sets left.led to red, rght.led to blue LED
+         Chnl::onFocus() turns on LED 
+         ChnlSqnc::evHandler() blinks LED on step-programmer push
+         add DuoSynth::onFocus() turns LEDs off on restore
+         system LED code is compiled #ifndef USE_SERIAL_PORT
+         add PCB_REV_1
+         [31496 / 1273] __FULLHOST__
+         [31028 / 1053] __STNDLONE__ (+ SynStr wave table)
+   2.01  add Bare-bones runtime model
+         add __BAREBONE__  
+         add INTERN_CONSOLE 
+         [31402 / 1271] __FULLHOST__
+         [27918 / 1221] __LITEHOST__
+         [26722 / 1044] __STNDLONE__
+         [23196 /  931] __BAREBONE__ (Duopoly runs but is minimally usable)
+   2.00  add Osc class
+         add Osc.h Osc.cpp to project
+         WaveOsc derives from Osc
+         [31402 / 1271] 
+   1.99  keyboard menus are a compile time option
+         add KEYBRD_MENUS in Model.h
+         [31338 / 1267] 
+         [30670 / 1229] no menus
+   1.98  remove Config.h from project
+         add about_program() macro
+         add set_baud_rate() macro
+         [31338 / 1267] 
+   1.97  WavOsc can use unincorporated wave tables
+         bankmem loses name slot #ifndef CONSOLE_OUTPUT
+         add WaveTable.h to project
+         add wave_descriptor() macro
+         add WaveOsc::setTable( const desWavTab* ) 
+         add WaveOsc::setTable( const desWavTab*, const char* )
+         WaveOsc::setTableFromBank() replaces ::setWave() 
+         WaveOsc::setTable() copies descriptor from PROGMEM
+         nix WaveBank::[] operator
+         add obEvent::getKey()
+         [31340 / 1273] 
+   1.96  add MonoSynth StereoSynth classes
+         DuoSynth starts in right channel
+         render_audio() can drive either mono or stereo synths
+         add begin_samples() end_samples() macros
+         LFO max frequency increased to 20 (was 6)
+         LFO frequency pot uses exponential scale
+         add Synth::startup(), DuoSynth::startup()
+         add Synth::inStereo() 
+         ::generate() methods renamed ::output()
+         [31302 / 1283] 
+   1.95  add SynStr wavetable (source: fpb3900.wav)
+         [31146 / 1279] 
+   1.94  add runtime models: Full-Host, Lite-Host, Stand-alone
+         add Model.h to project
+         add __FULLHOST__  __LITEHOST__ __STNDLONE__ 
+         conditionally compile prompt() methods on #ifdef CONSOLE_OUTPUT
+         [31146 / 1279] __FULLHOST__
+         [27878 / 1229] __LITEHOST__
+         [26696 / 1056] __STNDLONE__
+   1.93  macros for defining presets and wavetables, and constructing banks
+         wavetables are enumerated and loaded in DuoPoly.ino
+         WaveBank class no longer loads system wavetables by default
+         add begin_bank() end_bank() _member() macros
+         add define_wavetable() extern_wavetable() _wavetable() macros
+         add define_preset() extern_preset() _preset() macros
+         increase Bank::Max from 8 to 10
+         Bank::charEv() pops mode with ::chosen false on numeric input > ::num 
+         Bank::name() returns null if no members were loaded
+         Synth::setup() renamed ::load()
+         [31146 / 1279] 
+   1.92  conditionally compile chrBrief/Info sections on #ifdef CONSOLE_OUTPUT
+         use rom strings in Bank::charEv()
+         [31148 / 1279] full version
+         [28024 / 1263] no console output
+         [26842 / 1090] no serial port
+   1.91  indigenous detuning of wave oscillators
+         add WaveOsc::detune ::idealFreq ::effFreq 
+         add WaveOsc('d') ::setDetune() ::calcEffFreq()
+         nix WaveOsc::freq
+         add detune to scrollable voice params
+         add Console::getSByte() ::infoInt()
+         [31152 / 1277] full version
+         [29454 / 1269] no console output
+         [28272 / 1096] no serial port
+   1.90  pots can scroll over multiple parameters
+         add tap-press button events
+         add Scroller class 
+         Voice inherits additionally from Scroller 
+         add Scroller.cpp Scroller.h to project
+         in Voice, add attack decay sustain to scrollable params
+         Voice reset unmutes envAmp
+         Phonic::evHandler maps pot0 to vol (was pot1)
+         [30832 / 1275]
+   1.89  Rood wavetable (source:wid_3540.wav) replaces Ether as waveform 2
+         Ether wavetable remains, but is not compiled
+         XMFilter scales complement to avoid clipping on low weightings
+         add XMFilter::norm ::setWeight()
+         in Keltos preset, right envelope/filter/glide settings are reworked
+         [30452 / 1271]
+   1.88  noise-free loading of presets
+         add Synth('#')
+         all preset strings begin and end with '#'
+         add Synth::mute_at_reset
+         DuoSynth('.'/'<') set global vol of left/right chnls
+         DuoSynth::generate() no longer special cases if amMute()
+         Voice::generate() performs segues by ramping instVol
+         Voice::instVol ::segVol typed as Ints
+         nix Voice::segue
+         remove System::pause() ::resume()
+         until_rendered() renamed audio::wait()
+         [30226 / 1267]
+   1.87  meta events
+         all controls are PLAYTHRU by default
+         bugfix: vibrato control with 0 fade time was never updating
+         add Mode::flags.PLAYTHRU
+         nix Mode::flags.ONESHOT
+         add Console::oneShot ::oneShotMenu()
+         move Chnl::menu() to Voice
+         move 'w' option from Voice::menu() to WaveOsc::menu()
+         system normalizes signed output by += 128, not += 127
+         [30214 / 1270]
+   1.86  mitigate breaks/distortion in audio during heavy serial output
+         add display briefs for all classes derived from Mode
+         change console info format to {name value}
+         add Voice::setGlobVol()
+         DuoSynth pot1 controls overall synth volume
+         add until_rendered( byte )
+         Console::newline() calls until_rendered() 
+         add Mode::brief(), chrBrief
+         ::vol becomes a Phonic member
+         add Voice::effVol ::globVol
+         add Phonic.cpp to project
+         [30152 / 1275]
+   1.85  mitigate audible 'clicks' on Voice mute/unmute, and at startup
+         Voice::dynamics() sets ::segVol to 0 if ::amMute()
+         Voice::generate() no longer zero-fills buffer on ::amMute()
+         Voice::setVol() no longer sets ::instVol
+         audio_setup() sets PWM regs to "0" 
+         audio::enable() incorporates an implicit pause 
+         remove system::lastR ::lastL
+         nix DuoSynth::secDC (was not used)
+         [29656 / 1265]
+   1.84  serial port usage is optional
+         console internals are refined
+         add USE_SERIAL_PORT
+         nix Mode::flags.COLON 
+         nix Console::rprint() ::prompt()
+         [29724 / 1269]
+   1.83  add Envelope class
+         add Envelope.h Envelope.cpp to project
+         add Voice::envAmp
+         Voice::generate() performs segues at zero crossings
+         Voice::segue replaces Voice::flags.SEGUE
+         add TControl class
+         TControl ~ replaces L for legato triggering
+         TControl ' replaces S for stacatto triggering
+         bugfix: Tremolo(.) must force val to 1.0
+         bugfix: WaveBank::prompt() must have return type of const
+         bugfix: LFO/XMFilter/BSFilter::evHandler() must call parent by default
+         add enveloping to "Keltos" preset
+         [30094 / 1277]
+   1.82  string constants are placed in ROM 
+         console routines attempt serial output only if output is enabled
+         serial port no longer stopped/restarted by Console::disable()/enable()
+         (fixes occasional audio glitches and distortion on preset load)
+         add Console::output
+         add ALLOC_CONSTR() macro
+         [28922 / 1211]
+   1.81  integrate onboard pot events
+         in system module, add readPot() potVal[] NumPots CLOCKWISE_POTS
+         add console::postPot()
+         add obEvent::getPotVal() ::setPotVal()
+         Voice::evHandler() maps pot0 to glide, pot1 to volume
+         LFO::evHandler() maps pot0 to freq, pot1 to depth
+         BSFilter::evHandler() maps pot0 to shift, pot1 to clip
+         XMFilter::evHandler() maps pot0 to weight
+         LFO::calcStep() preserves current direction
+         LFO::setDepth() calls iniPos() if depth == 0
+         remove 0:'g' option from Chnl menu
+         [28818 / 1370]
+   1.80  keyboard octave settings are maintained by the system module
+         dynamic update rate is a compile-time constant in system module
+         move ConkeyBrd::octave bumpOctave() getOctave() setOctave() to system
+         IDEAL_DYNA_RATE replaces Config::dynaRate
+         [28168 / 1361]
+   1.79  bugfix: in Voice::generate() cast segVol to int when segueing down
+         [28228 / 1367]
+   1.78  onBoard events are specified by genus and type
+         evGenus replaces obEvType
+         add evType
+         butAction renames butEvType
+         remove but type
+         [28228 / 1367]
+   1.77  Modes handle all onboard events thru a single method
+         add Mode::evHandler()
+         nix Mode::butEv()
+         unvirtualize Mode::keyEv()
+         add obEvent type
+         add Onboard.h to project
+         remove but.h from project
+         remove key.h from project
+         butEvType no longer an enum
+         [28322 / 1367]
+   1.76  object info is displayed via ::charEv()
+         remove Mode::info() 
+         add chrInfo constant
+         cmdTrigger renamed chrTrigger
+         In "Hive" preset, right:bsf:shift reduced to 6 from 7 
+         In "Industry" preset, left:bsf:shift increased to 5 from 4 
+         [28184 / 1399]
+   1.75  abrupt changes in instantaneous volume (at trigger pts) are segued
+         processing of Voice triggers is deferred until next dynamic update
+         add Voice::flags.TRIG
+         add Voice::flags.SEGUE
+         add Voice::segVol
+         add MAX_SEGUE
+         add FadeLFO::ready()
+         add TrigLFO::ready()
+         add LFO::iniVal()
+         add XMF_DEF_WEIGHTING
+         bugfix: LFO::trigger() was not evaluating
+         [27982 / 1431]
+   1.74  note changes are deferred to next dynamic update
+         vibrato and portamento funcionality moved to Voice from WaveOsc 
+         WaveOsc::setFreq() becomes virtual
+         add WaveOsc::modFreq()
+         add Voice::pendNote ::keyEv() ::setFreq()
+         nix Chnl::keyEv()
+         add Chnl::dynamics()
+         Chnl::propFreq() takes no arg, assumes latched
+         in "Cadiz" preset, shorten intro 
+         [27604 / 1427]
+   1.73  bugfix: restore 8-bit voice output (was scaled to 7 bits since v1.35)
+         effects are applied at the pre-amp stage (before volume/tremolo)
+         add Voice.cpp to project
+         volume and tremolo functionality moved to Voice from WaveOsc 
+         Voice::vol is typed as a byte (was a double)
+         StepSqnc::exeRec() ignores unMute record after 1st pass
+         Mode::newline_info_prompt() renamed ::inform()
+         [27706 / 1441]
+   1.72  bugfix: unmuting TrigLFO had no effect if free-running
+         in "Cadiz" preset, add right channel sequence 
+         StdEffects.cpp replaces Filter.cpp
+         StdEffects.h   replaces Filter.h
+         reinstate Trig::LFO flags.STOPPED
+         Console::cfg replaces system::config
+         restore Config arg to audio_setup(), console_setup() 
+         use CONSTR macro for strings in StdEffects.cpp
+         [28200 / 1449]
+   1.71  add portamento capability to WaveOsc class
+         console I/O is disabled during macro execution
+         StepProgrammer remains in mode when buffer full, eats further input
+         add "Cadiz" preset (left channel riff only)
+         add WaveOsc::glide ::instGlide ::multGlide  ::dirGlide
+         add WaveOsc::setGlide() ::calcMultGlide() ::doneGlide()
+         add WaveOsc('g')
+         in Chnl::menu() low C maps to 'g' (was 'v')
+         add system::config
+         audio_setup(), console_setup() take system::config as implicit arg
+         add Console::enable() ::disable()
+         add StepProgrammer::fullHouse ::informFull() and associated logic
+         bugfix: StepProgrammer wrote EOS beyond array bounds in certain cases
+         [28122 / 1449]
    1.70  add TrigLFO::flags.LEGATO
          add TrigLFO::flags.PEAK
          add TrigLFO('L' 'S')
@@ -231,7 +511,7 @@ Versions:
          ::negative renamed ::complement
          [24396 / 1350]
    1.41  Voice::evaluate() rounds output value
-         remove consort::evElapsed
+         remove console::evElapsed
          remove TIMEOUT code in DuoSynth::iterate()
          Control::amMute() is inlined
          Voice::iterate() tests for mute at start of routine (not end)

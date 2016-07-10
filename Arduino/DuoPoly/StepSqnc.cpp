@@ -21,6 +21,7 @@
 #include "Audio.h"
 #include "ConKeyBrd.h"
 #include "StepSqnc.h"
+#include "System.h"
 
 #define DefTempo     108.00      // default tempo
 
@@ -34,117 +35,147 @@ class StepProgrammer : public ConKeyBrd
 {
    public:
 
-   byte   bufLen;                // length of sequence buffer
-   byte  *sqnc;                  // buffer for compiled sequence records
-   byte   idx;                   // current index into sqnc[] 
-   byte   duration;              // duration of note/rest in progress
+   byte    bufLen;               // length of sequence buffer
+   byte   *sqnc;                 // buffer for compiled sequence records
+   byte    idx;                  // current index into sqnc[] 
+   byte    duration;             // duration of note/rest in progress
+   boolean fullHouse;            // if true, sequence buffer is full
 
-   void butEv( but b )
-   {
-      byte      butNum  = b.num();
-      butEvType butType = b.type();
-
-      switch ( butType )
-      {
-         case butTAP:            // bump keybrd up(but 1) - down(but 0) 1 octave 
-
-            keybrd.bumpOctave( butNum );
-            break;
-
-         case butPRESS:          // bump duration on button 1 press
-
-            if ( butNum == 1 )
-            {
-               ++duration;
-               break;
-            }
-
-         default:                 
-
-            ConKeyBrd::butEv( b );
-      }
-   }
-
-   void charEv( char code )      // handle a character event
+   boolean charEv( char code )   // handle a character event
    {
       switch ( code )
       {
+         #ifdef INTERN_CONSOLE
          case '.':               // bump duration
          case ' ':
 
             ++duration;
             break;
+         #endif
 
          default:                         
          
-            ConKeyBrd::charEv( code );
+            return ConKeyBrd::charEv( code );
       }
+      return true;
    }
 
-   boolean keyEv( key k )        // handle a key event
+   boolean evHandler( obEvent ev ) 
    {
+      switch ( ev.genus() )
+      {
+         case evKEY:
+
+         {
+            key k = ev.getKey();
+
+            if ( fullHouse )     // if sequencer buffer is full, eat key
+            {
+               informFull();
+               return true;            
+            }
       
-      ConKeyBrd::keyEv( k );     // echo key to console
-
-      /*  --- Complete the compilation of any note/rest in progress ---
+            /*  --- Complete the compilation of any note/rest in progress ---
       
-         If records exist in the buffer, then by definition a note is in
-         process.
+               If records exist in the buffer, then by definition a note is in
+               process.
 
-         If no records exist in the buffer, and the duration is nonzero, then 
-         by definition a (initial) rest is in progress.
+               If no records exist in the buffer, and the duration is nonzero, then 
+               by definition a (initial) rest is in progress.
 
-      */    
+            */    
 
-      if ( idx > 0 )             // compile duration for note in progress
-      {
-         sqnc[ idx++ ] = duration;  
-      }
-      else if ( duration > 0 )   // compile a Rest-duration-UnMute sequence
-      {
-         sqnc[ idx++ ] = tokenRest;  
-         sqnc[ idx++ ] = duration;  
-         sqnc[ idx++ ] = tokenUnMute;  
-      }
+            if ( idx > 0 )             // compile duration for note in progress
+            {
+               sqnc[ idx++ ] = duration;  
+            }
+            else if ( duration > 0 )   // compile a Rest-duration-UnMute sequence
+            {
+               sqnc[ idx++ ] = tokenRest;  
+               sqnc[ idx++ ] = duration;  
+               sqnc[ idx++ ] = tokenUnMute;  
+            }
 
-      /*  --- Begin the compilation of a new note, space permitting --- */
+            /*  --- Begin the compilation of a new note, space permitting --- */
       
-      if ( idx > bufLen - 3 )    // no space for another note + EOS
-      {
-         sqnc[ idx ] = tokenEOS;
-         console.popMode();
-         return true;
-      }
-      else
-      {
-         sqnc[ idx++ ] = k.val;  // compile new note
-         duration      = 1;      // set its preliminary duration to 1
-      }
+            if ( idx > bufLen - 3 )    // no space for another note + EOS
+            {
+               fullHouse = true;
+               informFull();
+            }
+            else
+            {
+               ConKeyBrd::evHandler( ev );  // echo key to console
+               sqnc[ idx++ ] = k.val;  // compile 1st byte of new note record
+               duration      = 1;      // set its preliminary duration to 1
+            }
 
-      return false;              // allow parent mode to produce feedback
+            return fullHouse;
+            break; 
+         }
+
+         case evBUT:
+
+            switch ( ev.type() )
+            {
+               case BUT0_TAP:       
+
+                  system::bumpOctave( -1 );
+                  break;
+
+               case BUT1_TAP:       
+
+                  system::bumpOctave( 1 );
+                  break;
+
+               case BUT1_PRESS:          
+
+                  ++duration;
+                  break;
+
+               default:                 
+
+                  ConKeyBrd::evHandler( ev );
+            }
+
+            return true;               // "button event handled" in all cases
+            break;
+
+         default:
+
+            return false;
+
+      }  // switch ( ev.genus() )
+
+   }
+
+   void informFull()
+   {
+      console.romprint( CONSTR("full!") );
+      console.newprompt();
    }
    
    void onFocus( focus f )
    {
       if ( f == focusPOP )
       {
-         if ( idx > 0 )          // compile duration for current note
+         if ( idx > 0 && ! fullHouse )  // compile duration for current note
              sqnc[ idx++ ] = duration; 
          sqnc[ idx ] = tokenEOS;
       }
    }
 
-   char *prompt()
-   {
-      return CONSTR("sqnc");
-   }
+   #ifdef CONSOLE_OUTPUT
+   const char *prompt()  { return CONSTR("sqnc"); }
+   #endif
 
    void push( byte *bufptr, byte len )
    {
-      bufLen   = len;
-      sqnc     = bufptr;
-      idx      = 0;
-      duration = 0;
+      bufLen    = len;
+      sqnc      = bufptr;
+      idx       = 0;
+      duration  = 0;
+      fullHouse = false;
       console.pushMode( this );
    }
 
@@ -157,6 +188,7 @@ bool StepSqnc::_charEv( char code )
 
    switch ( code )
    {
+      #ifdef INTERN_CONSOLE
       case '[':                  // start sequencer playback
 
          start();
@@ -175,18 +207,19 @@ bool StepSqnc::_charEv( char code )
       case 'S':                  // step-program a new sequence
 
          stop();                 // insure sequencer is not playing
-         programmer.push( &this->sqnc[0], MaxLen ); // evoke the programmer
+         programmer.push( &this->sqnc[0], MaxLen ); // run the programmer
          break;
 
       case 't':                  // set sequencer tempo
 
-         if ( console.getDouble( "tempo" ) )
+         if ( console.getDouble( CONSTR("tempo") ) )
             setTempo( lastDouble );
          break;
 
       case 'k':                  // swallow "keybrd" event if sequence is playing
 
          if ( playback == pbON  ) break;
+      #endif
 
       case '!':
 
@@ -214,8 +247,12 @@ void StepSqnc::exeRec()
 
       case tokenUnMute:
 
-         subject->setMute( false );
-         exeRec();               
+         if ( unMute )           // process unMute record on 1st pass only
+         {
+            subject->setMute( false );
+            unMute = false;
+         }
+         exeRec();               // execute next rec after unMute
          break;
 
       case tokenEOS:
@@ -230,17 +267,24 @@ void StepSqnc::exeRec()
          break;
 
       default:                   // process note record
-
-         subject->keyEv( (key )token );
+      {
+         obEvent o;
+         o.setKeyDn( (key )token );
+         subject->evHandler( o );
          exeDC = sqnc[ idx++ ];
+      }
    }
 }
 
 void StepSqnc::info()
 {
+   #ifdef CONSOLE_OUTPUT
    console.rtab();
-   console.print( playback & pbON ? '[' : ']' );
-   console.infoDouble( "t", tempo );
+   console.romprint( CONSTR("sqnc:") );
+   console.romprint( playback == pbOFF ? CONSTR("Off ") :
+                   ( playback&pbPAUSED ? CONSTR("Paused ") : CONSTR("On ")) );
+   console.infoDouble( CONSTR("tempo"), tempo );
+   #endif
 }
 
 void StepSqnc::cont()

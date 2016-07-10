@@ -27,7 +27,13 @@ class Control : public Mode
 {
    public:
 
-   enum { MUTE = _RESERVE0 };          // flags.MUTE = 1 if object muted
+   Control();
+
+   enum {  // use these bits in the flags byte: 
+
+           MUTE   = _RESERVE0          // if flags.MUTE is set, object is muted
+
+        } ;
 
    virtual void  dynamics() {};        // perform a dynamic update
 
@@ -36,17 +42,38 @@ class Control : public Mode
       return flags & MUTE;
    }
 
-   void    charEv( char );             // process a character event
-   void    info();                     // display object info to console
-   char    menu( key );                // map key event to character 
+   boolean charEv( char );             // process a character event
    void    reset();                    // reset object state
    void    setMute( boolean );         // mute-unmute object
-   void    trigger();                  // trigger the control
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // map key event to character 
+   #endif
 
 } ;
 
-/* character codes for Control-specific commands (processed in charEv()) */
+class TControl : public Control        // a triggered control 
+{
+   public:
 
-#define cmdTrigger      -2             
+   enum {  // use these bits in the flags byte: 
+
+           LEGATO = _RESERVE1          // control uses legato re-triggering
+
+           // if flags.LEGATO is set, triggers are ignored until
+           //    ready() returns true
+
+        } ;
+
+   boolean charEv( char );             // process a character event
+   void    trigger();                  // trigger the control
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // map key event to character 
+   #endif
+
+   virtual boolean ready();            // trigger status
+
+} ;
 
 #endif   // ifndef CONTROL_H_INCLUDED

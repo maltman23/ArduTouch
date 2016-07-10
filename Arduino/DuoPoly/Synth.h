@@ -22,15 +22,62 @@
 #define SYNTH_H_INCLUDED
 
 #include "Phonic.h"
-#include "Console_.h"
+#include "Bank.h"
 
-class Synth : public StereoPhonic
+#define define_preset(x, y)                                                \
+                                                                           \
+   const char presetName##x[] PROGMEM = { #x };                            \
+   const char presetData##x[] PROGMEM = { y };
+
+#define extern_preset(x)                                                   \
+                                                                           \
+   extern const char presetName##x[];                                      \
+   extern const char presetData##x[]
+
+#define _preset(x) _member( presetData##x, presetName##x )
+
+class Synth : public Phonic
 {
    public:
 
-   void    charEv( char );                   // process a character event
-   virtual void  setup( const bankmem * );   // initialize synth (load presets)
+   boolean charEv( char );                   // process a character event
+   boolean inStereo();                       // true if synth produces stereo 
+                                             // output (else, output is mono)
+   virtual void load( const bankmem * );     // load bank of presets
+   virtual void startup();                   // execute at end of system startup
+
+   protected:
+
+   boolean stereo;                           // true is synth is stereo
+
+   private:
+
+   boolean mute_at_reset;                    // if true, overrides implicit 
+                                             // implicit unmute at reset 
+} ;
+
+class MonoSynth : public Synth
+{
+   public:
+
+   virtual void output( char* ) 
+   {
+      // write output to one (mono) audio buffer
+   };     
 
 } ;
 
+class StereoSynth : public Synth
+{
+   public:
+
+   StereoSynth() { stereo = true; }
+
+   virtual void output( char*, char* ) 
+   {
+      // write output to a left-right pair of audio buffers
+   };  
+
+} ; 
+   
 #endif   // ifndef SYNTH_H_INCLUDED

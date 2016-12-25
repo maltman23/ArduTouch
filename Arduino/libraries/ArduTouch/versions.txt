@@ -1,0 +1,123 @@
+Versions:
+
+   0.63  bugfix: bumping octave below 0 was wrapping to max octave
+         upOctave(), downOctave() replace bumpOctave( char )
+         Tuning::maxOctave reduced to 7 from 8
+   0.62  LFO::evaluate() returns 1.0 - pos (previously returned pos)
+         remove Tremolo::evaluate()
+         remove WahLFO::evaluate()
+   0.61  add Voice::charEv('O') -- "push oscillator"
+   0.60  bugfix: allocating effects from the heap resulted in indeterminateness
+         LPFilter and BSFilter constructors no longer perform a reset
+         Effect constructor initializes ::next to NULL
+   0.59  add Console::getULong()
+         add Console::infoULong()
+         additions to KEYWORDS.TXT
+   0.58  add Console::newlntab()
+         console_setup() calls console.newlntab() at start
+   0.57  reset aesthetics: in console.setup() replace rtab with \r + space(SEAM)
+   0.56  bugfix: Voice::setFreq() must check for instGlide == 0
+   0.55  additions to KEYWORDS.TXT
+   0.54  nix lastDouble
+         getDouble() takes a pointer argument to location for return value
+   0.53  Synth::mute_at_reset replaced by static Phonic::mute_at_reset  
+         Voice(!) sets globVol based on mute_at_reset
+         nix Voice::iniGlobVol()
+   0.52  add MONITOR_RAM
+         add freeRam()
+         Mode::inform() displays cpu/freeRam if MONITOR_CPU/MONITOR_RAM
+         nix Mode($)
+   0.51  Model.h checks for declaration of one and only one runtime model
+   0.50  system_setup() renamed ardutouch_setup()
+         system_loop() renamed ardutouch_loop()
+   0.49  remove Mode::onFocus()
+         remove focus enumumerated type
+         add focusPOP, focusPUSH, focusRESTORE "commands"
+   0.48  PCB_REV_1 renamed PCB_REV_B
+         not CLOCKWISE_POTS for PCB_REV_B (same as REV_A)
+   0.47  additions to KEYWORDS.TXT
+   0.46  bugfix: TControl('~') must set DONE flag
+   0.45  BUFSZ define moved from System.cpp to Audio.h
+         add AutoWah to StdEffects
+         additions to KEYWORDS.TXT
+   0.44  Voice::vibrato ::tremolo ::envAmp become public
+         additions to KEYWORDS.TXT
+   0.43  migrate Term/FadeLFO::flags.DONE to TControl
+         TControl::trigger() checks flags.DONE and .LEGATO
+         modifications to Envelope and TermLFO trigger logic
+   0.42  space optimization in TControl::charEv(chrInfo/Brief)
+   0.41  add Voice::useOsc() ::clearEffects() ::addEffect
+         add EffectsLoop::clear()
+   0.40  add Voice::release()
+         add EffectsLoop::release()
+         remove redundant check for amMute() in Envelope(chrRelease)
+   0.39  add TControl::release()
+         set flags.DONE on FadeLFO::charEv('~t)
+         rename Envelope::release to ::relTime
+   0.38  remove TControl::ready()
+   0.37  add LFO::prompt()
+   0.36  remove Filter abstract class
+   0.35  LPFilter replaces XMFilter
+   0.34  TrigLFO class renamed TermLFO
+         add headers for all LFO class methods
+         add headers for Vibrato and Tremolo class methods
+         additions to KEYWORDS.TXT
+   0.33  Voice propagates dynamic updates and triggers to the effects loop
+         Effect derives from TControl
+         add EffectsLoop::trigger() ::dynamics()
+   0.32  add Voice::noteOff()
+   0.31  Voice triggers are no longer deferred to next dynamics()
+         remove Voice::pendNote ::flags.TRIG
+         add Voice::noteOn() ::trigger()
+         TControl::trigger() no longer executes dynamics() if ! ready()
+   0.30  add Tuning::minOctave ::maxOctave ::defOctave
+         system octave routines use masterTuning state vars
+   0.29  add optional monitoring of cpu usage during render_audio()
+         add MONITOR_CPU
+         Mode('$') displays cpu usage
+   0.28  bugfix: blinking[] is dimensioned by NumLEDS (was NumButs)
+         LED routines check for valid input of LED #
+   0.27  octave routines no longer in system namespace
+   0.26  LED routines no longer in system namespace
+         additions to KEYWORDS.TXT
+   0.25  additions to KEYWORDS.TXT
+   0.24  audioBufSz replaces audio::bufSz
+         add placeholder KEYWORDS.TXT with keywords used in examples
+   0.23  system_setup() enables audio after call to synth's setup() method
+   0.22  add upper C = pin 26 for PCB_REV_1
+         numKeys in System.cpp replaces maxKey in scanKeys()
+   0.21  change comments to refer to left/right button (was top/bot)
+   0.20  Osc::onFreq() renames Osc::calcState() 
+   0.19  Osc::calcState() renames Osc::calcFreq()
+   0.18  add virtual Voice::iniGlobVol()
+   0.17  wave_descriptor() macro expands to *desc, name 
+   0.16  add Osc::prompt() 
+   0.15  Synth::load() no longer virtual
+   0.14  Synth::setup() renames ::startup
+   0.13  system_setup() calls synth's startup() method
+   0.12  add Osc::Osc(), which performs a reset
+   0.11  privatize Osc::detune ::calcEffFreq
+   0.10  Osc::setFreq() no longer virtual
+         nix WaveOsc::setFreq()
+   0.09  Osc::calcFreq() renames ::compute
+   0.08  Osc::modFreq() no longer virtual
+         add WaveOsc::compute()
+         Osc::extFactor renames ::instFactor
+   0.07  add Osc('!')
+         Voice('!') calls osc->reset()
+   0.06  add virtual Osc::compute() ::instFreq
+   0.05  Osc derives from TControl
+         Voice::dynamics() calls osc->trigger/dynamics()
+   0.04  nix Voice('O')
+         WaveOsc( chrInLnfo ) prints waveform on 2nd line
+   0.03  add chrInLnfo
+         Voice( chrInfo ) calls osc->chrEv( chrInLnfo )
+         nix WaveOsc( chrBrief )
+         add WaveOsc/Osc( chrInLnfo )
+         Voice('O') pushes oscillator
+   0.02  Voice( chrInfo ) calls osc->brief(), not info
+         add WaveOsc( chrBrief )
+   0.01  1st internal version of ArduTouch library
+         copy relevant modules from DuoPoly 2.05
+         edit StdEffects.h to include types.h
+         add ArduTouch.h

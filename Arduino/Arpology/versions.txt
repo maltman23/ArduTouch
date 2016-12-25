@@ -1,0 +1,71 @@
+Versions:
+
+   0.62  top pot in ARPEG_FRAME selects pattern
+   0.61  loading of pending pattern is synchronized with pattern start
+   0.60  pendingPattern renamed pendingPatNum
+         add currentPatNum
+         add display of currentPatNum to ArpSynth info
+   0.59  move setRate() from Strobe to ArpSynth
+         setRate() uses 3 logarithmic zones with emphasis on "sweet" zone
+   0.58  pendingPattern replaces selectPattern()
+   0.57  patterns[] is 1 based (element 0 is NULL)
+   0.56  revert to 0.53
+         9 patterns
+   0.55  add boolean arpegForward
+         add logic for playing patterns backwards 
+   0.54  patterns[] is 1 based (element 0 is NULL)
+         7 patterns
+   0.53  add ArpSynth('p')
+         6 patterns
+   0.52  add ArpSynth::selectPattern()
+   0.51  add structure for appegiation patterns
+         pattern0 replicates prior hardcoded logic
+         setup() inits ArpSynth::pattern to pattern0
+   0.50  add Strobe::setRate() sets freq semi-logarithmically
+         pot1 controls arpeggiation rate
+         [26282 / 903]
+   0.49  add Frame typedef
+         add ArpSynth::selectFrame()
+   0.48  BUT0_PRESS no longer sets majorTonality
+         BUT1_PRESS no longer sets minorTonality
+         BUT1_DTAP toggles tonality
+         [Note: had to intercept META_ONESHOT events b/c of PLAYTHRU setting]
+         [26088 / 902]
+   0.47  move all set envelope methods from ArpSynth to QuadSynth
+         [26076 / 902]
+   0.46  fix to broken tonality switching
+         ArpSynth::setTonality() no longer calls reTrigger()
+         [26076 / 902]
+   0.45  remove redundant init of release times in setup macro
+         --- changing tonality is broken
+         [26130 / 902]
+   0.44  copied from Modalia [0.44] and remonikered
+         [26162 / 908]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

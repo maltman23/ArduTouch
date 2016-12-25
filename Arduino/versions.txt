@@ -1,5 +1,63 @@
 Versions:
 
+   2.23  move DuoSynth constructor code to DuoSynth::setup()
+         remove DuoSynth constructor
+         syncs with 0.60
+         [32182 / 1286] 
+   2.22  calls to Console::getDouble() add ptr arg to location of return val
+         syncs with 0.54
+         [32192 / 1286] 
+   2.21  bugfix: resetting individual channel resulted in no sound in channel  
+         nix ChnlSqnc::iniGlobVol()
+         syncs with 0.53
+         [32144 / 1290] 
+   2.20  bugfix: Chnl::charEv('/') was displaying '*' as input prompt
+         [32152 / 1294] 
+   2.19  call to system_setup() becomes call to ardutouch_setup()
+         call to system_loop() becomes call to ardutouch_loop()
+         syncs with library 0.50
+         [32152 / 1294] 
+   2.18  onFocus() replaced by inline sections of charEv()
+         syncs with library 0.49
+         [32152 / 1294] 
+   2.17  load extra wavetable #ifndef USE_SERIAL_PORT (was CONSOLE_OUTPUT)
+         [32182 / 1332] 
+   2.16  add #error check for KEYBRD_MENUS
+         syncs with library 0.47
+         [32182 / 1332] 
+   2.15  syncs with library 0.42
+         [32098 / 1322] 
+   2.15  syncs with library 0.41
+         [32110 / 1322] 
+   2.14  syncs with library 0.35 
+         [32122 / 1346] 
+   2.13  Keltos preset no longer uses xmf
+         syncs with library 0.33
+         [32166 / 1348] 
+   2.12  bugfix: note releases were not being propagated to latched channel
+         add Chnl::noteOff()
+         syncs with library 0.32
+         [32074 / 1344] 
+   2.11  add Chnl::noteOn()
+         nix Chnl::dynamics()
+         syncs with library 0.31
+         [32000 / 1340] 
+   2.10  syncs with library 0.27
+   2.09  setup() no longer explicitly enables audio
+         syncs with library 0.23
+         [32054 / 1339] 
+   2.08  combine all source files into a single .ino file
+         [32054 / 1339] 
+   2.07  add check for minimum runtime model in DuoSynth.h
+         presets/wavebank defines moved to DuoSynth.cpp
+         nix synth_setup() -- use DuoSynth::setup() instead
+         replace includes of specific lib files with include of ArduTouch.h
+         add ChnlSqnc::iniGlobVol()  
+         syncs with library 0.22
+         [32082 / 1339] 
+   2.06  1st Library-based version
+         remove all .h and .cpp files except for DuoSynth and Chnl modules
+         [31958 / 1305] 
    2.05  system issues both key-down and key-up events
          4-stage envelopes
          ----

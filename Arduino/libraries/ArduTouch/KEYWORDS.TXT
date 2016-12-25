@@ -1,0 +1,207 @@
+about_program		KEYWORD2
+set_baud_rate		KEYWORD2
+
+__FULLHOST__		KEYWORD3
+__LITEHOST__		KEYWORD3
+__STNDLONE__		KEYWORD3
+__BAREBONE__		KEYWORD3
+
+ardutouch_setup		KEYWORD2
+ardutouch_loop		KEYWORD2
+BUFSZ			KEYWORD3
+audioBufSz		KEYWORD3
+audioRate		KEYWORD3
+
+begin_samples		KEYWORD2
+end_samples		KEYWORD2
+define_wavetable	KEYWORD2
+wave_descriptor		KEYWORD2
+_preset			KEYWORD2
+_wavetable		KEYWORD2
+define_preset		KEYWORD2
+define_bank		KEYWORD2
+begin_bank		KEYWORD2
+end_bank		KEYWORD2
+
+Tuning			KEYWORD1
+EqualTemperament	KEYWORD1
+masterTuning		KEYWORD3
+defOctave		KEYWORD2
+maxOctave		KEYWORD2
+minOctave		KEYWORD2
+pitch			KEYWORD2
+
+Sine			KEYWORD3
+dVox			KEYWORD3
+Rood			KEYWORD3
+Ether			KEYWORD3
+SynStr			KEYWORD3
+
+obEvent			KEYWORD1
+type			KEYWORD2
+getKey			KEYWORD2
+getPotVal		KEYWORD2
+KEY_DOWN		KEYWORD3
+KEY_UP			KEYWORD3
+POT0			KEYWORD3
+POT1			KEYWORD3
+BUT0_TAP		KEYWORD3
+BUT0_PRESS		KEYWORD3
+BUT0_DTAP		KEYWORD3
+BUT0_TPRESS		KEYWORD3
+BUT1_TAP		KEYWORD3
+BUT1_PRESS		KEYWORD3
+BUT1_DTAP		KEYWORD3
+BUT1_TPRESS		KEYWORD3
+RED_LED			KEYWORD3
+BLUE_LED		KEYWORD3
+LEFT_LED		KEYWORD3
+RIGHT_LED		KEYWORD3
+
+key			KEYWORD1
+octave			KEYWORD2
+position		KEYWORD2
+set			KEYWORD2
+
+bumpOctave		KEYWORD2
+getOctave		KEYWORD2
+setOctave		KEYWORD2
+
+onLED			KEYWORD2
+offLED			KEYWORD2
+blinkLED		KEYWORD2
+getBlinkRate		KEYWORD2
+setBlinkRate		KEYWORD2
+
+Mode			KEYWORD1
+charEv			KEYWORD2
+evHandler		KEYWORD2
+flags			KEYWORD2
+menu			KETWORD2
+onFocus			KEYWORD2
+PLAYTHRU		KEYWORD3
+
+Control			KEYWORD1
+amMute			KEYWORD2
+dynamics 		KEYWORD2
+reset			KEYWORD2
+setMute			KEYWORD2
+
+TControl		KEYWORD1
+release			KEYWORD2
+trigger			KEYWORD2
+
+Phonic			KEYWORD1
+output			KEYWORD2
+setVol			KEYWORD2
+
+MonoPhonic		KEYWORD1
+StereoPhonic		KEYWORD1
+
+LFO			KEYWORD1
+val			KEYWORD2
+iniOsc			KEYWORD2
+iniPos			KEYWORD2
+iniVal			KEYWORD2
+setDepth		KEYWORD2
+
+FadeLFO			KEYWORD1
+DONE			KEYWORD3
+FADEOUT			KEYWORD3
+TermLFO			KEYWORD1
+PEAK			KEYWORD3
+Vibrato			KEYWORD1
+Tremolo			KEYWORD1
+
+Envelope		KEYWORD1
+setAttack		KEYWORD2
+setDecay		KEYWORD2
+setSustain		KEYWORD2
+setRelease		KEYWORD2
+
+Effect			KEYWORD1
+process			KEYWORD2
+
+EffectsLoop		KEYWORD1
+append			KEYWORD2
+
+AutoWah			KEYWORD1
+
+Osc			KEYWORD1
+effFreq			KEYWORD2
+extFreq			KEYWORD2
+getFreq			KEYWORD2
+modFreq			KEYWORD2
+onFreq			KEYWORD2
+setDetune		KEYWORD2
+setFreq			KEYWORD2
+WaveOsc			KEYWORD1
+setTable		KEYWORD2
+
+Voice			KEYWORD1
+addEffect		KEYWORD2
+effects			KEYWORD2
+envAmp			KEYWORD2
+osc			KEYWORD2
+tremolo			KEYWORD2
+vibrato			KEYWORD2
+noteOn			KEYWORD2
+noteOff			KEYWORD2
+setGlide		KEYWORD2
+useOsc			KETWORD2
+
+MonoSynth		KEYWORD1
+setup			KEYWORD2
+
+StereoSynth		KEYWORD1
+
+console 		KEYWORD2
+disable			KEYWORD2
+done			KEYWORD2
+enable			KEYWORD2
+getByte 		KEYWORD2
+getDigit		KEYWORD2
+getDouble 		KEYWORD2
+getInt			KEYWORD2
+getSByte 		KEYWORD2
+getStr			KEYWORD2
+getULong		KEYWORD2
+infoByte		KEYWORD2
+infoDouble		KEYWORD2
+infoInt			KEYWORD2
+infoStr			KEYWORD2
+infoULong		KEYWORD2
+init			KEYWORD2
+input			KEYWORD2
+newline			KEYWORD2
+newprompt		KEYWORD2
+oneShotMenu		KEYWORD2
+ongoing			KEYWORD2
+popMode			KEYWORD2
+print			KEYWORD2
+pushMode		KEYWORD2
+romprint		KEYWORD2		
+romstrlen		KEYWORD2
+rtab			KEYWORD2
+runMode			KEYWORD2
+setIdle			KEYWORD2
+setMode			KEYWORD2
+space			KEYWORD2
+
+CONSTR			KEYWORD3
+CONSOLE_OUTPUT		KEYWORD3
+INTERN_CONSOLE		KEYWORD3
+USE_SERIAL_PORT		KEYWORD3
+KEYBRD_MENUS		KEYWORD3
+
+chrCR           	KEYWORD3
+chrESC          	KEYWORD3
+chrTrigger      	KEYWORD3
+chrRelease       	KEYWORD3
+chrInfo         	KEYWORD3
+chrInLnfo       	KEYWORD3
+chrBrief        	KEYWORD3
+
+
+
+

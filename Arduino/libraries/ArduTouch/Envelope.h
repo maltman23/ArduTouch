@@ -36,6 +36,10 @@ class Envelope : public TControl, public Scroller
    void    dynamics();           // update object dynamics
    boolean evHandler( obEvent ); // handle an onboard event
    void    finish();             // set phase to final ("done")
+   byte    getAttack();          // get attack time
+   byte    getDecay();           // get decay time
+   byte    getSustain();         // get sustain level
+   byte    getRelease();         // get release time
    void    setAttack( byte );    // set attack time
    void    setDecay( byte );     // set decay time
    void    setSustain( byte );   // set sustain level

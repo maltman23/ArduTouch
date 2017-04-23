@@ -1,5 +1,192 @@
 Versions:
 
+   0.96  bugfix: ArpSynth::charEv(!) must call refreshLEDS()
+         Streaker preset uses minor tonality
+         [30756 / 908]
+   0.95  add minorFollows[]
+         basicFollows[] renamed majorFollows[]
+         BasicImprov class renamed ArpImprov
+         add ArpSynth::setMajorTonality() ::setMinorTonality()
+         ArpSynth improviser is typed as *ArpImprov (was *Improvisation)
+         add ArpImprov::setMajor() ::setMinor()
+         add comments
+         [30722 / 908]
+   0.94  presets are directly accessed via double tap of right button
+         add How-to-use comments to file header
+         add Maj, Min, Reset presets
+         add _ preset (blank, do-nothing)
+         None preset renamed NoEff
+         re-order presets
+         ArpSynth::evHandler() intercepts META_ONESHOT event
+         nix ArpSynth::menu()
+         Strobe class renamed PeriodicCue
+         PeriodicCue::request renamed ::issued
+         [30604 / 908]
+   0.93  add placeholder presets for ArpSynth when ! ENABLE_PANNING
+         add comments to module header
+   0.92  QuadSynth and related classes moved to library
+         syncs with 0.84  
+         [30576 / 908]
+   0.91  all class declarations are placed together near top of file
+         NUMVOX replaced by NumVox, a static const of QuadSynth
+         Voicing becomes a typedef within QuadSynth
+         [30576 / 908]
+   0.90  break QuadPanSynth method definitions out from class declaration
+         break QuadDualPanSynth method definitions out from class declaration
+         break XPanControl method definitions out from class declaration
+         add header comments for QuadPanSynth methods
+         add header comments for QuadDualPanSynth methods
+         [30576 / 908]
+   0.89  break PanControl method definitions out from class declaration
+         add header comments for PanControl methods
+         add PanControl::menu()
+         PanControl::range renamed ::diameter
+         PanControl::calcParams() renamed ::calcExtent()
+         bugfix: PanControl::calcExtent() should not use depth as a factor!
+         [30548 / 908]
+   0.88  nix BUFSZ
+         syncs with 0.83  
+         [30582 / 908]
+   0.87  grepfile.lst no longer includes library files (use with atg.bat)
+         syncs with 0.82  
+         [30598 / 908]
+   0.86  break QuadSynth method definitions out from class declaration
+         break QuadVoice method definitions out from class declaration
+         add header comments for QuadSynth, QuadVoice methods
+         [30598 / 908] WTF?
+   0.85  XVoice migrated to library
+         syncs with 0.81  
+         [30522 / 908]
+   0.84  ArpSynth(!) sets osc frequencies to 0.0
+         -- this fixes phenomenon of brief chord played on 1st note after reset
+         [30524 / 908]
+   0.83  add Ambia, Streaker presets
+         add XPan clauses in Pan presets
+         presets/clauses are conditionally compiled
+         add QuadPanSynth::menu()
+         add QuadDualPanSynth::menu()
+         remove Wah preset
+         nix autowahs
+         [30486 / 908]
+   0.82  add QuadDualPanSynth class
+         add XPanControl class 
+         add DUAL_PANNING
+         U/I name for autoPilot is "aUtopilot" (was "autoImprov")
+         ArpSynth(U/u) replaces (I/i) for enablng/disabling autoPilot
+         "panMap" replaces "voxMap" in U/I 
+         arpSynth::currentPatNum renamed ::curPatNum 
+         ArpSynth(!) resets curPatNum
+         [31078 / 962]
+   0.81  add ArpSynth(A) for displaying info on ArduTouch library
+         unwind voice loop in QuadSynth::dynamics()
+         syncs with 0.79  
+         cpu panControl <: 208.25 [BUFSZ = 17]
+         [30676 / 941]
+   0.80  Normal preset renamed None
+         Vibrato preset renamed Vib
+         add Pan1 Pan2 Pan3 presets
+         add Wah preset
+         --- Wah preset uses too much cpu
+         syncs with lib 0.74  (which fixes crackles in FastWaveOsc output)
+         cpu panControl <: 221.00 
+         freeRam         : 220
+         [30472 / 925]
+   0.79  the array of ptrs to arpeggiation patterns are located in ROM
+         [30276 / 925]
+   0.78  arpeggiation patterns are located in ROM
+         add ArpSynth::kickStart()
+         --- Enabling autoPilot kick-starts playing of notes
+         bugfix: arpegCue is unmuted only within noteOn() and only if blankSlate
+         [30270 / 945]
+   0.77  QuadSynth(!) resets members of vox[]
+         [30232 / 1009]
+   0.76  add PanControl( byte *panPos )
+         PanControl directly updates panPos byte in QuadPanSynth
+         [30232 / 1009]
+   0.75  QuadPanSynth absorbs QuadDynaPanSynth
+         change in nomenclature: vocs -> vox
+         add ::pan[]
+         buf[0] and buf[3] become automatic variables of ::output()
+         break out ::setMap( char* ) from ::charEv()
+         nix PanControl::pSynth
+         QuadPanSynth refreshes panPos after call to panControl->dynamics()
+         nix NO_PANNING, STATIC_PANNING, and DYNAMIC_PANNING
+         cpu panControl <: 219.75 
+         freeRam         : 137
+         [30186 / 1009]
+   0.74  add QuadDynaPanSynth
+         add PanControl
+         add NO_PANNING, STATIC_PANNING, and DYNAMIC_PANNING defines
+         cpu panControl <: 227.25 
+         cpu panControl .: 218.50 
+         cpu pre-dynamics: 215.25 
+         sync with library [0.72]
+         [30014 / 1023] 
+   0.73  keyboard menu for presets, tonalities, generic mute/unmute/reset
+         add ArpSynth::arpegRate
+         ArpSynth('?') displays arpegRate, attack, decay (aka postAttack)
+         add ArpSynth('a') - set attack
+         add ArpSynth('d') - set postAttack
+         add ArpSynth('r') - set argpeggiation rate
+         setPostAttack() moved from QuadPanSynth to ArpSynth
+         sync with library [0.71]
+         [29118 / 1001]
+   0.72  U/I name for autoPilot is "autoImprov"
+         ArpSynth('I') enables autoPilot (was 'A')
+         ArpSynth('i') disables autoPilot (was 'a')
+         ArpSynth('N') set pattern number (was 'Z')
+         [28810 / 1000]
+   0.71  presets renamed myPresets
+         sync with lib [0.68] 
+         default Pan set to 80
+         [28812 / 1000]
+   0.70  use FastWaveOsc for oscillators
+         sync with lib [0.67] 
+         add ENABLE_PANNING
+         cpu usage: QuadSynth with WaveOsc      239
+                    QuadSynth with FastWaveOsc  212
+         [28818 / 1000]
+   0.69  add QuadPanSynth
+         add QuadPanSynth::panning ::setPanning()
+         add QuadPanSynth(P)
+         QuadSynth::xBuf[] renamed ::buf0[]
+         add QuadSynth::buf3[]
+         add ARP_BASE_CLASS define
+         ArpSynth(Z) replaces ArpSynth(p) "set Pattern"
+         add preset bank, with 'Normal' and 'Vibrato'
+         no default detuning of oscillators
+         [28310 / 990]
+   0.68  add QuadSynth(.) QuadSynth(<) 
+         QuadSynth::setVol() does not propagate globVol when muted
+         break ArpSynth(!) out from ArpSynth::setup() 
+         ArpSynth::noteOn() performs an unMute if blankSlate
+         --- transient audio glitch at reset
+         --- voices sound when 1st note is played after a reset
+         [28206 / 989]
+   0.67  fix to indeterminate enveloping on 1st note if allocated from heap
+         synth remains quiet until 1st note played
+         add QuadSynth::setVol()
+         add ArpSynth::blankSlate
+         ArpSynth::setup() sets mute_at_reset true while resetting voices
+         ArpSynth::noteOn() resets argpegIdx if blankSlate
+         ArpSynth::noteOn() performs noteOff() per voice if blankSlate
+         [28064 / 987]
+   0.66  beginnings of a 2nd-order improvisation engine
+         repeats of note-pairs are avoided
+         octave is occasionally bumped up/down (when on tonic, 4th, 5th)
+         add Improvisation::history[] 
+         add Improvisation::commitNote()
+         add Improvisation::cullRepeatPairs 
+         add Improvisation::minOctave
+         in VoiceFollowingImprov break randNote() out from nextNote()
+         add optional monitoring of generated notes
+         reorder typedefs in file to align with BerlinDemo [0.03]
+         requires ArduTouch library [0.65] or higher
+         [27878 / 986]
+   0.65  better voice leading
+   0.64  autoPilot
+   0.63  Thirds are const and placed in ROM
+         <278 freeRAM> from <230 freeRAM> in [0.62] :)
    0.62  top pot in ARPEG_FRAME selects pattern
    0.61  loading of pending pattern is synchronized with pattern start
    0.60  pendingPattern renamed pendingPatNum

@@ -34,6 +34,7 @@
 #include "Onboard.h"
 #include "Osc.h"
 #include "Phonic.h"
+#include "QuadSynth.h"
 #include "Scroller.h"
 #include "StdEffects.h"
 #include "StepSqnc.h"

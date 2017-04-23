@@ -129,7 +129,7 @@ char WaveOsc::menu( key k )
 
 void WaveOsc::onFreq()
 {
-   step = effFreq * extFactor * coeff;
+   step.val = effFreq * extFactor * coeff;
 }
 
 /*-------------------------------------------------------------------------*
@@ -154,7 +154,7 @@ void WaveOsc::output( char *buf )
 
    while ( icnt-- )
    {
-      idx.val += step;                      
+      idx.val += step.val;                      
       if ( idx._.msw.val >= length )
          idx._.msw.val -= length;
    
@@ -191,7 +191,6 @@ void WaveOsc::setTable( const desWavTab *d )
  *        +length           - # of samples in table 
  *        +name             - wacetable name
  *        +period           - # of samples per wavelength
- *        +step             - amount to increment idx per tick
  *        +table            - ptr to table of samples
  * 
  *----------------------------------------------------------------------------*/      
@@ -239,5 +238,76 @@ void WaveOsc::setTable( const desWavTab *d, const char *n )
 void WaveOsc::setTableFromBank( byte i ) 
 {
    setTable( (const desWavTab* )wavebank.dataPtr(i), wavebank.name(i) );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FastWaveOsc::onFreq
+ *
+ *  Desc:  Compute frequency-dependent state vars.
+ *
+ *  Args:  factor           - factor to apply
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb: +aggEnd           - length - (step * audioBufSz)
+ *         coeff            - step = frequency * coeff
+ *         effFreq          - effective frequency (includes internal detuning)
+ *         extFactor        - external detuning factor
+ *        +step             - amount to increment idx per tick
+ *
+ *----------------------------------------------------------------------------*/      
+
+void FastWaveOsc::onFreq()
+{
+   step.val = effFreq * extFactor * coeff;
+
+   DWord longAggStep;
+
+   longAggStep.val  = step.val;
+   longAggStep.val *= audioBufSz;
+   aggEnd = length - longAggStep._.msw.val - 1;
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  FastWaveOsc::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb:  aggEnd           - length - (step * audioBufSz)
+ *        +idx              - accumulated idx into wave table 
+ *         length           - # of samples in wave table 
+ *         step             - amount to increment idx per tick
+ *
+ *-------------------------------------------------------------------------*/      
+
+void FastWaveOsc::output( char *buf ) 
+{
+   byte icnt = audioBufSz;       // write this many ticks of output
+
+   if ( idx._.msw.val >= aggEnd )
+   {
+      while ( icnt-- )
+      {
+         idx.val += step.val;                      
+         if ( idx._.msw.val >= length )
+            idx._.msw.val -= length;
+         *buf++ = evaluate();
+      }
+   }
+   else
+   {
+      while ( icnt-- )
+      {
+         idx.val += step.val;                      
+         *buf++ = evaluate();
+      }
+   }
+
 }
 

@@ -69,13 +69,14 @@ boolean Bank::charEv( char code )
    #ifdef CONSOLE_OUTPUT
    else if ( code == chrInfo )
    {
-      console.rtab();
       for ( byte i = 0; i < num; i++ )
       {
+         if ( i > 0 )
+            console.newline();
+         console.rtab();
          console.print( (char )('0' + i) );   
          console.romprint( CONSTR(": ") );
          console.romprint( name(i) );
-         console.space(2);
       }
    }
    #endif      
@@ -143,6 +144,12 @@ const char* Bank::name( byte ith )
       return CONSTR("");
 }
 
+byte Bank::select( byte ith )
+{
+   idx = ith < num ? ith : 0;
+   onChoice();
+   return idx;
+}
 
 /* ----------------------     MacroBank class      -------------------------- */
 

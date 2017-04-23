@@ -66,6 +66,8 @@ class Bank : public Mode
    const char* name( byte );           // return name of nth member
    virtual void onChoice() {};         // execute this when member is chosen
 
+   byte    select( byte );             // select nth member of bank
+
    #ifdef KEYBRD_MENUS
    char    menu( key );                // map key event to character 
    #endif

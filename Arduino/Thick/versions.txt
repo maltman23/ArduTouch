@@ -1,5 +1,53 @@
 Versions:
 
+   0.56  bugfix: setup macro must use PSTR(), not CONSTR(), to encapsulate str;
+                 otherwise it is replaced with "" if ! CONSOLE_PUTPUT
+         [22652 / 804] 
+   0.55  QuadSynth and related classes moved to library
+         syncs with 0.84  
+         [22652 / 804] 
+   0.54  nix BUFSZ
+         syncs with 0.83  
+         [22652 / 804] 
+   0.53  grepfile.lst no longer includes library files (use with atg.bat)
+         syncs with 0.82  
+         [22660 / 804] 
+   0.52  utilize QuadSynth and QuadVoice from Arpology 0.85
+         nix XVoice (this class now resides in library)
+         ThickSynth::setup() performs a reset (fixes initial volume of 0)
+         syncs with library 0.81
+         [22660 / 804] 
+   0.51  utilize QuadSynth from Arpology 0.64
+         remove ThickVoice
+   0.50  utilize QuadVoice from Arpology 0.64
+   0.49  utilize XVoice from Arpology 0.64
+   0.48  OscTuning replaces Voicing
+   0.47  setup() arranges for sweeping glissando effect on 1st key touch
+   0.46  re-arrange code sections so that SawTooth methods follow declaration
+         --- bug noted in 0.40 fixed by library 0.56   
+         [22192 / 1504] 
+   0.45  bugfix: setGlideRatio() insures non-zero glides if topGlide != 0
+         (this fixes bug noted in 0.42)      
+         [22178 / 1504] 
+   0.44  add ThickSynth::setGlideRatio()
+         add ThickSynth(r/R) for setting glide ratio
+         [22122 / 1504] 
+   0.43  ThickSynth(chrInfo) displays voicing
+         add ThickSynth(s/S/u/U) for setting the voicing
+         [22014 / 1503] 
+   0.42  add ThickSynth::setVoicing()
+         --- bug: if topGlide all the way to right, one glide is immediate
+         [21838 / 1503] 
+   0.41  add ThickSynth::Voicing enumerated type
+         add ThickSynth::voicing
+         [21844 / 1503] 
+   0.40  ThickSynth::calcGlides() performs transform from "U/I domain"
+         add ThickSynth(d) - sets duration of portamento
+         --- bug: if setTopGlide is called before any note is played then
+                  no notes can be played at all
+         [21844 / 1501] 
+   0.39  add ThickVoice::vocNum ::prompt()
+         [21736 / 1501] 
    0.38  call to system_setup() becomes call to ardutouch_setup()
          call to system_loop() becomes call to ardutouch_loop()
          syncs with library 0.50

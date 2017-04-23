@@ -21,20 +21,7 @@
 #include "Audio.h"
 #include "Synth.h"
 
-
-#ifdef INTERN_CONSOLE
-
-class PresetBank : public MacroBank
-{
-   public:
-
-   #ifdef CONSOLE_OUTPUT
-      const char *prompt() { return CONSTR("preset"); }
-   #endif
-
-}  presets;
-
-#endif
+PresetBank presets;                 // bank of synth presets
 
 boolean Synth::charEv( char code )
 {
@@ -88,12 +75,16 @@ boolean Synth::inStereo()
    return stereo;
 }
 
-void Synth::load( const bankmem *p )
+#ifdef KEYBRD_MENUS
+char Synth::menu( key k )
 {
-   #ifdef INTERN_CONSOLE
-   presets.load( p );
-   #endif
+   switch ( k.position() )
+   {
+      case  0: return 'p';
+      default: return Phonic::menu(k);
+   }
 }
+#endif
 
 #ifdef CONSOLE_OUTPUT
 const char *Synth::prompt()                     

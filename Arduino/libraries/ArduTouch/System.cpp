@@ -24,11 +24,47 @@
 #include "Tuning.h"
 #include "pins_arduino.h"              // needed by Arduino pre-1.0 
 
+/* ------------------------------------------------------------------------
+       The following lines insure that one and only one PCB REV is declared
+   ------------------------------------------------------------------------ */
+
+#ifndef PCB_REV_A
+   #ifndef PCB_REV_B
+      #ifndef PCB_REV_C
+            #error No PCB REV has been declared (System.h)
+      #endif
+   #endif
+#endif
+
+#ifdef PCB_REV_A
+   #ifdef PCB_REV_B
+      #error Multiple PCB REVs have been declared (System.h)
+   #endif
+   #ifdef PCB_REV_C
+      #error Multiple PCB REVs have been declared (System.h)
+   #endif
+#endif
+
 #ifdef PCB_REV_B
-// #define CLOCKWISE_POTS              // pot values increase going clockwise 
+   #ifdef PCB_REV_C
+      #error Multiple PCB REVs have been declared (System.h)
+   #endif
+#endif
+
+/* ------------------------------------------------------------------------- */
+
+#ifdef PCB_REV_C
+   #define CLOCKWISE_POTS              // pot values increase going clockwise 
    #define LED_ACTIVE_LOW              // LEDs are active on LOW edge
    const byte numKeys = 12;            // # of accessible onboard keys
-#else                                  // PCB_REV_A
+#endif
+
+#ifdef PCB_REV_B
+   #define LED_ACTIVE_LOW              // LEDs are active on LOW edge
+   const byte numKeys = 12;            // # of accessible onboard keys
+#endif
+
+#ifdef PCB_REV_A
    const byte numKeys = 12;            // # of accessible onboard keys
 #endif
 
@@ -68,8 +104,11 @@ boolean usingCpu;                      // currently using CPU to render audio
 
 #endif
 
-word    bufsPerScan;                   // # buffers to render per I/O scan
-word    scanDC;                        // downcounter to next I/O scan
+#define NUMBUFS  3                     // # of audio buffers
+
+const   double scanRate = 20.0;        // rate at which to scan hardware
+byte    bufsPerScan;                   // # buffers to render per I/O scan
+byte    scanDC;                        // downcounter to next I/O scan
 boolean enabled;                       // audio is enabled
 
 #define NumButs        2               // number of onboard buttons 
@@ -109,7 +148,8 @@ byte  octave;                          // current octave # for keyboard
  *
  *  Args:  syn              - ptr to synthesizer object 
  *
- *  Glob: +bufsPerScan      - # buffers to render per I/O scan
+ *  Glob:  audioBufSz       - size of an audio buffer
+ *        +bufsPerScan      - # buffers to render per I/O scan
  *         butPin[]         - associated pin # per button (left to right) 
  *         LEDPin[]         - associated pin # per LED (left to right) 
  *         masterTuning     - ptr to master tuning object
@@ -117,6 +157,7 @@ byte  octave;                          // current octave # for keyboard
  *         potPin[]         - associated pin # per pot (top to bot)
  *        +potVal[]         - last value read per pot
  *        +scanDC           - downcounter (in bufs) to next I/O scan
+ *         scanRate         - rate at which to scan hardware
  *
  *  Note:  This routine should be called from the sketch's setup() routine.
  *
@@ -124,8 +165,6 @@ byte  octave;                          // current octave # for keyboard
 
 void ardutouch_setup( Synth *syn )
 {
-   const double scanRate = 30.0;       // rate at which to scan hardware
-
    console_setup( (Mode *) syn );      // initialize console module
    audio_setup( syn );                 // initialize audio module
 
@@ -177,6 +216,38 @@ void ardutouch_loop()
 {
    console.input();
    device_io();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  ardutouch_info()
+ *
+ *  Desc:  Display information about the ArduTouch library to the console.
+ *
+ *  Glob:  audioBufSz       - size of an audio buffer
+ *         audioRate        - audio playback rate 
+ *         bufsPerDyna      - # audio buffers rendered per dynamic update
+ *         bufsPerScan      - # audio buffers rendered per I/O scan
+ *         dynaRate         - dynamic udpate rate
+ *         scanRate         - rate at which to scan hardware
+ *
+ *----------------------------------------------------------------------------*/      
+
+void ardutouch_info()
+{
+   console.newlntab();
+   console.infoStr( CONSTR( "Version" ), CONSTR( LIBRARY_VERSION ) );
+   console.newlntab();
+   console.infoDouble( CONSTR("audioRate"), audioRate );
+   console.infoDouble( CONSTR("dynaRate"), dynaRate );
+   console.newlntab();
+   console.infoByte( CONSTR("bufSz"), audioBufSz );
+   console.infoByte( CONSTR("numBufs"), NUMBUFS );
+   console.infoByte( CONSTR("bufsPerDyna"), bufsPerDyna );
+   console.newlntab();
+   console.infoDouble( CONSTR("scanRate"), scanRate );
+   console.infoInt( CONSTR("bufsPerScan"), bufsPerScan );
+   console.newprompt();
 }
 
 /*----------------------------------------------------------------------------*
@@ -246,7 +317,7 @@ void device_io()
 void scanBut( byte num ) 
 {
    const signed char maxAbsButCount = 125;  // max # scans reflected in butCount  
-   const signed char prThresh       = 7;    // threshold (# scans) for a press
+   const signed char prThresh       = 5;    // threshold (# scans) for a press
 
    boolean butDown = ( digitalRead( butPin[num] ) == LOW );
 
@@ -562,14 +633,13 @@ void setOctave( byte o )
 
 /* ----------------------   Audio Output Buffer    ------------------------- */
 
-#define NUMBUFS  4                     // # of buffers
-#define NUMRECS  NUMBUFS*BUFSZ         // total # of buffered records 
+#define NUMRECS  NUMBUFS*audioBufSz         // total # of buffered records 
 
 byte audioL[NUMRECS];                  // records for left audio channel 
 byte audioR[NUMRECS];                  // records for right audio channel
 
 volatile boolean lock[NUMBUFS];        // write-lock status per buffer
-\
+
 volatile byte w;                       // idx of record being written to
 volatile byte r;                       // idx of record being read from
 volatile byte eor;                     // idx to end of current read buffer 
@@ -577,9 +647,16 @@ volatile byte eor;                     // idx to end of current read buffer
 volatile byte wBuf;                    // buffer # being written to
 volatile byte rBuf;                    // buffer # being read from
 
-const byte   audioBufSz  = BUFSZ;      // # of records per buffer
+/* -------------------------------------------------------------------------- 
 
-/* -------------------------------------------------------------------------- */
+                          SYSTEM AUDIO CONSTANTS
+
+         audioRate          - # audio ticks per second
+         bufRate            - # audio buffers rendered per second
+         bufsPerDyna        - # audio buffers rendered per dynamic update
+         dynaRate           - # dynamic updates per second
+
+  --------------------------------------------------------------------------- */
 
    // double refclk      = 31372.549;  // ideal ISR rate = 16MHz / 510
 const double refclk      = 31376.6;    // real ISR rate as measured
@@ -588,12 +665,15 @@ const double audioRate   = refclk*.5;  // PWM regs updated every other tick
 const word   ticksPerSec = audioRate;  // for use with integer down counters
 
 #define IDEAL_DYNA_RATE    150.0       // ideal dynamic update rate
-double  dynaRate;                      // dynamic update rate
-word    bufsPerDyna;                   // # buffers to render per dynamic update
-word    dynaDC;                        // downcounter to next dynamic update
+
+const double bufRate     = audioRate / audioBufSz;
+const byte   bufsPerDyna = bufRate / IDEAL_DYNA_RATE; 
+const double dynaRate    = bufRate / bufsPerDyna;
+
+byte    dynaDC;                        // downcounter to next dynamic update
 
 Synth  *matrix;                        // ptr to synth that generates the audio
-boolean stereo;                        // if true, synth produces stereo output
+boolean stereo;                        // true if synth produces stereo output
 
 /*----------------------------------------------------------------------------*
  *
@@ -603,9 +683,8 @@ boolean stereo;                        // if true, synth produces stereo output
  *
  *  ARGS:  synth            - ptr to synth which generates the audio 
  *
- *  GLOB: +bufsPerDyna      - # buffers written between dynamic updates
+ *  GLOB:  bufsPerDyna      - # audio buffers rendered per dynamic update
  *        +dynaDC           - downcounter (in bufs) to next dynamic update
- *        +dynaRate         - rate at which to call matrix->dynamics()
  *        +eor              - idx to end of current read buffer 
  *        +lock[]           - write-lock status per buffer
  *        +matrix           - ptr to synth which generates the audio
@@ -619,15 +698,11 @@ boolean stereo;                        // if true, synth produces stereo output
 
 void audio_setup( Synth *x )
 {
-   const double bufRate = audioRate / BUFSZ;
-
    /* initialize soft parameters */
 
    matrix       = x;
    stereo       = x->inStereo();
 
-   bufsPerDyna  = bufRate / IDEAL_DYNA_RATE;
-   dynaRate     = bufRate / bufsPerDyna;
    dynaDC       = bufsPerDyna;
 
    /* initialize audio output buffers */
@@ -636,8 +711,8 @@ void audio_setup( Synth *x )
    w    = 0;
 
    rBuf = NUMBUFS-1;
-   r    = rBuf * BUFSZ;
-   eor  = r + BUFSZ;
+   r    = rBuf * audioBufSz;
+   eor  = r + audioBufSz;
 
    for ( byte i = 0; i < NUMBUFS; i++ )
       lock[i] = false;
@@ -696,7 +771,6 @@ void audio_setup( Synth *x )
  *         blinkRate        - blink rate (in dynamic updates)
  *        +blinkDC          - downcounter to next blink transition
  *        +blinkEdge        - if true, turn blinking LEDs on at transition
- *        +bufsPerDyna      - # buffers to render between dynamic updates
  *        +dynaDC           - downcounter to next dynamic update
  *        +lock[]           - write-lock status per buffer
  *         matrix           - ptr to synth which generates the audio
@@ -722,19 +796,16 @@ boolean render_audio()
    {
       ((MonoSynth *)matrix)->output( (char *)&audioL[w] );
       byte wCopy = w;
-      for ( byte i = BUFSZ; i > 0; i-- )
+      for ( byte i = audioBufSz; i > 0; i-- )
          audioR[wCopy] = audioL[wCopy++];
    }
 
    if ( --dynaDC == 0 )                // manage dynamics 
    {
       matrix->dynamics();              // perform a dynamic update
-      dynaDC = bufsPerDyna;            // reload downcounter
 
-      #ifndef USE_SERIAL_PORT
-      /* update any blinking LEDs */
-
-      if ( --blinkDC == 0 )
+      #ifndef USE_SERIAL_PORT       
+      if ( --blinkDC == 0 )            // update any blinking LEDs 
       {
          blinkDC   = blinkRate;        // reload downcounter
          blinkEdge = ! blinkEdge;      // invert edge
@@ -743,6 +814,8 @@ boolean render_audio()
                digitalWrite( LEDPin[i], blinkEdge ? LED_ON : LED_OFF );
       } 
       #endif
+
+      dynaDC = bufsPerDyna;            // reload downcounter
    }
 
    lock[wBuf] = true;                  // lock buffer from further writes
@@ -754,7 +827,7 @@ boolean render_audio()
    }
    else
    {
-      w += BUFSZ;
+      w += audioBufSz;
    }
 
    #ifdef MONITOR_CPU
@@ -762,6 +835,14 @@ boolean render_audio()
    #endif
 
    return true;
+}
+
+void bufStats()
+{
+   console.romprint( CONSTR(" {locks ") );
+   for ( byte i = 0; i < NUMBUFS; i++ )
+      console.print( lock[i] ? '1' : '0' );
+   console.romprint( CONSTR("} ") );
 }
 
 void audio::disable()
@@ -831,7 +912,7 @@ ISR(TIMER1_OVF_vect)
          rBuf = 0;
             r = 0;
       }
-      eor = r + BUFSZ;              // adjust eor accordingly
+      eor = r + audioBufSz;         // adjust eor accordingly
    }
 
    #ifdef MONITOR_CPU               // monitor % cpu used rendering audio
@@ -862,5 +943,50 @@ ISR(TIMER1_OVF_vect)
 
 ISR(TIMER2_OVF_vect) 
 {
+}
+
+/******************************************************************************
+ *
+ *                   Rand16 (Random 16-bit Number Generator)
+ *
+ ******************************************************************************/
+
+#define LFSR_MASK  0xD295              // xor LFSR with this during feedback
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Rand16::next
+ *
+ *  Desc:  Generate the next random value.
+ *
+ *  Memb: +output           - random 16-bit value
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Rand16::next()
+{
+   byte perform_xor = output._.lsb & 0x01;
+   output.val >>= 1;
+   if ( perform_xor )
+      output.val ^= LFSR_MASK;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Rand16::reseed
+ *
+ *  Desc:  Reseed the generator.
+ *
+ *  Memb: +output           - random 16-bit value
+ *
+ *  Note:  This routine does not produce a useful value if called from startup 
+ *         code.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Rand16::reseed()
+{
+   output._.msb = TCNT1;
+   output._.lsb = TCNT2;
 }
 

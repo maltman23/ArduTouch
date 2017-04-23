@@ -140,6 +140,8 @@ void Voice::calcMultGlide()
  *  Memb: +glide            - portamento speed 1:255 (0 = off)
  *        +vol              - volume level 
  *
+ *  Rets:  status           - true if character was handled
+ *
  *----------------------------------------------------------------------------*/      
 
 boolean Voice::charEv( char code )    
@@ -206,8 +208,6 @@ boolean Voice::charEv( char code )
          tremolo.reset();           // reset tremolo
          vibrato.reset();           // reset vibrato 
          effects.charEv( code );    // reset effects
-
-         setGlobVol( mute_at_reset ? 0 : 255 );  
 
          // fall thru to MonoPhonic reset
             
@@ -653,6 +653,75 @@ void Voice::useOsc( Osc *o )
 {
    osc = o;
 }
+
+/******************************************************************************
+ *
+ *                                  XVoice 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  XVoice::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +xpose            - # of intervals to transpose notes by
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+boolean XVoice::charEv( char code )       // handle a character event
+{
+   switch( code )
+   {
+      #ifdef INTERN_CONSOLE               // compile cases needed by macros
+
+      case 'x':                           // set transposition amount
+
+         console.getSByte( CONSTR("xpose"), &this->xpose );
+         return true;
+
+      #endif
+
+      #ifdef CONSOLE_OUTPUT               // compile cases that display to console 
+
+      case chrInfo:                       // display voice info to console
+
+         Voice::charEv( chrInfo );
+         console.newlntab();
+         console.infoInt( CONSTR("xpose"), xpose );
+         return true;
+
+      #endif
+
+      default:
+
+         return Voice::charEv( code );
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  XVoice::noteOn
+ *
+ *  Desc:  Initiate the playing of a note
+ *
+ *  Args:  note             - key of note to be played  
+ *
+ *  Memb:  xpose            - # of intervals to transpose notes by
+ *
+ *----------------------------------------------------------------------------*/      
+
+void XVoice::noteOn( key k )              
+{
+   k.transpose( xpose ); 
+   Voice::noteOn( k ); 
+}
+
 
 /******************************************************************************
  *

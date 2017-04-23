@@ -61,6 +61,12 @@ class VoiceVibratoSynth : public MonoSynth
       // (Envelopes will be fully covered in a later sketch).
 
       voc.envAmp.setRelease(1);              // insure near-instantaneous note off
+
+      // We next initialize the voice's "global" volume level, so that it can
+      // be heard. Note: "global" vs "local" volume levels will be discussed
+      // in a later example.
+
+      voc.setGlobVol( 255 );                 // set the voice's "global" volume
    }                                         
 
    // In our event handler we no longer have to process the KEY_DOWN event through

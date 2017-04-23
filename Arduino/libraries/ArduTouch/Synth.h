@@ -21,6 +21,7 @@
 #ifndef SYNTH_H_INCLUDED
 #define SYNTH_H_INCLUDED
 
+#include "Console_.h"
 #include "Phonic.h"
 #include "Bank.h"
 
@@ -36,23 +37,38 @@
 
 #define _preset(x) _member( presetData##x, presetName##x )
 
+class PresetBank : public MacroBank
+{
+   public:
+
+   #ifdef CONSOLE_OUTPUT
+      const char *prompt() { return CONSTR("preset"); }
+   #endif
+
+} ;
+
+extern PresetBank presets;             // bank of synth presets
+
 class Synth : public Phonic
 {
    public:
 
-   boolean charEv( char );                   // process a character event
-   boolean inStereo();                       // true if synth produces stereo 
-                                             // output (else, output is mono)
-   void    load( const bankmem * );          // load a bank of presets
-   virtual void setup();                     // executed during system setup
+   boolean charEv( char );             // process a character event
+   boolean inStereo();                 // true if synth produces stereo 
+                                       // output (else, output is mono)
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // map key event to character 
+   #endif
+
+   virtual void setup();               // executed during system setup
 
    #ifdef CONSOLE_OUTPUT
-   const char *prompt();                     // return object's prompt string
+   const char *prompt();               // return object's prompt string
    #endif
 
    protected:
 
-   boolean stereo;                           // true is synth is stereo
+   boolean    stereo;                  // true if synth is stereo-capable
 
 } ;
 

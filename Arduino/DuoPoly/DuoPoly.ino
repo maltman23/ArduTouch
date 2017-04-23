@@ -22,7 +22,7 @@
 
 #include "ArduTouch.h"                       // ArduTouch library declarations
 
-about_program( DuoPoly, 2.23 )               // specify program name & version
+about_program( DuoPoly, 2.27 )               // specify program name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE
@@ -36,6 +36,7 @@ set_baud_rate( 115200 )                      // specify serial baud-rate
 /*----------------------------------------------------------------------------*
  *                                 presets
  *----------------------------------------------------------------------------*/      
+
 
 define_preset( Hive, "#!w1rebs6c3<``k3z``leb-s3c6<``t488\\S3jnhn`[`#" )
 
@@ -54,7 +55,7 @@ define_preset( Cadiz, "#!rw1t30\\V<f4.4\\d.13\\`"
                       "lw1t240\\g248\\"
                       "S2j4xv3j4jx3j4h2j4xv3j4jx3j4h2j4dg3j4jd3j4h2j4dg3j4gv3m4d``[#" )
 
-begin_bank( presets )                  // these presets will be loaded
+begin_bank( myPresets )                // these presets will be loaded
 
    _preset( Hive )
    _preset( Keltos )
@@ -580,7 +581,6 @@ char DuoSynth::menu( key k )
 {
    switch ( k.position() )
    {
-      case  0: return 'p';
       case  2: return 'w';
       case  3: return 'u';
       case  4: return '-';
@@ -615,8 +615,11 @@ const char *DuoSynth::prompt()
 void DuoSynth::setVol( byte x )
 {
    Synth::setVol(x);
-   left.setGlobVol(x);
-   rght.setGlobVol(x);
+   if ( ! amMute() )
+   {
+      left.setGlobVol(x);
+      rght.setGlobVol(x);
+   }
 }
 
 /*----------------------------------------------------------------------------*
@@ -650,8 +653,8 @@ void DuoSynth::setup()
    rght.useOsc( &oscR );
    rght.setName( CONSTR("right") );    
 
-   wavebank.load( wavetables );        // load wavetables
-   load( presets );                    // load presets
+   wavebank.load( wavetables );                 // load wavetables
+   presets.load( myPresets );                   // load presets
    reset();
    console.pushMode( &rght );
 }  

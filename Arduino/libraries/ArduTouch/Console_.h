@@ -120,6 +120,8 @@ class Console
    boolean  menuKeyDn;                 // if true, last key down was a menu
                                        // selection
 
+   boolean getStr( const char* );      // prompt for and get a String
+
    public:
 
    static const int SEAM     = 10;     // width of console seam
@@ -142,7 +144,7 @@ class Console
    boolean getDouble( const char*, double* );   // prompt for and get a double
    boolean getInt( const char*, int* );         // prompt for and get an int
    boolean getSByte( const char*, char* );      // prompt for and get byte (-128:127)
-   boolean getStr( const char* );               // prompt for and get a String
+   boolean getStr( const char*, char** );       // prompt for and get a String 
    boolean getULong( const char*, unsigned long* ); // info on unsigned long
    void    infoByte( const char*, byte );       // print info on a named byte
    void    infoInt( const char*, int );         // print info on a named int
@@ -197,6 +199,9 @@ class Console
 #define focusPOP        -8             // mode is being popped from stack
 #define focusRESTORE    -9             // mode is restored after pop of child
 
+   // following command issued by LFO when depth parameter is set/changed
+
+#define lfoOnDepth      -10            // LFO depth has been set/changed
 
 /* ------------------------      public vars      -------------------------- */
 

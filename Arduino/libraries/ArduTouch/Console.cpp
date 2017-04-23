@@ -563,6 +563,43 @@ boolean Console::getStr( const char *prompt )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Console::getStr
+ *
+ *  Desc:  Display an input prompt, and wait for a string to be input, then 
+ *         write the address of the input string to a handle supplied by the
+ *         calling routine.
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         handleStr        - address of handle to be written to 
+ *
+ *  Rets:  status           - if true, input was successfully completed
+ *
+ *  Note:  If this routine returns a false status (i.e., the user hit escape
+ *         before completing input) then no value is written to the address
+ *         supplied in the 2nd argument.
+ *
+ *         The input string will only be preserved until the next call to
+ *         a get*() routine.
+ *
+ *----------------------------------------------------------------------------*/
+       
+boolean Console::getStr( const char *prompt, char **val ) 
+{
+   #ifdef INTERN_CONSOLE
+      if ( getStr( prompt ) )
+      {
+         *val = strMode.result();
+         return true;
+      }
+      else
+         return false;
+   #else
+      return false;
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Console::getULong
  *
  *  Desc:  Display an input prompt, and wait for a string to be input, then 

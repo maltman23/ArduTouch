@@ -241,6 +241,11 @@ const char *Envelope::prompt()
 }
 #endif
 
+byte Envelope::getAttack()  { return attack; }
+byte Envelope::getDecay()   { return decay; }
+byte Envelope::getRelease() { return relTime; }
+byte Envelope::getSustain() { return sustain; }
+
 void Envelope::setAttack( byte val )
 {
    attack = val;

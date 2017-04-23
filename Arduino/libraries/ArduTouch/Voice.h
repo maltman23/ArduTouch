@@ -119,4 +119,15 @@ class Voice : public MonoPhonic, public Scroller
 } ;
 
 
+class XVoice : public Voice      // Voice with note transposition
+{
+   public:
+
+   char   xpose;                 // amount to transpose notes by
+
+   boolean charEv( char code );  // handle a character event
+   void noteOn( key k );         // initiate the playing of a note 
+
+} ;
+
 #endif   // ifndef VOICE_H_INCLUDED

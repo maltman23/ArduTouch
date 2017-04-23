@@ -34,7 +34,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.38 )                 // specify sketch name & version
+about_program( Thick, 0.56 )                 // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE                       // required for setup macro to work
@@ -64,325 +64,6 @@ class SawTooth : public Osc                  // a sawtooth oscillator
    void output( char *buf );                 // write one buffer of output
 
 } ;
-
-/******************************************************************************
- *
- *                              ThickVoice 
- *
- ******************************************************************************/
-
-class ThickVoice : public Voice              // voice with sawtooth osc, autowah,
-{                                            // and note transposition capability
-
-   AutoWah wah;                              // resident autowah effect
-
-   public:
-
-   SawTooth osc;                             // resident oscillator
-
-   char  xpose;                              // amount to transpose notes by
-
-   void setup()
-   {
-      useOsc( &osc );                        // assign oscillator to voice
-      addEffect( &wah );                     // append autowah to effects loop
-      reset();                               // and reset the voice
-   }
-
-   boolean charEv( char code )               // handle a character event
-   {
-      switch( code )
-      {
-         #ifdef INTERN_CONSOLE               // compile cases needed by macros
-
-         case 'x':                           // set transposition amount
-
-            console.getSByte( CONSTR("xpose"), &this->xpose );
-            return true;
-
-         #endif
-
-         #ifdef CONSOLE_OUTPUT               // compile cases that display to console 
-
-         case chrInfo:                       // display voice info to console
-
-            Voice::charEv( chrInfo );
-            console.newline();
-            console.rtab();
-            console.infoInt( CONSTR("xpose"), xpose );
-            return true;
-
-         #endif
-
-         default:
-
-            return Voice::charEv( code );
-      }
-   }
-
-   void noteOn( key k )                   // play of a note (with transposition)
-   {
-      #define MAX_KEYNUM 12*15            // 12 notes per octave, 15 octaves max
-
-      key  xpKey;                         // transposed key struct
-      byte pos, oct;                      // transposed key position, octave
-      int  keyNum;                        // transposed key number
-
-      // translate untransposed key octave/position into keyNum
-
-      keyNum  = k.position() + k.octave() * 12;
-
-      // transpose keyNum
-
-      keyNum += xpose;
-
-      // range-check transposed keyNum
-
-      while ( keyNum < 0 )
-         keyNum += 12;
-         
-      while ( keyNum > MAX_KEYNUM )
-         keyNum -= 12;
-
-      // translate transposed keyNum back into octave/position
-      
-      oct = keyNum / 12;
-      pos = keyNum % 12;
-      xpKey.set( pos, oct );
-
-      Voice::noteOn( xpKey );             // play the transposed note
-
-      #undef  MAX_KEYNUM
-   }
-
-} ;
-
-/******************************************************************************
- *
- *                              ThickSynth 
- *
- ******************************************************************************/
-
-#define NUMVOCS 4
-
-class ThickSynth : public StereoSynth             
-{
-   ThickVoice voc[ NUMVOCS ];        // component sawtooth voices 
-
-   char xBuf[ BUFSZ ];               // buffer for combining voice outputs
-
-   key   lastKey;                    // last key played
-   byte  deferVoc;                   // if nonzero, call noteOn() for voc[deferVoc-1]
-                                     // at next dynamic update
-
-   Word  portRatio;                  // ratio between adjacent voice portamento
-                                     // speeds (Fixed Pt 0100h = 1.0)
-   byte  topGlide;                   // top portamento speed (applied to voc[3])
-
-   public:
-
-   void setup() 
-   { 
-      portRatio.val = 256;           // portRatio = 1.0 (no diff in portamentos)
-
-      for ( byte i = 0; i < NUMVOCS; i++ )  // init each voice
-         voc[i].setup();
-
-      // the following line executes a macro which sets up each voice's 
-      // detuning/autowah/vibrato so the voices sound groovy together
-
-      console.exe( CONSTR( "0d-6\\ea<c180\\lf.5\\d.625\\````"
-                           "1d38\\Vf1\\d.075\\<`ea<c200\\lf2.75\\d.6\\````"
-                           "2d-12\\Vf.25\\d.1\\<`ea<c150\\lf.75\\d.5\\````"
-                           "3d48\\ea<c190\\lf.23\\d.75\\````"
-                          ) 
-                  ); 
-
-      lastKey.set( 0, 2 );           // initial last note of "C" in octave 2
-      masterTuning->defOctave = 2;   // start keyboard in octave 2
-      masterTuning->maxOctave = 3;   // constrain keybrd to octaves 0..3
-                                     // because it sounds better down there
-   }
-
-   void calcGlides()                // calc voice portamento speeds given
-   {                                // topGlide and portRatio
-      Word portReg;
-
-      byte lastGlide = topGlide;
-      voc[NUMVOCS-1].setGlide( lastGlide );
-
-      for ( byte i = NUMVOCS-1; i >= 1; i-- )
-      {
-         portReg.val  = portRatio.val;       // scale portamento per voice
-         portReg.val *= lastGlide;
-         lastGlide     = portReg._.msb;
-         voc[i-1].setGlide( lastGlide );
-      }
-   }
-
-   boolean charEv( char code )               // handle a character event
-   {
-      switch( code )
-      {
-         #ifdef INTERN_CONSOLE               // compile cases needed by macros
-
-         case '0':                           // 0 thru 3 push respective voices
-         case '1':
-         case '2':
-         case '3':
-            console.pushMode( &voc[code-'0'] );
-            break;
-
-         #endif
-
-         #ifdef CONSOLE_OUTPUT               // compile cases that display to console 
-
-         case chrInfo:
-
-            StereoSynth::charEv( chrInfo );
-            console.infoByte( CONSTR("top"), topGlide );
-            break;
-
-         #endif
-
-         default:
-            return StereoSynth::charEv( code );
-      }
-      return true;
-   }
-
-   boolean evHandler( obEvent e )            // event handler
-   {
-      switch ( e.type() )                    // branch on event type
-      {
-         case KEY_DOWN:                      // a key has been pressed
-
-            deferVoc = NUMVOCS;              // set for defered noteOns
-            lastKey = e.getKey();
-            return true;                     
-
-         case KEY_UP:                        // key has been released
-
-            for ( byte i = 0; i < NUMVOCS; i++ )
-               voc[i].noteOff();                  
-            return true;                     
-
-         case POT0:                          // set portamento spread
-         
-            portRatio.val = 256 - ( e.getPotVal() >> 1 );
-            calcGlides();
-            return true;
-         
-         case POT1:                          // set portamento speed
-         {
-            Word glideVal;
-            glideVal.val = 256 - e.getPotVal();
-            setTopGlide( glideVal._.lsb );
-            return true;
-         } 
-         case BUT0_PRESS:
-         {
-            // unison tuning
-
-            char unison_xpose[]  = {   0,  0,   0,  0 };
-            char unison_detune[] = {  -6, 38, -12, 48 };
-
-            for ( byte i = 0; i < NUMVOCS; i++ )
-            {
-               voc[i].xpose = unison_xpose[i];
-               voc[i].osc.setDetune( unison_detune[i] );
-            }
-
-            reTrigger();
-            return true;
-         }
-         case BUT1_PRESS:
-         {
-            // spread tuning
-
-            char spread_xpose[]  = { -12, 0, 0, 7 };
-            char spread_detune[] = {   1, 3, -2, -5 };
-
-            for ( byte i = 0; i < NUMVOCS; i++ )
-            {
-               voc[i].xpose = spread_xpose[i];
-               voc[i].osc.setDetune( spread_detune[i] );
-            }
-
-            reTrigger();
-            return true;
-         }
-         default:                            // pass on unhandled events
-                                             
-            return StereoSynth::evHandler(e);
-      }
-   }
-
-   void output( char *bufL, char *bufR )     // output 1 buffer of audio
-   {  
-      int sum;
-
-      // combine voc[0] and voc[1] output in bufL
-
-      voc[0].output( bufL ); 
-      voc[1].output( &this->xBuf[0] ); 
-
-      for ( byte i = 0 ; i < BUFSZ; i++ )
-      {
-         sum = bufL[ i ] + xBuf[ i ];
-         bufL[i] = sum >> 1;
-      }
-
-      // combine voc[2] and voc[3] output in bufR
-
-      voc[2].output( bufR ); 
-      voc[3].output( &this->xBuf[0] ); 
-
-      for ( byte i = 0 ; i < BUFSZ; i++ )
-      {
-         sum = bufR[ i ] + xBuf[ i ];
-         bufR[i] = sum >> 1;
-      }
-   }
-
-   void dynamics()                           // perform a dynamic update
-   {  
-      if ( deferVoc )                        // execute noteOn for next defered voice
-      {
-         --deferVoc;
-         voc[ deferVoc ].noteOn( lastKey );
-      }
-
-      for ( byte i = 0; i < NUMVOCS; i++ )   // update dynamics for all voices
-         voc[i].dynamics();    
-   }
-
-   void reTrigger()                          // retrigger all voices
-   {
-      for ( byte i = 0; i < NUMVOCS; i++ )   // call noteOff for all voices
-         voc[i].noteOff();
-      deferVoc = NUMVOCS;                    // set deferVoc so that noteOns() will
-   }                                         // be called in subsequent dynamics() 
-
-   void setTopGlide( byte g )                // set the top portamento speed
-   {
-      topGlide = g;
-      calcGlides();                          // recalculate all voice portamentos
-   }
-
-} synth;                                     
-
-
-void setup()
-{
-   ardutouch_setup( &synth );                // initialize ardutouch resources
-}
-
-void loop()
-{
-   ardutouch_loop();                         // perform ongoing ardutouch tasks   
-}                                             
-
 
 /*----------------------------------------------------------------------------*
  *
@@ -455,4 +136,271 @@ void SawTooth::output( char *buf )
       *buf++ = rounded;                   // write rounded to buffer and bump
    }
 }
+
+/******************************************************************************
+ *
+ *                              ThickSynth 
+ *
+ ******************************************************************************/
+
+class ThickSynth : public QuadSynth             
+{
+   enum  OscTuning { UNISON = 0,     // all oscillators at tonic 
+                     SPREAD = 1      // spread tuning with 5ths and octaves
+                   };
+
+   OscTuning oscTuning;              // current tuning for oscillators
+   
+   byte  glideRatio;                 // ratio between adjacent voice portamentos
+                                     // 0 = 1.0, 255 = close to 0.0
+   Word  portRatio;                  // ratio between adjacent voice portamentos
+                                     // speeds (Fixed Pt 0100h = 1.0)
+
+   byte  topGlide;                   // top portamento speed (applied to vox[3])
+
+   public:
+
+   void setup() 
+   { 
+      QuadSynth::setup();
+
+      portRatio.val = 256;           // portRatio = 1.0 (no diff in portamentos)
+
+      // initialize voices
+
+      for ( byte i = 0; i < NumVox; i++ )
+      {
+         vox[i]->useOsc( new SawTooth() );
+         vox[i]->addEffect( new AutoWah() ); 
+      }
+
+      reset();
+
+      // the following line executes a macro which sets up each voice's 
+      // detuning/autowah/vibrato so the voices sound groovy together
+
+      console.exe( PSTR( "0ea<c180\\lf.5\\d.625\\````"
+                         "1Vf1\\d.075\\<`ea<c200\\lf2.75\\d.6\\````"
+                         "2Vf.25\\d.1\\<`ea<c150\\lf.75\\d.5\\````"
+                         "3ea<c190\\lf.23\\d.75\\````"
+                         "d128\\r73\\"
+                        ) 
+                  ); 
+
+      setOscTuning( SPREAD );
+
+      // the following code is for starting with an impressive glissando :)
+
+      lastNote.set( 7, 5 );           // start from up high
+
+      for ( byte i = 0; i < NumVox; i++ )
+      {
+         vox[i]->setMute( true );
+         vox[i]->envAmp.setSustain( 0 );
+         vox[i]->noteOn( lastNote );
+         vox[i]->noteOff();
+         vox[i]->envAmp.setSustain( 255 );
+         vox[i]->setMute( false );
+      }
+
+      lastNote.set( 0, 2 );          // initial last note of "C" in octave 2
+      masterTuning->defOctave = 2;   // start keyboard in octave 2
+      masterTuning->maxOctave = 3;   // constrain keybrd to octaves 0..3
+                                     // because it sounds better down there
+   }
+
+   void calcGlides()                // calc voice portamento speeds given
+   {                                // topGlide and portRatio
+      Word portReg;
+
+      // remap topGlide so fastest speed is closest to 0
+
+      portReg.val = 256 - topGlide;          
+      byte lastGlide = portReg._.lsb;        
+
+      vox[NumVox-1]->setGlide( lastGlide );
+
+      if ( lastGlide == 0 )
+      {
+         for ( byte i = NumVox-1; i >= 1; i-- )
+            vox[i-1]->setGlide( 0 );
+         return;
+      }
+
+      for ( byte i = NumVox-1; i >= 1; i-- )
+      {
+         portReg.val  = portRatio.val;       // scale portamento per voice
+         portReg.val *= lastGlide;
+         lastGlide     = portReg._.msb;
+         vox[i-1]->setGlide( lastGlide ? lastGlide : 1 );
+      }
+   }
+
+   boolean charEv( char code )               // handle a character event
+   {
+      switch( code )
+      {
+         #ifdef INTERN_CONSOLE               // compile cases needed by macros
+
+         case 'd':
+         {         
+           byte duration;
+           if ( console.getByte( CONSTR("duration"), &duration ) )
+               setTopGlide( duration );
+           break;
+         }   
+
+         case 'r':
+         case 'R':
+         {         
+           byte ratio;
+           if ( console.getByte( CONSTR("ratio"), &ratio ) )
+               setGlideRatio( ratio );
+           break;
+         }   
+
+         case 's':
+         case 'S':
+
+            setOscTuning( SPREAD );
+            reTrigger();
+            break;
+
+         case 'u':
+         case 'U':
+
+            setOscTuning( UNISON );
+            reTrigger();
+            break;
+
+         #endif
+
+         #ifdef CONSOLE_OUTPUT               // compile cases that display to console 
+
+         case chrInfo:
+
+            QuadSynth::charEv( chrInfo );
+            switch( oscTuning )
+            {
+               case UNISON: 
+
+                  console.infoStr( CONSTR("oscTuning"), CONSTR("UNISON") ); 
+                  break;
+
+               case SPREAD: 
+               
+                  console.infoStr( CONSTR("oscTuning"), CONSTR("SPREAD") ); 
+                  break;
+            }              
+            console.newline();
+            console.rtab();
+            console.infoByte( CONSTR("duration"), topGlide );
+            console.infoByte( CONSTR("ratio"), glideRatio );
+            break;
+
+         #endif
+
+         default:
+            return QuadSynth::charEv( code );
+      }
+      return true;
+   }
+
+   boolean evHandler( obEvent e )            // event handler
+   {
+      switch ( e.type() )                    // branch on event type
+      {
+         case POT0:                          // set portamento ratio
+         
+            setGlideRatio( e.getPotVal() );
+            break;
+         
+         case POT1:                          // set top portamento speed
+         
+            setTopGlide( e.getPotVal() );
+            break;
+          
+         case BUT0_PRESS:                    // set unison oscTuning
+
+            setOscTuning( UNISON );
+            reTrigger();
+            break;
+         
+         case BUT1_PRESS:                    // set spread oscTuning
+
+            setOscTuning( SPREAD );
+            reTrigger();
+            break;
+
+         default:                            // pass on unhandled events
+                                             
+            return QuadSynth::evHandler(e);
+      }
+      return true;                     
+   }
+
+   void setGlideRatio( byte r )
+   {
+      glideRatio = r;
+      portRatio.val = 256 - ( r >> 1 );
+      calcGlides();
+   }
+
+   void setTopGlide( byte g )                // set the top portamento speed
+   {
+      topGlide = g;
+      calcGlides();                          // recalculate all voice portamentos
+   }
+
+   void setOscTuning( OscTuning t )          // set oscillator tuning
+   {
+      switch( t )
+      {
+         case UNISON:
+         {
+            char unison_xpose[]  = {   0,  0,   0,  0 };
+            char unison_detune[] = {  -6, 38, -12, 48 };
+
+            for ( byte i = 0; i < NumVox; i++ )
+            {
+               vox[i]->xpose = unison_xpose[i];
+               vox[i]->osc->setDetune( unison_detune[i] );
+            }
+            break;
+         }
+
+         case SPREAD:
+         {
+            char spread_xpose[]  = { -12, 0, 0, 7 };
+            char spread_detune[] = {   1, 3, -2, -5 };
+
+            for ( byte i = 0; i < NumVox; i++ )
+            {
+               vox[i]->xpose = spread_xpose[i];
+               vox[i]->osc->setDetune( spread_detune[i] );
+            }
+            break;
+         }
+
+         default:
+
+            return;
+      }
+      oscTuning = t;
+   }
+
+} synth;                                     
+
+
+void setup()
+{
+   ardutouch_setup( &synth );                // initialize ardutouch resources
+}
+
+void loop()
+{
+   ardutouch_loop();                         // perform ongoing ardutouch tasks   
+}                                             
+
+
 

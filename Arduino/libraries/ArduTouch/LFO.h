@@ -33,6 +33,8 @@ class LFO : public TControl
    void    dynamics();           // update object dynamics
    boolean evHandler( obEvent ); // handle an onboard event
    virtual void evaluate();      // compute output value from osc position
+   double  getDepth();           // get oscillation depth
+   double  getFreq();            // get oscillation frequency
    virtual void iniPos();        // set initial osc position
    void    iniVal();             // set initial osc position and evaluate
    void    iniOsc(double,double);// initialize oscillator

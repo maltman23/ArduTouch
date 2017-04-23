@@ -1,4 +1,5 @@
 # ArduTouch
+![alt tag](http://cornfieldelectronics.com/cfe/images/projects/ArduTouch_C_LR.jpg)
 ArduTouch is an Arduino-compatible music synthesizer kit.  
 Build it, and it works!  
 Way low cost (target price per kit is $25 -- currently $30.)  
@@ -9,5 +10,4 @@ The library comes with examples (with more to come) that serve as a nice tutoria
 
 ArduTouch is really just an Arduino Uno clone with a small amplifier & speaker, with a PCB touch keyboard, a couple of extra buttons, and a couple of pots (for playing music and controlling the sounds).  The ArduTouch Arduino Library is where the real magic comes from!
 
-Coming soon:
-For those who want to learn more, the documentation teaches the basics of Digital Signal Processing for audio generation.
+For those who want to learn more, the documentation teaches the basics of Digital Signal Processing for audio generation (more documentation coming soon).

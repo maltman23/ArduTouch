@@ -1,5 +1,47 @@
 Versions:
 
+   0.86  add PCB_REV_C, PCB_REV_A defines
+         add Event_Monitor example program
+         add README.TXT
+   0.85  Bank::charEv(?) lists each member on separate line
+   0.84  add QuadSynth module to library
+         in Synth.h, add "#include Console_.h" (avoids posiible compiler error)
+   0.83  audioBufSz const defined in system.h instead of system.cpp
+         nix BUFSZ 
+   0.82  add bcklib.bat to library
+         add grepfile.lst to library
+   0.81  add XVoice class
+         add key::transpose(char)
+   0.80  bufsPerScan and scanDC are typed as bytes
+         add display of numBufs to ardutouch_info()
+   0.79  add ardutouch_info()
+         add LIBRARY_VERSION
+         BUFSZ increased to 17 from 16 (reduces real dynaRate from 163 to 153)
+   0.78  remove interlaced dynamic updates
+         BUFSZ increased to 16 from 10
+         NUMBUFS reduced to 3 from 4
+   0.77  add bufStats()
+   0.76  add interlaced dynamic updates
+         add Synth::_dynamics()
+         add dynaReload, interlace statics in system module 
+   0.75  bufsPerDyna and dynaRate are compile time constants
+         bufsPerDyna and dynaDC are typed as bytes
+   0.74  FastWaveOsc::aggEnd replaces ::aggStep
+   0.73  add Console::getStr( const char*, char** )
+         Console::getStr( const char * ) becomes private
+   0.72  add lfoOnDepth command
+         LFO::setDepth() issues lfoOnDepth
+   0.71  add Synth::menu()
+   0.70  add Envelope::getAttack() ::getDecay() ::getRelease() ::getSustain()
+         add LFO::getDepth() ::getFreq()
+   0.69  reduce system scanRate to 20.0 Hz (was 30.0 Hz)
+   0.68  add Bank::select( byte )
+         presets is declared extern in Synth.h
+         remove Synth::load()
+   0.67  add FastWaveOsc class
+   0.66  Voice reset leaves global volume unchanged
+   0.65  add key operator==
+   0.64  add Rand16 class
    0.63  bugfix: bumping octave below 0 was wrapping to max octave
          upOctave(), downOctave() replace bumpOctave( char )
          Tuning::maxOctave reduced to 7 from 8

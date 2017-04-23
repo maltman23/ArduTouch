@@ -27,13 +27,12 @@
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
-#define BUFSZ        10                // size of an audio buffer
-
 /* ------------------------      public vars      -------------------------- */
 
-extern const byte   audioBufSz;        // size of an audio buffer
+const  byte  audioBufSz  = 17;         // # of records per audio buffer
 extern const double audioRate;         // audio playback rate 
-extern       double dynaRate;          // dynamic update rate
+extern const byte   bufsPerDyna;       // # buffers rendered per dynamic update
+extern const double dynaRate;          // dynamic update rate
 extern const word   ticksPerSec;       // (int )audioRate
 
 /* ----------------------     public functions     ------------------------- */

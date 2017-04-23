@@ -19,6 +19,7 @@
 */
 
 #include "Console_.h"
+#include "Audio.h"
 #include "LFO.h"
 
 #define DEF_DEPTH       0.25     // default depth of oscillation
@@ -27,8 +28,6 @@
 #define MIN_LOW_FREQ    0.01     // minimum freq  of oscillation
 #define DEF_LOW_FREQ    3.8      // default freq  of oscillation
 
-
-extern double dynaRate;          // dynamic update rate
 
 /******************************************************************************
  *
@@ -214,6 +213,40 @@ boolean LFO::evHandler( obEvent ev )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  LFO::getDepth
+ *
+ *  Desc:  Get the oscillation depth.
+ *
+ *  Args:  d                - oscillation depth 
+ *
+ *  Memb:  depth            - oscillation depth (0.0 - 1.0)
+ *
+ *----------------------------------------------------------------------------*/
+
+double LFO::getDepth()
+{
+   return depth;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::getFreq
+ *
+ *  Desc:  Get the oscillation frequency.
+ *
+ *  Rets:  f                - oscillation frequency 
+ *
+ *  Memb:  freq             - oscillation frequency
+ *
+ *----------------------------------------------------------------------------*/
+
+double LFO::getFreq()
+{
+   return freq;
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  LFO::iniOsc
  *
  *  Desc:  Initialize the LFO.
@@ -296,6 +329,7 @@ void LFO::setDepth( double d )
    if ( d == 0.0 )
       iniPos();
    calcStep();
+   charEv( lfoOnDepth );
 }
 
 /*----------------------------------------------------------------------------*

@@ -28,14 +28,14 @@
 
 class WaveOsc : public Osc
 {
-   private:
+   protected:
 
    const signed char* table;     // ptr to table of samples
    
    word    length;               // # of samples in table 
    double  period;               // # of samples per wavelength
 
-   unsigned long step;           // amount to increment idx per tick
+   DWord   step;                 // amount to increment idx per tick
                                  // (msw/lsw : integral/fractional parts)
    DWord   idx;                  // current accumulated idx into table
                                  // (msw/lsw : integral/fractional parts)
@@ -59,6 +59,19 @@ class WaveOsc : public Osc
    void   setTable( const desWavTab* );              // set wave table 
    void   setTable( const desWavTab*, const char* ); // set wave table & name
    void   setTableFromBank( byte ); // set table to nth member of wavebank
+
+} ;  
+
+class FastWaveOsc : public WaveOsc
+{
+   private:
+
+   word    aggEnd;              // length - (step * audioBufSz)
+
+   public:
+
+   void   onFreq();              // compute frequency dependent state vars
+   void   output( char* );       // write output to a buffer 
 
 } ;  
 

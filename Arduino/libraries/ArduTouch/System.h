@@ -1,7 +1,7 @@
 /*
-    Systems.h  
+    System.h  
 
-    Declarations for the Systems module
+    Declarations for the System module
 
     ---------------------------------------------------------------------------
  
@@ -25,7 +25,7 @@
 #include "Audio.h"
 #include "Synth.h"
 
-#define LIBRARY_VERSION "0.86"
+#define LIBRARY_VERSION "1.02"
 
 /* ------------------------------------------------------------------------- */
 
@@ -50,7 +50,7 @@
 
 #ifdef MONITOR_CPU
 
-extern byte  cpu;                      // % CPU used rendeing audio (parts per 256)
+extern byte  cpu;                      // % CPU used rendering audio (parts per 256)
 
 #endif
 
@@ -67,13 +67,16 @@ extern void blinkLED( byte );          // blink an LED
 extern byte getBlinkRate();            // return LED blink rate
 extern void setBlinkRate( byte );      // set LED blink rate
 
-extern void downOctave();              // lower keyboard by 1 octave 
-extern byte getOctave();               // return keyboard's octave #
-extern void setOctave( byte );         // set keyboard's octave #
-extern void upOctave();                // raise keyboard by 1 octave 
-
 extern void bufStats();                // prints audio buffer stats
 extern int  freeRam();                 // returns space between heap & stack
+
+                  // Non-Volatile Storage (EEPROM) routines
+
+extern byte readNVS( word addrNVS );                           // read one byte 
+extern void readNVS( word addrNVS, byte *addrRAM, word size ); // read multiple bytes
+
+extern void writeNVS( word addrNVS, byte value );              // write one byte
+extern void writeNVS( word addrNVS, byte *addrRAM, word size );// write multiple bytes
 
 /******************************************************************************
  *

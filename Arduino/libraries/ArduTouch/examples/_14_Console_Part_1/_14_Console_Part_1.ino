@@ -187,7 +187,7 @@ set_baud_rate( 115200 )                      // specify serial baud-rate
 
 // Sine440HzSynth plays a Sine wave at 440 Hz 
 
-class Sine440HzSynth : public MonoSynth      // synth from example _03_, 
+class Sine440HzSynth : public Synth          // synth from example _03_, 
 {                                            // using a Sine wave 
    public:
 
@@ -195,8 +195,8 @@ class Sine440HzSynth : public MonoSynth      // synth from example _03_,
 
    void setup() 
    { 
-      osc.setTable( wave_descriptor( Sine ) );  // load Sine wave from library
-      osc.setFreq( 440.0 );                     // play at 440 Hz
+      osc.setTable( wavetable( Sine ) );     // load Sine wave from library
+      osc.setFreq( 440.0 );                  // play at 440 Hz
    }
 
    void output( char *buf )                  // output 1 buffer of audio
@@ -258,14 +258,19 @@ class ConsoleSynth : public Sine440HzSynth
       //  provides a macro CONSTR("your constant string here"), which places
       //  the string in ROM, and returns a pointer to it.
       //
+      //  Important! CONSTR should only be used for string constants that are
+      //  intended solely for display to the Console. If your string is meant 
+      //  for any other purpose, and you want to place it in ROM, then use the
+      //  Arduino environment's PSTR() macro instead.
+      //
       //  ---------------------------------------------------------------------
 
       switch( code )
       {
-         // The Console provides 4 methods for inputting data values of various
-         // types (unsigned byte, signed byte, int, and double). These methods 
-         // are listed below. They all take two arguments. The 1st argument for 
-         // each methos is a prompt string to display (and must be a constant). 
+         // The Console provides 5 methods for inputting data values of various
+         // types (unsigned and signed byte, int, double, unsigned long). These 
+         // methods are listed below. They all take two arguments. The 1st argument 
+         // for  each methos is a prompt string to display (and must be a constant). 
          // The 2nd argument is the address of a variable to write the input to. The 
          // return type of each method is a boolean which indicates whether the 
          // input was successfully completed (the user may have escaped out from 
@@ -287,11 +292,11 @@ class ConsoleSynth : public Sine440HzSynth
             return true;
          }
 
-         // The Console provides 4 methods for displaying values of various
-         // types (unsigned byte, signed byte, int, and double). These methods 
-         // are listed below. The 1st argument for each method is a label string
-         // to display (and must be a constant). The 2nd argument is the value 
-         // to be displayed.
+         // The Console provides 5 methods for displaying values of various
+         // types (unsigned and signed byte, int, double, unsigned long). These 
+         // methods  are listed below. The 1st argument for each method is a 
+         // label string to display (and must be a constant). The 2nd argument
+         // is the value to be displayed.
          //
          //    void infoByte( const char*, byte );       // display an unsigned byte
          //    void infoSByte( const char*, char );      // display a signed byte

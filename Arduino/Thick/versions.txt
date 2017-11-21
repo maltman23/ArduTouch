@@ -1,6 +1,32 @@
 Versions:
 
-   0.56  bugfix: setup macro must use PSTR(), not CONSTR(), to encapsulate str;
+   0.64  sync with lib 0.99a (::envAmp moved from StockVoice to Voice)
+         [22082 / 819] 0.99a
+   0.63  add a default envelope release
+   0.62  edit presets to accomodate swap of Voice(e) and (E)
+         sync with lib 0.98
+         [21904 / 819] {429} 
+   0.61  ThickSynth sets top/def octaves via member keybrd 
+         sync with lib 0.96
+         [22670 / 817] {419}
+   0.60  break ThickSynth::newOsc() out from ::setup()
+         sync with lib 0.93
+         [22736 / 812] 
+   0.59  sync with lib 0.92
+         [22638 / 821]
+   0.58  migrate all reset code to charEv(!)
+         no explicit reset in setup()
+         sync with lib 0.90 
+         [22686 / 807]
+   0.57  initial glissando code changed to work with lib 0.87 (defered setFreq)
+         add ThickSynth::cleanSlate
+         add ThickSynth::noteOn() 
+         mute synth at startup
+         initial glide settings in noteOn()
+         unmute synth in noteOn()
+         [22608 / 805] 0.86
+         [22620 / 805] 0.87
+   0.56  bugfix: setup macro must use PSTR(), not CNSTR(), to encapsulate str;
                  otherwise it is replaced with "" if ! CONSOLE_PUTPUT
          [22652 / 804] 
    0.55  QuadSynth and related classes moved to library

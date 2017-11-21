@@ -21,6 +21,8 @@
 #ifndef WAVETABLE_H_INCLUDED
 #define WAVETABLE_H_INCLUDED
 
+#include "types.h"
+
 #define begin_samples(x)  PROGMEM const signed char samples##x[] = {
 #define end_samples(x)    };   
 
@@ -34,12 +36,13 @@
    extern const char wavtabName##x[];                                      \
    extern const desWavTab wavtabDesc##x;
 
-#define wave_descriptor(x)  &wavtabDesc##x, CONSTR(#x)                                              
+#define wavetable(x)        &wavtabDesc##x                                              
+#define wavetable_named(x)  &wavtabDesc##x, CONSTR(#x)                                              
 
-typedef struct {                       // desWavTab : WaveTable descriptor
+typedef struct {                       // desWavTab : wavetable descriptor
 
-   const signed char* table;           // ptr to table of waveform pts
-   unsigned long      length;          // # of samples in table 
+   const signed char* table;           // ptr to table of samples
+   word               length;          // # of samples in table 
    double             period;          // # of samples per wavelen
 
    }  desWavTab;

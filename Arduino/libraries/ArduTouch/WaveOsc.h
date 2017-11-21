@@ -1,7 +1,7 @@
 /*
     WaveOsc.h  
 
-    Declaration of the WaveOsc class (wavetable-based oscillator).
+    Declaration of WaveOsc and derived classes.
 
     ---------------------------------------------------------------------------
  
@@ -26,8 +26,16 @@
 #include "Osc.h"
 #include "WaveTable.h"
 
-class WaveOsc : public Osc
+/******************************************************************************
+ *
+ *                                  WaveOsc 
+ *
+ ******************************************************************************/
+
+class WaveOsc : public Osc       // wavetable oscillator
 {
+   typedef Osc super;            // superclass is Osc
+
    protected:
 
    const signed char* table;     // ptr to table of samples
@@ -53,7 +61,7 @@ class WaveOsc : public Osc
    void   output( char* );       // write output to a buffer 
 
    #ifdef KEYBRD_MENUS
-   char   menu( key );           // map key event to character 
+   char   menu( key );           // given a key, return a character 
    #endif
 
    void   setTable( const desWavTab* );              // set wave table 
@@ -62,7 +70,13 @@ class WaveOsc : public Osc
 
 } ;  
 
-class FastWaveOsc : public WaveOsc
+/******************************************************************************
+ *
+ *                                FastWaveOsc 
+ *
+ ******************************************************************************/
+
+class FastWaveOsc : public WaveOsc  // speed-optimized wavetable oscillator
 {
    private:
 
@@ -72,6 +86,30 @@ class FastWaveOsc : public WaveOsc
 
    void   onFreq();              // compute frequency dependent state vars
    void   output( char* );       // write output to a buffer 
+
+} ;  
+
+/******************************************************************************
+ *
+ *                                 SampleOsc 
+ *
+ ******************************************************************************/
+
+class SampleOsc : public WaveOsc          // plays a wavetable once, one sample per tick
+{
+   typedef WaveOsc super;                 // superclass is WaveOsc
+
+   protected:
+
+   word   samples_to_go;                  // # of samples remaining to output
+   word   tabptr;                         // current location in sample table
+
+   public:
+
+   boolean charEv( char );                // process a character event
+   void   onFreq();                       // compute frequency dependent state vars
+   void   output( char* );                // write output to a buffer 
+   void   setSample( const desWavTab* );  // set wave table 
 
 } ;  
 

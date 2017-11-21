@@ -21,6 +21,28 @@
 #include "WaveOsc.h"
 #include "WaveBank.h"
 
+/******************************************************************************
+ *
+ *                                  WaveOsc 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  name             - wavetable name
+ *  
+ *  Glob:  wavebank         - bank of wave tables.
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
 boolean WaveOsc::charEv( char code )
 {
    switch ( code )
@@ -40,16 +62,16 @@ boolean WaveOsc::charEv( char code )
       case chrInfo:              // display object info to console
       case chrInLnfo:            // display object info inline to console
 
-         Osc::charEv( code );
-         console.newlntab();
-         console.infoStr( CONSTR("waveform"), name );
+         super::charEv( code );
+         if ( name )
+            console.infoStr( CONSTR("waveform"), name );
          break;
 
       #endif
 
       default:
 
-         return Osc::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }
@@ -102,12 +124,33 @@ byte WaveOsc::evaluate()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  WaveOsc::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *----------------------------------------------------------------------------*/      
+
 char WaveOsc::menu( key k )
 {
    switch ( k.position() )
    {
       case  2: return 'w';
-      default: return Osc::menu( k );
+      default: return super::menu( k );
    }
 }
 #endif
@@ -240,6 +283,12 @@ void WaveOsc::setTableFromBank( byte i )
    setTable( (const desWavTab* )wavebank.dataPtr(i), wavebank.name(i) );
 }
 
+/******************************************************************************
+ *
+ *                                FastWaveOsc 
+ *
+ ******************************************************************************/
+
 /*----------------------------------------------------------------------------*
  *
  *  Name:  FastWaveOsc::onFreq
@@ -309,5 +358,124 @@ void FastWaveOsc::output( char *buf )
       }
    }
 
+}
+
+/******************************************************************************
+ *
+ *                                 SampleOsc 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  SampleOsc::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +flags.DONE       - output of wavetable has been completed
+ *         name             - wavetable name
+ *        +samples_to_go    - # of samples remaining to output
+ *        +tabptr           - current location in sample table
+ *  
+ *  Glob:  wavebank         - bank of wave tables.
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+boolean SampleOsc::charEv( char key )
+{
+   switch ( key )
+   {
+      case chrTrigger:                    // trigger the sample
+
+         flags &= ~DONE;
+         samples_to_go = length;
+         tabptr = (word )table;
+         break;
+
+      case '!':                           // reset
+
+         super::charEv( key );
+         samples_to_go = 0;
+         setMute( false );
+         break;
+
+      default:
+
+         return super::charEv( key );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  SampleOsc::onFreq
+ *
+ *  Desc:  Compute frequency-dependent state vars.
+ *
+ *  Args:  factor           - factor to apply
+ *
+ *----------------------------------------------------------------------------*/      
+
+void SampleOsc::onFreq()
+{
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  SampleOsc::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb:  aggEnd           - length - audioBufSz
+ *        +idx              - accumulated idx into wave table 
+ *         length           - # of samples in wave table 
+ *        +samples_to_go    - # of samples remaining to output
+ *         step             - amount to increment idx per tick
+ *        +tabptr           - current location in sample table
+ *
+ *-------------------------------------------------------------------------*/      
+
+void SampleOsc::output( char *buf ) 
+{
+   byte icnt   = audioBufSz;       // write this many ticks of output
+
+   while ( icnt-- )
+   {
+      if ( samples_to_go )                      
+      {
+         *buf++ = (char )pgm_read_byte_near( tabptr++ );
+         --samples_to_go;
+      }
+      else
+      {
+         *buf++ = 0;
+      }
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  SampleOsc::setSample
+ *
+ *  Desc:  Set the wavetable to be output.
+ *
+ *  Args:  descriptor       - wavetable descriptor
+ *
+ *  Memb: +samples_to_go    - # of samples remaining to output
+ *
+ *----------------------------------------------------------------------------*/      
+
+void SampleOsc::setSample( const desWavTab *d ) 
+{
+   setTable( d );
+   samples_to_go = 0;
 }
 

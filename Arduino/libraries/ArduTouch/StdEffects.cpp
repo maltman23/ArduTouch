@@ -33,11 +33,6 @@
 
 #define LPF_DEF_CUTOFF  255            // default cutoff value at reset
 
-LPFilter::LPFilter()
-{
-   shortcut = 'l';
-}
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  LPFilter::calcWeight
@@ -95,6 +90,7 @@ boolean LPFilter::charEv( char code )
       case '!':                        // perform a reset
 
          setCutoff( LPF_DEF_CUTOFF );
+         last = 0;
 
          // fall thru to Effect reset
 
@@ -135,6 +131,45 @@ boolean LPFilter::evHandler( obEvent ev )
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LPFilter::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  c  |       |     |     |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char LPFilter::menu( key k )
 {
    switch ( k.position() )
@@ -222,11 +257,6 @@ void LPFilter::setCutoff( byte c )
  *                                                                            
  ******************************************************************************/
 
-BSFilter::BSFilter() 
-{ 
-   shortcut = 'b';
-}
-
 boolean BSFilter::charEv( char code )
 {
    char digit;
@@ -254,17 +284,17 @@ boolean BSFilter::charEv( char code )
       case 'c':                        // set # bits to clip 
 
          digit = console.getDigit( CONSTR("clip"), MaxClip );
-         if ( digit )
-            setClip( digit - '0' );
+         if ( digit >= 0 )
+            setClip( digit );
          break;
 
       case 's':                        // set # bits to shift 
 
          digit = console.getDigit( CONSTR("shift"), 7 );
-         if ( digit )
+         if ( digit >= 0 )
          {
-            if ( digit < '1' ) digit = '1';
-            setShift( digit - '0' );
+            if ( digit < 1 ) digit = 1;
+            setShift( digit );
          }
          break;
 
@@ -315,14 +345,52 @@ boolean BSFilter::evHandler( obEvent ev )
 }
 
 #ifdef KEYBRD_MENUS
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  BSFilter::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  c  |   s   |  +  |  -  |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char BSFilter::menu( key k )
 {
    switch ( k.position() )
    {
+      case  0: return 'c';
       case  2: return 's';
-      case  4: return 'c';
-      case  5: return '+';
-      case  7: return '-';
+      case  4: return '+';
+      case  5: return '-';
       default: return Effect::menu( k );
    }
 }
@@ -383,11 +451,6 @@ void BSFilter::setShift( byte n )
  *
  ******************************************************************************/
 
-AutoWah::AutoWah()
-{
-   shortcut = 'a';
-}
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  AutoWah::calcWeight
@@ -402,7 +465,7 @@ AutoWah::AutoWah()
 
 void AutoWah::calcWeight()
 {
-   weight = cutoff * lfo.val;
+   weight = cutoff * lfo.value;
 }
 
 /*----------------------------------------------------------------------------*
@@ -512,3 +575,106 @@ boolean WahLFO::charEv( char code )
    return true;
 }
 
+/******************************************************************************
+ *
+ *                               Tremolo 
+ *                                                                            
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Tremolo::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  +value           - current output value
+ *
+ *  Rets:  status           - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+
+boolean Tremolo::charEv( char code )
+{
+   switch ( code )
+   {
+      case '.':                        // mute
+
+         TermLFO::charEv('.');
+         value = 1.0;
+         break;
+
+      case '!':                        // reset
+
+        iniOsc( .4, 2.5 );  
+        // fall thru
+
+      default:
+
+         return TermLFO::charEv( code );
+   }
+   return true;
+}
+
+#ifdef CONSOLE_OUTPUT
+const char* Tremolo::prompt()
+{
+   return CONSTR("tremolo");
+}
+#endif
+
+
+/******************************************************************************
+ *
+ *                               Vibrato 
+ *                                                                            
+ ******************************************************************************/
+
+#define RATIO_SEMITONE   1.059463   // frequency ratio between adjacent pitches
+#define INVERT_SEMITONE   .943874   // 1 / RATIO_SEMITONE
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Vibrato::evaluate
+ *
+ *  Desc:  Compute output value based on oscillator position.
+ *
+ *  Memb:  depth            - oscillation depth (0.0 - 1.0)
+ *        +fader            - current fader value
+ *         pos              - current position within oscillation range
+ *        +value            - current output value
+ *
+ *----------------------------------------------------------------------------*/
+
+void Vibrato::evaluate()
+{
+   double spos = fader * ((2.0 * pos) - depth);
+   if ( spos >= 0 )
+      value = 1.0 + (spos * (RATIO_SEMITONE-1.0) );
+   else
+      value = 1.0 + (spos * (1.0 - INVERT_SEMITONE));
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Vibrato::iniPos
+ *
+ *  Desc:  Set initial oscillator position.
+ *
+ *  Memb:  depth            - oscillation depth (0.0 - 1.0)
+ *        +pos              - cur position within oscillation range
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Vibrato::iniPos()
+{
+   pos = depth * 0.5;
+}
+
+#ifdef CONSOLE_OUTPUT
+const char* Vibrato::prompt()
+{
+   return CONSTR("vibrato");
+}
+#endif

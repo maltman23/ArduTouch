@@ -20,7 +20,7 @@
 
 #include "Console_.h"
 #include "Mode.h"
-#include "System.h"     
+#include "System.h"
 
 /******************************************************************************
  *
@@ -28,16 +28,24 @@
  *
  ******************************************************************************/
 
-Mode::Mode() 
-{ 
-   flags = ECHO | MENU;          // echo char input; menu() pre-empts KEY_DOWN
-}
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Mode::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/
 
 boolean Mode::charEv( char code )
 {
    switch ( code )
    {
       #ifdef CONSOLE_OUTPUT
+
       case '?':
 
          inform();
@@ -47,6 +55,7 @@ boolean Mode::charEv( char code )
 
          console.romprint( prompt() );
          break;
+
       #endif
 
       case chrESC:
@@ -61,6 +70,18 @@ boolean Mode::charEv( char code )
    return true;
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Mode::evHandler
+ *
+ *  Desc:  Handle an onboard event.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
 boolean Mode::evHandler( obEvent ev )
 {
    switch ( ev.type() )
@@ -68,27 +89,22 @@ boolean Mode::evHandler( obEvent ev )
       case BUT0_DTAP:
 
          charEv( chrESC );
-         return true;
+         break;
 
-      case META_OCTUP:
+      #ifdef KEYBRD_MENUS
 
-         upOctave();
-         return true;
+      case BUT1_DTAP:
 
-      case META_OCTDN:
+         console.oneShotMenu();     // menu() pre-empts KEY_DOWN for next key
+         break;
 
-         downOctave();
-         return true;
-
-      case META_ONESHOT:
-
-         console.oneShotMenu();      // menu() pre-empts KEY_DOWN for next key
-         return true;
+      #endif
 
       default:
 
          return false;              // "event not handled"
    }
+   return true;
 }
 
 void Mode::brief()
@@ -100,6 +116,21 @@ void Mode::brief()
    #endif
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Mode::execute
+ *
+ *  Desc:  Execute a macro string, based in this mode. 
+ *
+ *  Args:  macStr           - ptr to macro string in ROM.
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Mode::execute( const char *m )
+{
+   console.exeIn( m, this );
+}
+
 void Mode::inform()
 {
    // define USAGE_INFO if either MONITOR_CPU or MONITOR_RAM is defined
@@ -108,7 +139,7 @@ void Mode::inform()
       #define USAGE_INFO
    #endif
    #ifdef MONITOR_RAM               
-         #define USAGE_INFO
+      #define USAGE_INFO
    #endif
 
    #ifdef CONSOLE_OUTPUT
@@ -137,10 +168,32 @@ void Mode::inform()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Mode::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set, or if the keyboard is in a "oneShot menu selection" 
+ *         state.
+ *
+ *----------------------------------------------------------------------------*/      
+
 char Mode::menu( key )
 {
-   return 0;                  // "no character was mapped"
+   return 0;                  // "no character"
 }
+
 #endif
 
 #ifdef CONSOLE_OUTPUT

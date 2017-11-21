@@ -1,5 +1,85 @@
 Versions:
 
+   2.43  Chnl::charEv() no longer explicitly propagates sequencer commands
+         in Chnl::evHandler() nix (redundant) handling of BUT1_DTAP
+         syncs with 1.02
+         [30182 / 1229] 
+   2.42  Chnl no longer inherits from StepSqnc
+         Chnl::charEv() explicitly propagates sequencer commands
+         Chnl( chrInfo ) calls sqnc->brief()
+         Chnl('S') pushes sequencer
+         't' no longer propagated (must be sent within sequencer)
+         syncs with 1.00
+         [30108 / 1215] 
+   2.41  modify Chnl::menu()
+         syncs with 0.99
+         [29724 / 1352] 
+   2.40  Chnl derives from StockVoice
+         Chnl explicitly adds a resident tremolo
+         edit presets to accomodate swap of Voice(e) and (E)
+         syncs with 0.98
+         [29516 / 1352] {538} 
+   2.39  DuoSynth sets local control of left/right via their keybrd.setMute()
+         DuoSynth::outputs() renamed ::output()
+         Chnl::subject renamed target
+         syncs with lib 0.96
+         [29326 / 1254] {620}
+   2.38  nix Chnl::charEv(k)
+         syncs with lib 0.95
+         [29408 / 1248] 
+   2.37  nix leading, trailing '#' from presets
+         replace leading ! with ' in presets
+         --- channel instances made static (for time being)
+         syncs with lib 0.94
+         [29372 / 1236] 
+   2.36  utilize ::setupVoices() ::newVox() ::newOsc()
+         syncs with lib 0.93
+         [29422 / 787] 
+   2.35  DuoSynth derives from VoxSynth
+         DuoSynth::output( L, R ) renamed ::outputs( L, R )
+         syncs with lib 0.92
+         [29214 / 796] 
+   2.34  noteOff() takes an argument of type key
+         syncs with lib 0.91 
+         [28592 / 778] 
+   2.33  break DuoSynth::welcome() out from ::setup()
+         no explicit reset in DuoSynth::setup()
+         syncs with lib 0.90 
+         [28562 / 772]
+   2.32  nix Chnl::charEv('-')
+         nix Chnl::charEv('/')
+         DuoSynth::charEv('+') replaces ::charEv('-')
+         DuoSynth::charEv('*') replaces ::charEv('/')
+         sync with lib 0.89
+         [28482 / 770] 
+   2.31  merge ChnlSqnc into Chnl
+         restore DuoSynth info display
+         [28654 / 772] 
+   2.30  rght/left become ChnlSqnc* members of DuoSynth, allocated in setup()
+         osc, bsf, and lpf are allocated dynamically in ChnlSqnc()
+         Chnl::reset(), not DuoSynth::reset() sets osc wavetable to wavebank 0
+         [28620 / 772] 
+   2.29  load Rood wavetable only if ! SERIAL_PORT
+         can no longer accomodate SynStr wavetable even if ! SERIAL_PORT
+         [28644 / 1314] 
+   2.28  propagation logic altered to work with lib 0.87 (deferred freq/trig)
+         nix Chnl::propFreq()
+         add Chnl::dynamics() 
+         add Chnl::propFreq
+         add Chnl::propTrig
+         optimize Chnl::charEv() for size
+         syncs with 0.87
+         [32204 / 1314] 
+   2.27  grepfile.lst no longer includes library files (use with atg.bat)
+         syncs with 0.82  
+         [32150 / 1302] 
+   2.26  syncs with 0.71 
+         [32220 / 1286] 
+   2.25  syncs with 0.68 
+         [32212 / 1286] 
+   2.24  bugfix: DuoSynth::setVol() propagated globVol even when muted
+         using [0.65]
+         [32242 / 1286] 
    2.23  move DuoSynth constructor code to DuoSynth::setup()
          remove DuoSynth constructor
          syncs with 0.60

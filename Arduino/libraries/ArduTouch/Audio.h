@@ -33,6 +33,7 @@ const  byte  audioBufSz  = 17;         // # of records per audio buffer
 extern const double audioRate;         // audio playback rate 
 extern const byte   bufsPerDyna;       // # buffers rendered per dynamic update
 extern const double dynaRate;          // dynamic update rate
+extern const byte   ticksPerDyna;      // # ticks per dynamic update
 extern const word   ticksPerSec;       // (int )audioRate
 
 /* ----------------------     public functions     ------------------------- */
@@ -41,6 +42,7 @@ namespace audio
 {
    extern void disable();              // disable audio output
    extern void enable();               // enable audio output
+   extern bool enabled();              // audio is enabled
    extern void wait( byte );           // wait for buffers to be rendered
 }
 

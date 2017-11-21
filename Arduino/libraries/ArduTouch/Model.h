@@ -1,7 +1,8 @@
 /*
     Model.h  
 
-    Declares which runtime model is in effect.
+    Declares which runtime model is in effect, and which optional features
+    are enabled.
 
     There are 4 recognized runtime models:
 
@@ -40,6 +41,17 @@
 // #define __STNDLONE__
 // #define __BAREBONE__
 
+/* ---------------------------------------------------------------------------
+
+    The following optional features can be omitted by commenting out the
+    relevant defines below. This will free up extra memory (both RAM and 
+    ROM) and reduce CPU overhead for synths which have no need for these 
+    features.
+
+   ------------------------------------------------------------------------ */
+
+#define KEYBRD_MENUS                 // Modes have built-in keyboard menus
+#define IMPLICIT_SEQUENCER           // Instruments may use built-in sequencers
 
 /* ---------------------------------------------------------------------------
        The following lines insure that one and only one model is declared
@@ -86,16 +98,13 @@
 
    Depending on which model is chosen, a number of symbolic constants are
    defined below, which control the conditional compilation of library 
-   modules. None of the statements below should be changed, with the 
-   exception of "#define KEYBRD_MENUS", which can be commented out to 
-   save space in sketches which have no need for keyboard menus.
+   modules. None of the statements below should be changed.
 
    ------------------------------------------------------------------------ */
 
 #define USE_SERIAL_PORT                
 #define CONSOLE_OUTPUT    
 #define INTERN_CONSOLE             
-#define KEYBRD_MENUS                 // comment this out for no keybrd menus
 
 #ifdef __FULLHOST__
 #endif

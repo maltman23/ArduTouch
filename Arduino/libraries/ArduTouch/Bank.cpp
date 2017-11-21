@@ -122,10 +122,50 @@ void Bank::load( const bankmem *p )
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Bank::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   | 1 |   | 3 |   |   | 6 |   | 8 |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  0  |   2   |  4  |  5  |   7   |   9   |     |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char Bank::menu( key k )
 {
    return ( k.position() <= 9 ? '0' + k.position() : 0 );
 }
+
 #endif
 
 const char* Bank::name( byte ith )

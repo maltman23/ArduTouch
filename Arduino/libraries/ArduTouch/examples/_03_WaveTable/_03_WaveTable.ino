@@ -74,8 +74,8 @@ define_wavetable( Triangle, 2, 2.0 )        // name, # samples, wavelength
 //  part of the ArduTouch library).
 //
 //  In the setup() method we set the oscillator's wave-table to Triangle 
-//  (using the macro wave_descriptor() in the argument), and then set 
-//  the oscillator's frequency to 440 Hz.
+//  (using the macro wavetable() in the argument), and then set the oscillator's 
+//  frequency to 440 Hz.
 //
 //  The ArduTouch library contains a class called WaveOsc. When we want to 
 //  generate sound using a wave-table, we instantiate a WaveOsc, and assign it 
@@ -87,21 +87,19 @@ define_wavetable( Triangle, 2, 2.0 )        // name, # samples, wavelength
 //
 //  ---------------------------------------------------------------------------      
 
-class TriangleSynth : public MonoSynth
+class TriangleSynth : public Synth
 {
    WaveOsc  osc;                             // a wave-table oscillator
 
    public:
 
-
-  // this setup() method sets up our triangle wave at 440.0Hz
+   // this setup() method sets up our triangle wave at 440.0Hz
 
    void setup() 
    { 
-      osc.setTable( wave_descriptor( Triangle ) ); 
+      osc.setTable( wavetable( Triangle ) ); 
       osc.setFreq( 440.0 );
    }
-
 
    // this output() method automatically fills buffers with our triangle waveform 
    // as the ArduTouch system needs them filled
@@ -150,9 +148,9 @@ void loop()
 //  Any of these can be used as arguments to the wave_descrptor() macro.
 //  Please try them -- they are cool sounds!
 //
-//  Also, please try changing the above Triangle array of samples and hear 
-//  what it sounds like -- there's lots of cool (and wonderfully horrible)
-//  sounds that you can create!
+//  Also, try changing the above Triangle array of samples and hear what it 
+//  sounds like -- there's lots of cool (and wonderfully horrible) sounds 
+//  that you can create!
 //
 //  --------------------------------------------------------------------------
 

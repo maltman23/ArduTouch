@@ -26,10 +26,9 @@
 about_program( Bare Minimum, 1.00 )          // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-
 // here is where you create a synthesizer (in this case, an empty one, that makes no sound)
 
-class EmptySynth : public MonoSynth          // define your synthesizer
+class EmptySynth : public Synth              // define your synthesizer
 {
 } myEmptySynth;                              // instantiate synthesizer 
 
@@ -53,10 +52,10 @@ void loop()
 //
 //  The crux of every ArduTouch sketch is the definition and instantiation
 //  of a synthesizer object to be used by the system. The ArduTouch library
-//  supplies two base classes from which to derive a synthesizer: MonoSynth, 
-//  and StereoSynth.
+//  supplies several different base classes from which to derive a synthesizer.
+//  In this example we use the very simplest: Synth
 //   
-//  In this sketch we have defined an "empty" monaural synthesizer, that makes no sound.
+//  In this sketch we have defined an "empty" synthesizer, that makes no sound.
 //
 //  In the next tutorial we will define a synth that makes some sound.
 //

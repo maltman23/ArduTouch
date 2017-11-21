@@ -74,7 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 0.96 )              // specify sketch name & version
+about_program( Arpology, 1.07 )              // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 // Specify whether the voices of Arpology can be panned in stereo by 
@@ -207,7 +207,7 @@ class Tonality
 
    // buffer is used for constructing a 4-part voicing in RAM
 
-   QuadSynth::Voicing buffer;          // voicing buffer
+   char buffer[4];                     // voicing buffer
 
    public:
 
@@ -235,7 +235,7 @@ class Tonality
    *
    *-------------------------------------------------------------------------*/      
 
-   virtual QuadSynth::Voicing &getVoicing( byte ith )
+   virtual char* getVoicing( byte ith )
    {  
       Thirds  *ptrThird  = thirds;
                ptrThird += ith;
@@ -364,8 +364,8 @@ class Improvisation
 
    Improvisation()
    {
-      minOctave = masterTuning->minOctave;
-      maxOctave = masterTuning->maxOctave;
+      minOctave = 0;
+      maxOctave = 7;
 
       for ( byte i = 0; i < LEN_HISTORY; i++ )
          history[i] = key( 15, 15 );   // impossible note
@@ -617,7 +617,7 @@ class PeriodicCue : public LFO
 
    void dynamics()                  // update object dynamics
    {
-      if ( amMute() )
+      if ( muted() )
          return;
 
       LFO::dynamics();
@@ -701,8 +701,10 @@ PROGMEM const byte* const patterns[] =
    #define ARP_BASE_CLASS  QuadSynth         // use QuadSynth as superclass
 #endif
 
-class ArpSynth : public ARP_BASE_CLASS             
+class ArpSynth : public ARP_BASE_CLASS
 {
+   typedef ARP_BASE_CLASS super;             // superclass is ARP_BASE_CLASS
+
    Tonality *tonality;                       // current tonality for synth
    
    Tonality *majorTonality;
@@ -735,44 +737,28 @@ class ArpSynth : public ARP_BASE_CLASS
 
    Frame curFrame;
 
-   const byte maxOctave = 3;                 // max keyboard octave for synth
-   const byte defOctave = 2;                 // start with keyboard in this octave
-
    public:
 
    void setup() 
    { 
-      ARP_BASE_CLASS::setup();
+      super::setup();
 
-      // tailor masterTuning parameters for this synth
-
-      masterTuning->defOctave = defOctave;        
-      masterTuning->maxOctave = maxOctave;
-
-      // we allocate the improvisation object after setting our masterTuning
-      // parameters, because the improviser constructor will pick up its min/
-      // maxOctave settings from the masterTuning object (and they happen to
-      // coincide for this synth).
+      flags |= RSTMUTE;
 
       improviser = new ArpImprov();
+
+      // constrain keyboard to a top octave of 3
+
+      improviser->maxOctave = 3;
+      keybrd.setTopOct( 3 );
+      keybrd.setDefOct( 2 );        
 
       // allocate tonalities 
 
       majorTonality = new MajorTonality();
       minorTonality = new MinorTonality();
 
-      // allocate voices
-
-      for ( byte i = 0; i < NumVox; i++ )
-      {
-         FastWaveOsc *o = new FastWaveOsc();
-         o->setTable( wave_descriptor( Ether ) ); 
-         vox[i]->useOsc( o );
-      }
-      
-      reset();
-
-      presets.load( myPresets );       // load presets
+      presets.load( myPresets );       // load bank of presets
    }
 
    boolean charEv( char code )         // handle a character event
@@ -839,11 +825,10 @@ class ArpSynth : public ARP_BASE_CLASS
 
          case '!':                     // reset
 
-            for ( byte i = 0; i < NumVox; i++ )
+            for ( byte i = 0; i < numVox; i++ )
                vox[i]->setFreq( 0.0 );
 
-            ARP_BASE_CLASS::charEv( code );
-            setMute( true );
+            super::charEv( code );
 
             pendingPatNum = 1;
             arpegCue.reset();
@@ -862,10 +847,10 @@ class ArpSynth : public ARP_BASE_CLASS
             selectFrame( ENV_FRAME );
 
             curPatNum  = 0;
-            autoPilot  = false;
+            enableAutoPilot( false );
             blankSlate = true;
 
-            lastNote.set( 0, defOctave ); // initial (unplayed) note of "C"
+            lastNote.set( 0, 2 );         // initial (unplayed) note of C2
 
             setMajorTonality();
             refreshLEDs();
@@ -875,11 +860,13 @@ class ArpSynth : public ARP_BASE_CLASS
          #ifdef CONSOLE_OUTPUT         // compile cases that display to console 
 
          case chrInfo:
+         {
+            super::charEv( chrInfo );
 
-            ARP_BASE_CLASS::charEv( chrInfo );
             console.newlntab();
             console.infoByte( CONSTR("attack"), vox[0]->envAmp.getAttack() ); 
             console.infoByte( CONSTR("decay"),  vox[0]->envAmp.getDecay() ); 
+
             console.newlntab();
             console.infoByte( CONSTR("patterN"), curPatNum ); 
             console.infoByte( CONSTR("rate"),  arpegRate ); 
@@ -895,18 +882,18 @@ class ArpSynth : public ARP_BASE_CLASS
             */
 
             break;
-
+         }
          #endif
 
          default:
-            return ARP_BASE_CLASS::charEv( code );
+            return super::charEv( code );
       }
       return true;
    }
 
    void dynamics()                           // perform a dynamic update
    {
-      ARP_BASE_CLASS::dynamics();
+      super::dynamics();
 
       arpegCue.dynamics();
       if ( arpegCue.pending() && ! deferVoc )
@@ -974,6 +961,7 @@ class ArpSynth : public ARP_BASE_CLASS
    void enableAutoPilot( boolean enable )
    {
       autoPilot = enable;
+      keybrd.setMute( enable );               // disable keyboard when enabled
       if ( autoPilot )
       {
          rand16.reseed();
@@ -989,21 +977,6 @@ class ArpSynth : public ARP_BASE_CLASS
 
    boolean evHandler( obEvent e )            // event handler
    {
-      // If autoPilot is on, then the keyboard is "locked",
-      // therefore eat all keyboard and octave shift events
-
-      if ( autoPilot )
-      {
-         switch ( e.type() )                 // branch on event type
-         {
-            case KEY_DOWN:                     
-            case KEY_UP:                     
-            case META_OCTUP:
-            case META_OCTDN:
-               return true;                  
-         }
-      }
-
       switch ( e.type() )                    // branch on event type
       {
          case KEY_UP:                        // key has been released
@@ -1057,21 +1030,14 @@ class ArpSynth : public ARP_BASE_CLASS
             enableAutoPilot( ! autoPilot );
             break;
 
-         // Since the flags.PLAYTHRU bit is set (by the Control base class in
-         // the chain of inheritance from Synth) the system will translate 
-         // double-tap events of the right button (BUT1_DTAP) into META_ONESHOT
-         // events (for automatic execution of class menu from onboard keybrd). 
-         // We don't want that behavior here. We intercpet this event and use it 
-         // instead to simply pick a preset using the onboard keybrd.
-
-         case META_ONESHOT:                  // over-ride "one-shot menu" 
+         case BUT1_DTAP:                     // override "one-shot menu" 
 
             presets.choose();                // choose a preset
             break;
 
          default:                            // pass on unhandled events
                                              
-            return ARP_BASE_CLASS::evHandler(e);
+            return super::evHandler(e);
       }
       return true;                     
    }
@@ -1080,10 +1046,16 @@ class ArpSynth : public ARP_BASE_CLASS
    {
       setMute( false );
       arpegCue.setMute( false );
-      for ( byte i = 0; i < NumVox; i++ )   
-         vox[i]->noteOff();    
+      noteOff(0);                            
       arpegIdx = 1;
       blankSlate = false;
+   }
+
+   Osc *newOsc( byte nth )
+   {
+      FastWaveOsc *o = new FastWaveOsc();
+      o->setTable( wavetable_named( Ether ) ); 
+      return o;
    }
 
    void noteOn( key newNote )                // play a note

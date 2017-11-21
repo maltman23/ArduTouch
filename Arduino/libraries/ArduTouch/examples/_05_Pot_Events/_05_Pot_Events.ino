@@ -30,7 +30,7 @@
 about_program( Pot Events, 1.00 )            // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class ArithmeticSynth : public MonoSynth     // synth from example _04_
+class ArithmeticSynth : public Synth         // synth from example _04_
 {
    public:
 
@@ -97,7 +97,7 @@ void ArithmeticSynth::setup()
    baseHz  = 200.0;                          // low C = 200.0 Hz
    tuneHz  = 25.0;                           // 25.0 Hz arithmetic tuning
    keyDown = false;                          // begin with no key pressed
-   osc.setTable( wave_descriptor(Sine) );    // use Sine table from library
+   osc.setTable( wavetable(Sine) );          // use Sine table from library
 }
 
 boolean ArithmeticSynth::evHandler( obEvent e ) 

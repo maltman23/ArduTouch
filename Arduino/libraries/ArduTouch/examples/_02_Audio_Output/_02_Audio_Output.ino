@@ -1,3 +1,4 @@
+//
 //  _02_Audio_Output.ino
 // 
 //  This sketch demonstrates how to create a simple synthsizer that produces 
@@ -51,7 +52,7 @@ set_baud_rate( 115200 )                   // specify serial baud-rate
 //
 //  ---------------------------------------------------------------------------      
 
-class SawToothSynth : public MonoSynth
+class SawToothSynth : public Synth
 {
    public:
 
@@ -92,11 +93,14 @@ class SawToothSynth : public MonoSynth
 //  ardutouch_loop() will then execute "call backs" to the output() method 
 //  of our synth, feeding it new audio buffers to be filled. 
 //   
-//  Both setup() and output() are virtual methods of the MonoSynth class, 
-//  which is defined by the library.
+//  Both setup() and output() are virtual methods of the Synth class, which is 
+//  defined by the library.
 //
-//  If our synth was derived from the StereoSynth class, then the output()
-//  method would take 2 arguments: void output(char *bufLeft, char *bufRight).
+//  If our synth was designed to produce stereo audio, then we would not use
+//  the output() method, but would instead use the following call-back method:
+//
+//             void outputs(char *bufLeft, char *bufRight)
+//
 //  We will see this in a later example.
 //
 //  ---------------------------------------------------------------------------      

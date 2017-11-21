@@ -34,7 +34,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.56 )                 // specify sketch name & version
+about_program( Thick, 0.64 )                 // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE                       // required for setup macro to work
@@ -158,55 +158,21 @@ class ThickSynth : public QuadSynth
 
    byte  topGlide;                   // top portamento speed (applied to vox[3])
 
+   boolean  cleanSlate;              // true if user has yet to play a note
+
    public:
 
    void setup() 
    { 
       QuadSynth::setup();
 
-      portRatio.val = 256;           // portRatio = 1.0 (no diff in portamentos)
+      keybrd.setTopOct( 3 );         // constrain keyboard to octaves 0-3
+      keybrd.setDefOct( 2 );         // start keyboard in octave 2
 
-      // initialize voices
+      // add autowah effect to each voice
 
-      for ( byte i = 0; i < NumVox; i++ )
-      {
-         vox[i]->useOsc( new SawTooth() );
+      for ( byte i = 0; i < numVox; i++ )
          vox[i]->addEffect( new AutoWah() ); 
-      }
-
-      reset();
-
-      // the following line executes a macro which sets up each voice's 
-      // detuning/autowah/vibrato so the voices sound groovy together
-
-      console.exe( PSTR( "0ea<c180\\lf.5\\d.625\\````"
-                         "1Vf1\\d.075\\<`ea<c200\\lf2.75\\d.6\\````"
-                         "2Vf.25\\d.1\\<`ea<c150\\lf.75\\d.5\\````"
-                         "3ea<c190\\lf.23\\d.75\\````"
-                         "d128\\r73\\"
-                        ) 
-                  ); 
-
-      setOscTuning( SPREAD );
-
-      // the following code is for starting with an impressive glissando :)
-
-      lastNote.set( 7, 5 );           // start from up high
-
-      for ( byte i = 0; i < NumVox; i++ )
-      {
-         vox[i]->setMute( true );
-         vox[i]->envAmp.setSustain( 0 );
-         vox[i]->noteOn( lastNote );
-         vox[i]->noteOff();
-         vox[i]->envAmp.setSustain( 255 );
-         vox[i]->setMute( false );
-      }
-
-      lastNote.set( 0, 2 );          // initial last note of "C" in octave 2
-      masterTuning->defOctave = 2;   // start keyboard in octave 2
-      masterTuning->maxOctave = 3;   // constrain keybrd to octaves 0..3
-                                     // because it sounds better down there
    }
 
    void calcGlides()                // calc voice portamento speeds given
@@ -218,16 +184,16 @@ class ThickSynth : public QuadSynth
       portReg.val = 256 - topGlide;          
       byte lastGlide = portReg._.lsb;        
 
-      vox[NumVox-1]->setGlide( lastGlide );
+      vox[numVox-1]->setGlide( lastGlide );
 
       if ( lastGlide == 0 )
       {
-         for ( byte i = NumVox-1; i >= 1; i-- )
+         for ( byte i = numVox-1; i >= 1; i-- )
             vox[i-1]->setGlide( 0 );
          return;
       }
 
-      for ( byte i = NumVox-1; i >= 1; i-- )
+      for ( byte i = numVox-1; i >= 1; i-- )
       {
          portReg.val  = portRatio.val;       // scale portamento per voice
          portReg.val *= lastGlide;
@@ -300,7 +266,42 @@ class ThickSynth : public QuadSynth
 
          #endif
 
+         case '!':                           // perform a reset
+
+            QuadSynth::charEv( code );       // execute reset of super class
+
+            setMute( true );                 // mute synth until initial note 
+            setTopGlide( 0 );                // no portamento for top voice
+            setGlideRatio( 0 );              // no difference in portamento speeds
+            setRelease( 80 );                // set envelope release
+            setOscTuning( SPREAD );          // use a tuning of octaves and 5ths
+
+            // the following line executes a macro which sets up each voice's 
+            // detuning/autowah/vibrato so the voices sound groovy together
+      
+            console.exe( PSTR( "0Ea<c180\\lf.5\\d.625\\````"
+                               "1Vf1\\d.075\\<`Ea<c200\\lf2.75\\d.6\\````"
+                               "2Vf.25\\d.1\\<`Ea<c150\\lf.75\\d.5\\````"
+                               "3Ea<c190\\lf.23\\d.75\\````"
+                              ) 
+                        ); 
+
+            // the following code is for starting with a nice multi-octave 
+            // glissando: the voices are started on a high note, with the synth 
+            // muted, then in noteOn() when the 1st note is played, glide 
+            // parameters will be set and the synth unmuted, yielding a sweeping 
+            // glissando to the 1st note played by the user.
+
+            cleanSlate = true;               // user has yet to play a note
+            lastNote.set( 7, 5 );            // start from up high
+
+            for ( byte i = 0; i < numVox; i++ )
+               vox[i]->noteOn( lastNote );
+
+            break;
+
          default:
+
             return QuadSynth::charEv( code );
       }
       return true;
@@ -339,6 +340,23 @@ class ThickSynth : public QuadSynth
       return true;                     
    }
 
+   Osc *newOsc( byte nth )
+   {
+      return new SawTooth();
+   }
+   
+   void noteOn( key k )
+   {
+      if ( cleanSlate )                      // if this is 1st note played
+      {
+         setMute( false );                   // unmute synth
+         setTopGlide( 128 );                 // and set glide parameters
+         setGlideRatio( 73 );                // for an initial sweeping
+         cleanSlate = false;                 // glissando
+      }
+      QuadSynth::noteOn( k );
+   }
+
    void setGlideRatio( byte r )
    {
       glideRatio = r;
@@ -361,7 +379,7 @@ class ThickSynth : public QuadSynth
             char unison_xpose[]  = {   0,  0,   0,  0 };
             char unison_detune[] = {  -6, 38, -12, 48 };
 
-            for ( byte i = 0; i < NumVox; i++ )
+            for ( byte i = 0; i < numVox; i++ )
             {
                vox[i]->xpose = unison_xpose[i];
                vox[i]->osc->setDetune( unison_detune[i] );
@@ -374,7 +392,7 @@ class ThickSynth : public QuadSynth
             char spread_xpose[]  = { -12, 0, 0, 7 };
             char spread_detune[] = {   1, 3, -2, -5 };
 
-            for ( byte i = 0; i < NumVox; i++ )
+            for ( byte i = 0; i < numVox; i++ )
             {
                vox[i]->xpose = spread_xpose[i];
                vox[i]->osc->setDetune( spread_detune[i] );

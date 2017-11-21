@@ -44,7 +44,7 @@ set_baud_rate( 115200 )                      // specify serial baud-rate
 //  Our synth is meant to demonstrate LED functionality. It does not create
 //  any sound because we haven't implemented an output() method.
 
-class LEDSynth : public MonoSynth
+class LEDSynth : public Synth
 {
    public:
 

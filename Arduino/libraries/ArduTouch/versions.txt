@@ -1,5 +1,182 @@
 Versions:
 
+   1.02  support for Non-Volatile Storage
+         Sequencer class can read and write sequences to NVS
+         add Arduino's EEPROM.h to project (circumvents Arduino linker bug)
+         add writeNVS( addrNVS, value )
+         add writeNVS( addrNVS, addrRAM, size )
+         add readNVS( addrNVS )
+         add readNVS( addrNVS, addrRAM, size )
+         add Sequencer::read()    
+         add Sequencer::write()   
+         add Sequencer::load()  (loads sqnc from ROM)
+         add Sequencer('D') (dumps sqnc to console as comma-delimited values)
+         add Sequencer::length()
+         add Sequencer::bufSize()
+         move IMPLICIT_SEQUENCER to Model.h
+         in Sequencer module, DEVELOPER replaces VERBOSE_INFO
+         StepProgrammer::charEv() echoes '.' for '.' or <SPACE>
+         StepProgrammer::evHandler( BUT1_PRESS ) calls ::charEv(.)
+         Instrument::charEv() propagates transport commands
+         blinkLed() immediately reverses pin state 
+         ledState[] supercedes blinking[]
+         add LED_BLINK define
+         in System module, enabled renamed _enabled
+         add audio::enabled() wrapper for _enabled
+   1.01  add Drums module
+         add NoiseOsc module (NoiseOsc and WhiteNoise classes)
+         add SampleOsc class
+         Sequencer() replaces StepSqnc()
+         add Sequencer::targetMuting ::setTargetMuting() 
+         add Sequencer::playing() ::ticksPerHalf
+         Sequencer(?) prints total # jiffs if VERBOSE_INFO
+         add Mode::execute()
+         add Console::exeIn() ::ongoing() ::inMode() ::runModeWhile()
+         bugfix: VoxSynth::dynamics() must call super::dynamics() to upd sqnc
+         bugfix: Instrument('S') must check for null ::sqnc 
+   1.00  Sequencer module replaces StepSqnc module 
+         add Sequencer base class
+         add IMPLICIT_SEQUENCER switch in Instrument module 
+         add Instrument::sqnc
+         add Instrument::dynamics()
+         add Instrument::useSequencer()
+         Sequencer::dynamics() replaces StepSqnc::cont()
+         Sequencer('r') replaces StepSqnc('S')
+         add Sequencer::start() ::stop() ::_pause_() wrappers for ::charEv([,],|)
+         add Sequencer::record() - wrapper for 'r'
+         Sequencer::ticksPerBeat renamed ::ticksPerJiff
+         Sequencer::beatDC renamed jiffDC
+         Sequencer::exeRec() descriminates keyDn records 
+         Sequencer::setTempo() checks for maxTempo (in addition to minTempo)
+         StepSqnc::sqnc[] becomes a ptr (buffer is malloced in constructor)
+         StepSqnc() takes optional parameter specifying buffer size
+         sequence buffer size is stored in sqnc[0]
+         add StepProgrammer::noteValue, ::charEv('V')
+         add ticksPerDyna constant in System module
+         add key::setOctave()
+         wavetable_named() macro replaces wave_descriptor() macro
+         add wavetable() macro
+         WaveOsc info checks for null name
+         desWavTab::length typed as word (was unsigned long)
+         Rand16::next() performs xor with LSFR_MASK on bit 0 clr (was on set)
+         bugfix: StepProgrammer::evHandler() must skip KEY_UP events
+         bugfix: StepProgrammer::evHandler() sets event octave prior to getKey
+   0.99  nix QuadSynth::Voicing typedef
+         move ::setVoicing() from QuadSynth to VoxSynth
+         move ::setAttack/Decay/Release/Sustain() from QuadSynth to VoxSynth
+         move ::ampEnv from StockVoice to Voice
+         Voice::menu(C#) pushes ampMods 
+         Voice::menu(D#) pushes pitchMods 
+         BSFilter::menu has been shuffled
+         add OneVoxSynth::menu() which overrides '#' with '0'
+         TwoVoxPanSynth derives from TwoVoxSynth
+         add graphical depictions of key mappings in ::menu() header comments
+         bugfix: QuadSynth::noteOn() was not transposing
+         bugfix: Bank() must set ::flags.MENU
+   0.98  Voice becomes a formal "empty container" with no built-in controls
+         add ControlChain, Factor, Factors, AmpMods, PitchMods classes
+         add Voice::ampMods ::pitchMods ::addAmpMod() ::addPitchMod()
+         add StockVoice class with built-in ::ampEnv and ::vibrato
+         VoxSynth::newVox() returns a *StockVoice
+         add Voice(A) - pushes ampMods
+         add Voice(P) - pushes pitchMods
+         Voice(E) pushes effects (was ampEnv)
+         Voice(e) pushes ampEnv (was effects)
+         Voice::release() releases ampMods and pitchMods
+         remove Effect module from project
+         EffectsLoop renamed Effects
+         Envelope(!) unmutes self
+         nix display of shortcut in Control::charEv( chrBrief )
+   0.97  add OneVoxSynth, TwoVoxSynth, TwoVoxPanSynth classes
+         break Pan module out from QuadSynth module
+         nix QuadVoice class
+         nix QuadSynth::newVox() 
+         Voice::prompt() returns ptr to "v0", "v1", etc.
+         in FadeLFO::charEv(t) "flags != DONE" typo changed to "flags |= DONE"
+         bugfix: TermLFO::dynamics() returns on flags&DONE only if trav != 0
+   0.96  global system keybrd is replaced by local instrument keybrd(s)
+         local control of Instrument determined by ::keybrd.muted()
+         StereoInstrument::outputs() renamed ::output()
+         system always posts key events in octave 0
+         remove octave state vars from Tuning class
+         KeyBrd derives from Control
+         nix KeyBrd::whichNote() ::position
+         add KeyBrd::setTop/Bot/DefOct()
+         add KeyBrd::chrEv(!)
+         add KeyBrd::minOctave ::maxOctave ::defOctave ::octave
+         add KeyBrd::upOctave() ::downOctave() ::getOctave() ::setOctave()
+         nix Instrument::local ::charEv(+) ::charEv(-)
+         Instrument::evHandler() inserts keybrd.octave in KEY_UP/DOWN events
+         StepSqnc::subject renamed ::target
+         SteqSqnc no longer eats 'k' event
+         StepSqnc sets octave on for generated key events
+         add obEvent.clean(), .setOctOn() .setOctOff() .octOn(), .setOctave()
+         move obEvent.type from upper to lower nibble of hi byte
+         add Instrument *StepProgrammer::target
+         StepProgrammer::push() takes target argument
+         StepProgrammer acquires octave from target
+         StepProgrammer saves/restores target keybrd mute status
+         StepProgrammer unmutes target keybrd on entry
+         StepProgrammer sets event octave before passing to target
+         add VoxSynth::charEv(#)
+         add VoxSynth::menu(1) = '#'
+         digitMode converts result to numeric value (-1 = aborted input)
+         getDigit() returns numeric value of digit (-1 = aborted input)
+         bugfix: InputMode::InputMode() now sets flag.MENU
+   0.95  ConKeyBrd class renamed KeyBrd
+         KeyBrd.cpp .h replace ConKeyBrd.cpp .h in library
+         add Instrument::keybrd 
+         add Instrument::charEv(k) -- pushes ::keybrd
+         break DynaControl class out from Control class
+         add super typedef to Control, TControl, Phonic, KeyBrd, Osc classes
+         replace "Control" (properly, "TControl") with "super" in Envelope, LFO
+   0.94  quiet reset capability for Synth replaces mute_at_reset logic
+         add Control::flags.RSTMUTE
+         add Synth::quiet_reset 
+         add Synth::preset_loading
+         add Synth::charEv(') 
+         nix Synth::charEv(#) 
+         nix Phonic::mute_at_reset
+         move constructor bodies to within class declarations (saves space)
+   0.93  Instrument::xpose supercedes Voice::xpose
+         VoxSynth transposes notes before propagation to voices 
+         nix META events
+         nix Mode::flags.PLAYTHRU
+         Mode::flags.MENU is off by default
+         add Onboard.cpp to library
+         key::transpose() moved to Onboard.cpp
+         add Instrument::local
+         add Instrument::charEv() for handling '+' '-' chrInfo
+         add Instrument::menu() with F# = '-', G = 'x', G# = '+'
+         add VoxSynth::setupVoices() ::newOsc() ::newVox()
+         nix VoxSynth::regVox, registerVoice()
+         break Console::stackEv() out from ::postKeyUp/Dn()
+         Console::postBut() calls stackEv() on BUT0/1_TAP
+         add "include System.h" to Mode.cpp to enable MONITOR_* defines -- WTF
+         in infoULong() compile "Serial.print()" only if CONSOLE_OUTPUT
+   0.92  add VoxSynth class
+         merge XVoice into Voice 
+         StereoInstrument::output(L,R) renamed ::outputs()
+         StereoInstrument::outputs() copies left to right by default
+         nix MonoSynth
+   0.91  add Instrument class
+         add Instrument module to library
+         nix MonoPhonic class
+   0.90  macros are executed synchronously
+         support for nested macros 
+         add Synth::welcome()
+         ardutouch_setup() calls synth->setup, then reset(), then welcome() 
+         nix Console::ongoing()
+   0.89  system module no longer discriminates between mono and stereo synths
+         Synth derives from StereoPhonic
+         MonoSynth derives from Synth
+         nix StereoSynth
+         Control::amMute() renamed ::muted()
+   0.88  bugfix: EffectsLoop constructor must set loop to NULL
+   0.87  Voice freq changes and triggers are deferred to next dynamic update
+         add Voice::pendFreq
+         add Voice::flags.FREQ 
+         add Voice::flags.TRIG
    0.86  add PCB_REV_C, PCB_REV_A defines
          add Event_Monitor example program
          add README.TXT

@@ -35,7 +35,7 @@ about_program( Key Events, 1.00 )            // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 
-class ArithmeticSynth : public MonoSynth
+class ArithmeticSynth : public Synth
 {
    public:
 
@@ -51,7 +51,7 @@ class ArithmeticSynth : public MonoSynth
 
    void setup() 
    {                                         
-      osc.setTable( wave_descriptor(Sine) ); // use Sine table from library
+      osc.setTable( wavetable(Sine) );       // use Sine table from library
 
       baseHz  = 200.0;                       // play 200.0 Hz when touching low C key
       tuneHz  = 25.0;                        // 25.0 Hz arithmetic tuning

@@ -76,6 +76,8 @@
    #define LED_OFF LOW
 #endif
 
+#define LED_BLINK HIGH+LOW+1
+
 /* ----------------------    private functions    -------------------------- */
 
 
@@ -109,7 +111,6 @@ boolean usingCpu;                      // currently using CPU to render audio
 const   double scanRate = 20.0;        // rate at which to scan hardware
 byte    bufsPerScan;                   // # buffers to render per I/O scan
 byte    scanDC;                        // downcounter to next I/O scan
-boolean enabled;                       // audio is enabled
 
 #define NumButs        2               // number of onboard buttons 
 #define NumPots        2               // number of onboard pots 
@@ -127,7 +128,7 @@ byte        nextPot;                   // next pot # to scan
 #ifndef USE_SERIAL_PORT
 
 byte        LEDPin[] = { 1, 0 };       // pin # per LED (left to right)
-boolean     blinking[ NumLEDs ];       // true if LED is blinking
+byte        ledState[ NumLEDs ];       // state per LED { LED_ON/OFF/BLINK }
 byte        blinkRate = 80;            // blink rate (in dynamic updates)
 byte        blinkDC = 80;              // down-counter to next blink transition
 boolean     blinkEdge;                 // if true turn blinkers on at transition
@@ -135,9 +136,6 @@ boolean     blinkEdge;                 // if true turn blinkers on at transition
 #endif
 
 volatile signed char curKey = -1;      // currently pressed key (-1 means none)
-byte curKeyOct;                        // octave of currently pressed key
-
-byte  octave;                          // current octave # for keyboard
 
 /*----------------------------------------------------------------------------*
  *
@@ -152,8 +150,6 @@ byte  octave;                          // current octave # for keyboard
  *        +bufsPerScan      - # buffers to render per I/O scan
  *         butPin[]         - associated pin # per button (left to right) 
  *         LEDPin[]         - associated pin # per LED (left to right) 
- *         masterTuning     - ptr to master tuning object
- *        +octave           - current octave # for keyboard
  *         potPin[]         - associated pin # per pot (top to bot)
  *        +potVal[]         - last value read per pot
  *        +scanDC           - downcounter (in bufs) to next I/O scan
@@ -197,9 +193,10 @@ void ardutouch_setup( Synth *syn )
 
    #endif
 
-   syn->setup();                       // setup the synth
-   octave = masterTuning->defOctave;   // set initial octave for keyboard
+   syn->setup();                       // set up the synth
+   syn->reset();                       // reset the synth
    audio::enable();                    // enable audio output
+   syn->welcome();                     // execute any post-reset code
 }
 
 /*----------------------------------------------------------------------------*
@@ -259,7 +256,6 @@ void ardutouch_info()
  *
  *  Glob:  bufsPerScan      - # buffers to render per I/O scan
  *         curKey           - currently pressed key (-1 means none)
- *         curKeyOct        - octave of currently pressed key
  *        +nextPot          - next pot to read
  *        +scanDC           - downcounter (in bufs) to next I/O scan
  *
@@ -279,7 +275,7 @@ void device_io()
       {
          if ( ! readKey( curKey ) )
          {
-            console.postKeyUp( curKey, curKeyOct );
+            console.postKeyUp( curKey, 0 );
             scanKeys();
          }
       }
@@ -420,7 +416,6 @@ void readPot( byte num )
  *  Args:  -- none --
  *
  *  Glob:  +curKey          - currently pressed key (-1 means none)
- *         +curKeyOct       - octave of currently pressed key
  *          numKeys         - # of onboard keys
  *
  *----------------------------------------------------------------------------*/      
@@ -431,8 +426,7 @@ void scanKeys()
       if ( readKey(i) )
       {
          curKey = i;
-         curKeyOct = getOctave();
-         console.postKeyDn( i, curKeyOct );
+         console.postKeyDn( i, 0 );
          return;
       }
    curKey = -1;
@@ -554,7 +548,11 @@ int freeRam ()
    return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
 }
 
-/* ---------------------           LEDs           -------------------------- */
+/******************************************************************************
+ *
+ *                                   LEDs
+ *
+ ******************************************************************************/
 
 /*
    Note: LEDs are not operable if the serial port is enabled.
@@ -563,8 +561,11 @@ int freeRam ()
 void blinkLED( byte nth )
 {
    #ifndef USE_SERIAL_PORT
-   if ( nth < NumLEDs )
-      blinking[ nth ] = true;
+   if ( nth < NumLEDs && ledState[ nth ] != LED_BLINK )
+   {
+      digitalWrite( LEDPin[ nth ], ! ledState[ nth ] );
+      ledState[ nth ] = LED_BLINK;
+   }
    #endif
 }
 
@@ -573,8 +574,8 @@ void onLED( byte nth )
    #ifndef USE_SERIAL_PORT
    if ( nth < NumLEDs )
    {
-      digitalWrite( LEDPin[nth], LED_ON );
-      blinking[ nth ] = false;
+      digitalWrite( LEDPin[ nth ], LED_ON );
+      ledState[ nth ] = LED_ON;
    }
    #endif
 }
@@ -584,8 +585,8 @@ void offLED( byte nth )
    #ifndef USE_SERIAL_PORT
    if ( nth < NumLEDs )
    {
-      digitalWrite( LEDPin[nth], LED_OFF );
-      blinking[ nth ] = false;
+      digitalWrite( LEDPin[ nth ], LED_OFF );
+      ledState[ nth ] = LED_OFF;
    }
    #endif
 }
@@ -607,33 +608,13 @@ void setBlinkRate( byte rate )
    #endif
 }
 
-/* ---------------------      Onboard Keyboard    -------------------------- */
+/******************************************************************************
+ *
+ *                          Audio Output Buffer
+ *
+ ******************************************************************************/
 
-void downOctave()
-{
-   if ( octave > 0 ) setOctave( octave-1 );
-}
-
-void upOctave()
-{
-   setOctave( octave+1 );
-}
-
-byte getOctave()
-{
-   return octave;
-}
-
-void setOctave( byte o )
-{
-   if ( o > masterTuning->maxOctave ) o = masterTuning->maxOctave;
-   if ( o < masterTuning->minOctave ) o = masterTuning->minOctave;
-   octave = o;
-}
-
-/* ----------------------   Audio Output Buffer    ------------------------- */
-
-#define NUMRECS  NUMBUFS*audioBufSz         // total # of buffered records 
+#define NUMRECS  NUMBUFS*audioBufSz    // total # of buffered records 
 
 byte audioL[NUMRECS];                  // records for left audio channel 
 byte audioR[NUMRECS];                  // records for right audio channel
@@ -646,6 +627,8 @@ volatile byte eor;                     // idx to end of current read buffer
 
 volatile byte wBuf;                    // buffer # being written to
 volatile byte rBuf;                    // buffer # being read from
+
+boolean _enabled;                      // audio is enabled
 
 /* -------------------------------------------------------------------------- 
 
@@ -666,14 +649,14 @@ const word   ticksPerSec = audioRate;  // for use with integer down counters
 
 #define IDEAL_DYNA_RATE    150.0       // ideal dynamic update rate
 
-const double bufRate     = audioRate / audioBufSz;
-const byte   bufsPerDyna = bufRate / IDEAL_DYNA_RATE; 
-const double dynaRate    = bufRate / bufsPerDyna;
+const double bufRate      = audioRate / audioBufSz;
+const byte   bufsPerDyna  = bufRate / IDEAL_DYNA_RATE; 
+const byte   ticksPerDyna = bufsPerDyna * audioBufSz; 
+const double dynaRate     = bufRate / bufsPerDyna;
 
 byte    dynaDC;                        // downcounter to next dynamic update
 
 Synth  *matrix;                        // ptr to synth that generates the audio
-boolean stereo;                        // true if synth produces stereo output
 
 /*----------------------------------------------------------------------------*
  *
@@ -690,7 +673,6 @@ boolean stereo;                        // true if synth produces stereo output
  *        +matrix           - ptr to synth which generates the audio
  *        +r                - idx of record being read from
  *        +rBuf             - buffer # being read from
- *        +stereo           - if true, synth produces stereo output
  *        +w                - idx of record being written to
  *        +wBuf             - buffer # being written to
  *
@@ -701,8 +683,6 @@ void audio_setup( Synth *x )
    /* initialize soft parameters */
 
    matrix       = x;
-   stereo       = x->inStereo();
-
    dynaDC       = bufsPerDyna;
 
    /* initialize audio output buffers */
@@ -763,18 +743,17 @@ void audio_setup( Synth *x )
  *
  *  Desc:  Render the next free audio buffer, if available, via the matrix 
  *         synth's output() method. Manage the matrix synth's dynamics.
- *         Update any blinking LEDs.
+ *         Update any ledState LEDs.
  *
  *  Rets:  status           - if true, a buffer was rendered
  *
- *  Glob:  blinking[]       - true if LED is blinking
+ *  Glob:  ledState[]       - true if LED is ledState
  *         blinkRate        - blink rate (in dynamic updates)
  *        +blinkDC          - downcounter to next blink transition
- *        +blinkEdge        - if true, turn blinking LEDs on at transition
+ *        +blinkEdge        - if true, turn ledState LEDs on at transition
  *        +dynaDC           - downcounter to next dynamic update
  *        +lock[]           - write-lock status per buffer
  *         matrix           - ptr to synth which generates the audio
- *         stereo           - if true, synth output is in stereo
  *        +usingCpu         - currently using CPU to render audio 
  *        +w                - idx of record being written to
  *        +wBuf             - buffer # being written to
@@ -790,27 +769,19 @@ boolean render_audio()
       usingCpu = true;
    #endif
 
-   if ( stereo )
-      ((StereoSynth *)matrix)->output( (char *)&audioL[w], (char *)&audioR[w] ); 
-   else
-   {
-      ((MonoSynth *)matrix)->output( (char *)&audioL[w] );
-      byte wCopy = w;
-      for ( byte i = audioBufSz; i > 0; i-- )
-         audioR[wCopy] = audioL[wCopy++];
-   }
+   matrix->output( (char *)&audioL[w], (char *)&audioR[w] ); 
 
    if ( --dynaDC == 0 )                // manage dynamics 
    {
       matrix->dynamics();              // perform a dynamic update
 
       #ifndef USE_SERIAL_PORT       
-      if ( --blinkDC == 0 )            // update any blinking LEDs 
+      if ( --blinkDC == 0 )            // update any ledState LEDs 
       {
          blinkDC   = blinkRate;        // reload downcounter
          blinkEdge = ! blinkEdge;      // invert edge
          for ( byte i = 0; i < NumLEDs; i++ )
-            if ( blinking[i] )
+            if ( ledState[i] == LED_BLINK )
                digitalWrite( LEDPin[i], blinkEdge ? LED_ON : LED_OFF );
       } 
       #endif
@@ -847,19 +818,24 @@ void bufStats()
 
 void audio::disable()
 {
-   enabled = false;
+   _enabled = false;
    cbi (TIMSK1,TOIE1);                 // disable Timer1 Interrupt
 }
 
 void audio::enable()
 {
    sbi (TIMSK1,TOIE1);                 // enable Timer1 Interrupt
-   enabled = true;
+   _enabled = true;
+}
+
+bool audio::enabled()
+{
+   return _enabled;
 }
 
 void audio::wait( byte nbufs )
 {
-   if ( enabled )
+   if ( _enabled )
    {
       while ( --nbufs )
       {
@@ -967,7 +943,7 @@ void Rand16::next()
 {
    byte perform_xor = output._.lsb & 0x01;
    output.val >>= 1;
-   if ( perform_xor )
+   if ( ! perform_xor )
       output.val ^= LFSR_MASK;
 }
 
@@ -988,5 +964,90 @@ void Rand16::reseed()
 {
    output._.msb = TCNT1;
    output._.lsb = TCNT2;
+}
+
+/******************************************************************************
+ *
+ *                       Non-Volatile Storage (EEPROM)
+ *
+ ******************************************************************************/
+
+#include "EEPROM.h"              // use (copy of) Arduino EEPROM code
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  readNVS
+ *
+ *  Desc:  Read a byte from non-volatile storage (EEPROM).
+ *
+ *  Args:  addrNVS          - address in NVS
+ *
+ *  Rets:  value            - byte read 
+ *
+ *----------------------------------------------------------------------------*/
+
+byte readNVS( word addrNVS )
+{
+   return EEPROM.read( addrNVS );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  readNVS
+ *
+ *  Desc:  Read a string of bytes from non-volatile storage (EEPROM).
+ *
+ *  Args:  addrNVS          - start address in NVS
+ *         addrRAM          - start address in RAM
+ *         size             - # of bytes to read 
+ *
+ *----------------------------------------------------------------------------*/
+
+void readNVS( word addrNVS, byte *addrRAM, word size )
+{
+   for ( word i = 0; i < size; i++ )
+      *addrRAM++ = EEPROM.read( addrNVS + i );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  writeNVS
+ *
+ *  Desc:  Write a byte to non-volatile storage (EEPROM).
+ *
+ *  Args:  addrNVS          - address in NVS
+ *         value            - byte to write 
+ *
+ *----------------------------------------------------------------------------*/
+
+void writeNVS( word addrNVS, byte value )
+{
+   writeNVS( addrNVS, &value, 1 );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  writeNVS
+ *
+ *  Desc:  Write a string of bytes to non-volatile storage (EEPROM).
+ *
+ *  Args:  addrNVS          - start address in NVS
+ *         addrRAM          - start address in RAM
+ *         size             - # of bytes to write 
+ *
+ *----------------------------------------------------------------------------*/
+
+void writeNVS( word addrNVS, byte *addrRAM, word size )
+{
+   bool toggleAudio = audio::enabled();
+
+   if ( toggleAudio )         // disable audio interrupt during EEPROM write
+      audio::disable();
+
+   for ( word i = 0; i < size; i++ )
+      EEPROM.write( addrNVS + i, *addrRAM++ );
+
+   if ( toggleAudio ) 
+      audio::enable();
 }
 

@@ -87,7 +87,7 @@ set_baud_rate( 115200 )                   // specify serial baud-rate
 //  ---------------------------------------------------------------------------
 
 
-class RuntimeModelSynth : public MonoSynth   // an "empty" synth
+class RuntimeModelSynth : public Synth       // an "empty" synth
 {
 } myRuntimeModelSynth;                       // instantiate synthesizer
 
@@ -129,10 +129,10 @@ void loop()
 //  to see how much memory is used. On the developer's machine the following
 //  memory usages were observed:
 //
-//       __FULLHOST__  9496 bytes of ROM, 570 bytes of RAM
-//       __LITEHOST__  8060 bytes of ROM, 536 bytes of RAM
-//       __STNDLONE__  7104 bytes of ROM, 366 bytes of RAM
-//       __BAREBONE__  5870 bytes of ROM, 275 bytes of RAM
+//       __FULLHOST__  9752 bytes of ROM, 576 bytes of RAM
+//       __LITEHOST__  8246 bytes of ROM, 544 bytes of RAM
+//       __STNDLONE__  7286 bytes of ROM, 374 bytes of RAM
+//       __BAREBONE__  5944 bytes of ROM, 303 bytes of RAM
 //
 //  For more complex synthesizers the differences will be more dramatic
 //  than those seen for this simplest ArduTouch synthesizer.

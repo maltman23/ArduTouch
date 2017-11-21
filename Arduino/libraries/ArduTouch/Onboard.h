@@ -29,7 +29,7 @@
       
          1: those originating from the musical keyboard
          2: those originating from the buttons
-       ( 3: those originating from the pots )
+         3: those originating from the pots 
 
    -------------------------------------------------------------------------- */
 
@@ -38,7 +38,6 @@ typedef byte evGenus ; enum
    evKEY,            // a key event
    evBUT,            // a button event
    evPOT,            // a pot event
-   evMETA,           // a meta event
    evUNDEF           // an undefined event
 } ;
 
@@ -61,10 +60,7 @@ typedef byte evType ; enum
    BUT1_DTAP,        // right button is double-tapped
    BUT1_TPRESS,      // right button is tapped-then-pressed
    POT0,             // top pot is moved
-   POT1,             // bot pot is moved
-   META_OCTUP,       // octave up
-   META_OCTDN,       // octave down
-   META_ONESHOT      // initiate one-shot menu selection
+   POT1              // bot pot is moved
 } ;
 
 /* --------------------------------------------------------------------------
@@ -132,35 +128,12 @@ struct key
       val = p + (o << 4);
    }
 
-   void transpose( char xpose )
+   void setOctave( byte o )
    {
-      const int MaxKeyNum = 12*15;        // 12 notes per octave, 15 octaves max
-
-      byte pos, oct;                      // transposed key position, octave
-      int  keyNum;                        // transposed key number
-
-      // translate untransposed key octave/position into keyNum
-
-      keyNum  = position() + octave() * 12;
-
-      // transpose keyNum
-
-      keyNum += xpose;
-
-      // range-check transposed keyNum
-
-      while ( keyNum < 0 )
-         keyNum += 12;
-         
-      while ( keyNum > MaxKeyNum )
-         keyNum -= 12;
-
-      // translate transposed keyNum back into octave/position
-      
-      oct = keyNum / 12;
-      pos = keyNum % 12;
-      set( pos, oct );
+      val = position() + (o << 4);
    }
+
+   void transpose( char xpose );
 
 } ;
 
@@ -176,10 +149,12 @@ struct key
 
    -------------------------------------------------------------------------- */
 
-typedef struct 
+struct obEvent
 {
    byte lo;
    byte hi;
+
+   #define OB_OCTAVE 0b00010000    // if hi.OB_OCTAVE set, key has octave info
 
    evGenus genus()
    {
@@ -190,10 +165,13 @@ typedef struct
          return evBUT;
       else if ( t >= POT0 && t <= POT1 )
          return evPOT;
-      else if ( t >= META_OCTUP && t <= META_ONESHOT )
-         return evMETA;
       else
          return evUNDEF;
+   }
+
+   void clean()
+   {
+      hi = lo = 0;
    }
 
    byte get()
@@ -211,38 +189,58 @@ typedef struct
       return (key )lo;
    }
 
+   void setOctave( byte o )
+   {
+      lo &= 0b00001111;
+      lo |= o << 4;
+   }
+
+   boolean octOn()
+   {
+      return (hi & OB_OCTAVE);
+   }
+
+   void setOctOff()
+   {
+      hi &= ~OB_OCTAVE;
+   }
+
+   void setOctOn()
+   {
+      hi |= OB_OCTAVE;
+   }
+
    void setKeyDn( key k )
    {
       lo = k.val;
-      hi = 0;
       setType( KEY_DOWN );
    }
 
    void setKeyUp( key k )
    {
       lo = k.val;
-      hi = 0;
       setType( KEY_UP );
    }
 
    void setPotVal( byte x )
    {
       lo = x;
-      hi &= 0b11110000;
    }
 
    void setType( evType t )
    {
-      hi &= 0b00001111;
-      hi |= ((byte )t << 4);
+      hi &= 0b11110000;
+      hi |= (byte )t;
    }
 
    evType type()
    {
-      return (hi >> 4);
+      return hi & 0b00001111;
    }
 
-} obEvent ;
+   #undef OB_OCTAVE
+
+} ;
 
 
 #endif   // ifndef ONBOARD_H_INCLUDED

@@ -23,11 +23,11 @@
 
 #include "Control.h"
 
-class LFO : public TControl
+class LFO : public Factor
 {
-   public:
+   typedef Factor super;         // superclass is Factor
 
-   double  val;                  // current output value 
+   public:
 
    boolean charEv( char );       // process a character event
    void    dynamics();           // update object dynamics
@@ -42,7 +42,7 @@ class LFO : public TControl
    void    setFreq( double );    // set oscillation frequency
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // map key event to character 
+   char    menu( key );          // given a key, return a character 
    #endif
 
    #ifdef CONSOLE_OUTPUT
@@ -66,11 +66,13 @@ class LFO : public TControl
 
 class FadeLFO : public LFO       // LFO with fade capability
 {
+   typedef LFO super;            // superclass is LFO
+
    public:
 
    enum {  // use these bits in the flags byte: 
 
-         FADEOUT = _RESERVE3     // LFO fades out (if not set, LFO fades in)
+         FADEOUT = _RESERVE4     // LFO fades out (if not set, LFO fades in)
                                  
         } ;
 
@@ -78,7 +80,7 @@ class FadeLFO : public LFO       // LFO with fade capability
    void    dynamics();           // update object dynamics
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // map key event to character 
+   char    menu( key );          // given a key, return a character 
    #endif
 
    protected:
@@ -94,11 +96,13 @@ class FadeLFO : public LFO       // LFO with fade capability
 
 class TermLFO : public LFO       // LFO that terminates after n half-cycles
 {                                
+   typedef LFO super;            // superclass is LFO
+
    public:
 
    enum {  // use these bits in the flags byte: 
 
-           PEAK  = _RESERVE3     // trigger LFO starting at peak value 
+           PEAK  = _RESERVE4     // trigger LFO starting at peak value 
 
         } ;
 
@@ -107,7 +111,7 @@ class TermLFO : public LFO       // LFO that terminates after n half-cycles
    void    iniPos();             // set initial osc position
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // map key event to character 
+   char    menu( key );          // given a key, return a character 
    #endif
 
    protected:

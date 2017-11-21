@@ -141,7 +141,10 @@ class InputMode : public Mode
 
    const char *_prompt;                // ptr to prompt str
 
-   InputMode() {}
+   InputMode() 
+   { 
+      flags |= MENU;                   // persistent keybrd menu
+   }
 
    boolean charEv( char code )
    {
@@ -184,19 +187,20 @@ class DigitMode : public InputMode
 {
    public:
 
-   DigitMode() { flags &= ~ECHO; }
-
-   char  result;                       // result of input (0 = no input)
+   char  result;                       // numeric result of input (-1 = no input)
    byte  max;                          // max allowable digit
+
+   DigitMode() 
+   { 
+      flags &= ~ECHO; 
+   }
 
    boolean charEv( char code )
    {
-      if ( isDigit( code ) )
+      if ( isDigit( code ) && code <= '0' + max )
       {
-         if ( code > '0' + max )
-            code = '0' + max;
+         result = code - '0';
          console.print( code );
-         result = code;
          console.popMode();
          return true;
       }
@@ -208,7 +212,7 @@ class DigitMode : public InputMode
    {
       _prompt   = prompt;
       this->max = max;     
-      result    = 0;
+      result    = -1;
    }
 
 } digitMode;
@@ -301,7 +305,11 @@ class StrMode : public InputMode
 
 #endif  // ifdef INTERN_CONSOLE
 
-/* ----------------------      Console class       -------------------------- */
+/******************************************************************************
+ *
+ *                                  Console 
+ *
+ ******************************************************************************/
 
 #define alphaCR         '\\'           // alphanumeric alternative to <CR>
 #define alphaESC        '`'            // alphanumeric alternative to <ESC>
@@ -359,11 +367,83 @@ void Console::enable()
    output = true;
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::exe
+ *
+ *  Desc:  Execute a macro string. 
+ *
+ *  Args:  macStr           - ptr to macro string in ROM.
+ *
+ *  Memb: +atMacro          - ptr into macro string currently being executed
+ *
+ *----------------------------------------------------------------------------*/
+       
 void Console::exe( const char *m )
 {
+   const char *nestMacro = atMacro;
+
    atMacro = m;
-   disable();
+
+   if ( ! nestMacro ) 
+      disable();
+
+   while ( atMacro )
+   {
+      input();
+      if ( idle ) idle();
+   }
+
+   atMacro = nestMacro;
+   if ( ! nestMacro ) 
+      enable();
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::exeIn
+ *
+ *  Desc:  Execute a macro string within a specified mode. 
+ *
+ *  Args:  macStr           - ptr to macro string in ROM.
+ *         exeMode          - mode within which to execute macro
+ *
+ *  Memb:  _modeStk[]       - obj ptrs of nested console modes
+ *         modeSP           - stack pointer for _modeStk[]
+ *
+ *  Note:  If exeMode is not the top mode on the stack, it will be pushed for
+ *         the duration of the macro.
+ *
+ *         This method restores the modeSP at the end of macro execution, so
+ *         the macro does not need to pop any modes that may have been pushed
+ *         during it's execution. 
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::exeIn( const char *m, Mode *exeMode )
+{
+   byte saveSP = modeSP;
+
+   if ( _modeStk[ modeSP ] != exeMode ) 
+      _modeStk[ ++modeSP ] = exeMode;
+
+   exe(m);
+
+   modeSP = saveSP;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::getDigit
+ *
+ *  Desc:  Display an input prompt, and wait for a digit to be input. 
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         maxDigit         - numeric value of max allowable digit 
+ *
+ *  Rets:  result           - numeric value of digit (-1 = "aborted input")
+ *
+ *----------------------------------------------------------------------------*/
 
 char Console::getDigit( const char *prompt, byte max )
 {
@@ -372,7 +452,7 @@ char Console::getDigit( const char *prompt, byte max )
       runMode( &digitMode );
       return digitMode.result;
    #else
-      return false;
+      return -1;
    #endif
 }
 
@@ -684,7 +764,9 @@ void Console::infoStr( const char* name, const char* val )
 void Console::infoULong( const char* name, unsigned long val )
 {
    begInfo( name );
-   Serial.print( val );
+   #ifdef CONSOLE_OUTPUT
+      Serial.print( val );
+   #endif
    endInfo();
 }
 
@@ -695,23 +777,55 @@ void Console::init( Mode *mode, void (*idle_routine)() )
    setIdle( idle_routine );
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::inMode
+ *
+ *  Desc:  Return a boolean indicating whether a given mode is the current 
+ *         mode (i.e. is the top mode on the mode stack ).
+ *
+ *  Args:  tryMode          - ptr to mode to test as current mode
+ *
+ *  Rets:  status           - if true, tryMode is the current mode
+ *
+ *  Memb:  _modeStk[]       - obj ptrs of nested console modes
+ *         modeSP           - stack pointer for _modeStk[]
+ *
+ *----------------------------------------------------------------------------*/
+       
+boolean Console::inMode( Mode *tryMode )
+{
+   return ( _modeStk[ modeSP ] == tryMode );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::input
+ *
+ *  Desc:  Process the next character, if any, from the input stream.
+ *
+ *  Args:  macStr           - ptr to macro string in ROM.
+ *
+ *  Memb: +atMacro          - ptr into macro string currently being executed
+ *
+ *----------------------------------------------------------------------------*/
+
 void Console::input()
 {
    char chr;
 
-   /* get next keystroke; if none available, return. */
+   /* get next character; if none available, return. */
 
-   if ( atMacro )
+   if ( atMacro )    // input stream is a string in ROM
    {
       chr = pgm_read_byte_near( atMacro++ ); 
       if ( ! chr )
       {
          atMacro = NULL;
-         enable();
          return;
       }
    }
-   else 
+   else              // input stream is the serial port
    {
       #ifdef USE_SERIAL_PORT
       if ( Serial.available() > 0 )
@@ -721,7 +835,7 @@ void Console::input()
          return;
    }
 
-   /* send character event to current Mode */
+   /* send character to current Mode */
 
    if ( chr == alphaCR )
       chr = chrCR;
@@ -809,18 +923,6 @@ void Console::oneShotMenu()
    oneShot = true;
 }
 
-boolean Console::ongoing( Mode *x )
-{
-   if ( _modeStk[ modeSP ] == x )
-   {
-      input();
-      if ( idle ) idle();
-      return true;
-   }
-   else
-      return false;
-}
-
 void Console::popMode()
 {
    oneShot = false;
@@ -840,17 +942,13 @@ void Console::postBut( byte num, butAction action )
    obEvent o;
 
    oneShot = false;
+
    o.setType( ( num ? BUT1_PRESS : BUT0_PRESS ) + action );   
-   if ( _modeStk[ modeSP ]->flags&Mode::PLAYTHRU )
-   {
-      if ( o.type() == BUT0_TAP )
-         o.setType( META_OCTDN );
-      else if ( o.type() == BUT1_TAP )
-         o.setType( META_OCTUP );
-      else if ( o.type() == BUT1_DTAP )
-         o.setType( META_ONESHOT );
-   }
-   _modeStk[ modeSP ]->evHandler( o ); 
+
+   if ( o.type() == BUT0_TAP || o.type() == BUT1_TAP )
+      stackEv( o );
+   else
+      _modeStk[ modeSP ]->evHandler( o ); 
 }
 
 void Console::postKeyDn( byte pos, byte oct )  
@@ -858,7 +956,12 @@ void Console::postKeyDn( byte pos, byte oct )
    key k( pos, oct );
 
    #ifdef KEYBRD_MENUS
-   byte menuFlags = _modeStk[ modeSP ]->flags&( Mode::MENU | Mode::PLAYTHRU );
+
+   // if the top mode has its menu enabled, pass the key to the mode's menu() 
+   // method, which will return a character. If this character is non-null, 
+   // call the mode's charEv() method with it.
+
+   byte menuFlags = _modeStk[ modeSP ]->flags&( Mode::MENU );
    if ( oneShot || ( menuFlags == Mode::MENU ) )
    {
       menuKeyDn = true;
@@ -877,11 +980,10 @@ void Console::postKeyDn( byte pos, byte oct )
    else
    #endif
    {
-      obEvent o;
-      o.setKeyDn( k );
-      signed char stkptr = modeSP;
-      while ( stkptr >= 0 && ! _modeStk[ stkptr ]->evHandler( o ) ) 
-         --stkptr;
+      obEvent ev;
+      ev.clean();
+      ev.setKeyDn( k );
+      stackEv( ev );
    }
 }
 
@@ -897,11 +999,10 @@ void Console::postKeyUp( byte pos, byte oct )
    else
    #endif
    {
-      obEvent o;
-      o.setKeyUp( k );
-      signed char stkptr = modeSP;
-      while ( stkptr >= 0 && ! _modeStk[ stkptr ]->evHandler( o ) ) 
-         --stkptr;
+      obEvent ev;
+      ev.clean();
+      ev.setKeyUp( k );
+      stackEv( ev );
    }
 }
 
@@ -940,6 +1041,25 @@ void Console::print( int i )
       Serial.print( buf );
    }
 #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::ongoing
+ *
+ *  Desc:  Continue the console's ongoing tasks for one cycle.
+ *
+ *  Memb:  idle             - ptr to idling routine
+ *
+ *  Note:  Call this method when idling for a condition to be satisfied,
+ *         inorder to keep the system's console and audio I/O running.
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::ongoing()                     
+{
+   input();
+   if ( idle ) idle();
 }
 
 void Console::pushMode( Mode *x )
@@ -996,10 +1116,34 @@ void Console::runMode( Mode *x )
    }
 }
 
+void Console::runModeWhile( Mode *x, boolean *condition )
+{
+   pushMode( x );
+   while ( *condition )
+   {
+      input();
+      if ( idle ) idle();
+   }
+   popMode();
+}
+
 void Console::setIdle( void (*x)() )
 {
    idle = x;
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::setMode
+ *
+ *  Desc:  Set the current (top) mode.
+ *
+ *  Args:  ptrMode          - ptr to Mode to set as the current mode
+ *
+ *  Memb:  _modeStk[]       - obj ptrs of nested console modes
+ *         modeSP           - stack pointer for _modeStk[]
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::setMode( Mode *x )
 {
@@ -1039,6 +1183,24 @@ void Console::space( byte repeatCount )
       if ( output )
          Serial.print(' ');
 #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::stackEv
+ *
+ *  Desc:  Post an event iteratively to each mode in the stack until the event 
+ *         is handled, or the bottom of the mode stack is reached.
+ *
+ *  Args:  event            - event to be posted
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Console::stackEv( obEvent ev ) 
+{
+   signed char stkptr = modeSP;
+   while ( stkptr >= 0 && ! _modeStk[ stkptr ]->evHandler( ev ) ) 
+      --stkptr;
 }
 
 

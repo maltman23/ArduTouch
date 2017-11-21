@@ -14,9 +14,8 @@
 //  you own custom algorithms. To make use of them they should all have their 
 //  state updated in dynamics(). We will see how to do this in this example.
 //
-//  The dynamics() method, used to modify the output(), is where "all the action 
-//  takes place" in forming the sound of your synth -- the output is modified 
-//  by the dynamics.
+//  The dynamics() method, together with the output() method, is where "all 
+//  the action takes place" in forming the sound of your synth.
 //
 //  In this example, as an illustration of how to use the dynamics() method we 
 //  take the EqualTempSynth of example _06_ and add vibrato to it.
@@ -55,7 +54,7 @@
 about_program( Dynamics, 1.00 )              // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class EqualTempSynth : public MonoSynth      // synth from example _06_
+class EqualTempSynth : public Synth          // synth from example _06_
 {
    public:
 
@@ -92,14 +91,14 @@ class VibratoSynth : public EqualTempSynth
    // In this example we will take the vibrato's output (public Vibrato::val),
    // which oscillates around a median value of 1.0, and use it to modify the 
    // frequency of our oscillator.  The Vibrato class has a dynamics() method, 
-   // which contains code that takes care of modifying the output value.
+   // which contains code that takes care of modifying its output (::value).
 
    // The following dynamics() method modifies the osillator frequency 150 times per second.
 
    void dynamics()                           // perform a dynamic update
    {
       vib.dynamics();                        // update vibrato output value
-      osc.modFreq( vib.val );                // apply vibrato to ideal freq
+      osc.modFreq( vib.value );              // apply vibrato to ideal freq
    }
 
    // Notice that we have applied the vibrato's output to the oscillator 
@@ -166,7 +165,7 @@ void loop()
 
 void EqualTempSynth::setup() 
 {                                         
-   osc.setTable( wave_descriptor(Rood) );    // use Rood wavetable from library
+   osc.setTable( wavetable(Rood) );          // use Rood wavetable from library
    osc.setFreq( 440.0 );
 }
 
@@ -175,8 +174,12 @@ boolean EqualTempSynth::evHandler( obEvent e )
    switch ( e.type() )
    {
       case KEY_DOWN:                         
-         osc.setFreq( masterTuning->pitch( e.getKey() ) ); 
+      {
+         key myKey = e.getKey();            // get key from event
+         myKey.setOctave( 4 );              // set the key's octave to 4
+         osc.setFreq( masterTuning->pitch( myKey ) ); 
          return true;                     
+      }
       default:       
          return false;                       
    }

@@ -29,6 +29,21 @@
 #include "Model.h"
 
 /*
+                    IMPORTANT NOTE REGARDING STRING CONSTANTS
+
+   The Arduino environment provides a macro, PSTR(), which places a string
+   constant in ROM. The ArduTouch Library extends this feature by providing 2 
+   additional macros, CONSTR() and ALLOC_CONSTR(), which are used for placing
+   string constants intended only for display to the Ardutouch Console in ROM. 
+   
+   If a string constant is meant to be executed as an ArduTouch macro (i.e.,
+   as an argument to console.exe()), or in any capacity other than being
+   displayed to the Console, then YOU MUST use PSTR() -- because CONSTR() and 
+   ALLOC_CONSTR() replace their string arguments with the NULL string unless
+   the Runtime Model is __FULLHOST__. 
+
+                    -----------------------------------------
+
    The following 2 macros -- CONSTR(x) and ALLOC_CONSTR(p, x) -- allow for the 
    semi-transparent placement of string contants in ROM (circumventing Arduino's 
    run-time behavior of copying constants into RAM).
@@ -105,6 +120,12 @@
 #include "Arduino.h"
 #include "Mode.h"
 
+/******************************************************************************
+ *
+ *                                  Console 
+ *
+ ******************************************************************************/
+
 class Console
 {
    static const int MAX_MODE = 8;      // max nesting level of console modes
@@ -117,10 +138,11 @@ class Console
    boolean  output;                    // if true, console output is enabled
    boolean  oneShot;                   // if true, interpret next key-down event 
                                        // as a menu selection
-   boolean  menuKeyDn;                 // if true, last key down was a menu
-                                       // selection
+   boolean  menuKeyDn;                 // if true, last key down was a menu selection
 
    boolean getStr( const char* );      // prompt for and get a String
+
+   void    stackEv( obEvent ev );      // post an event to each mode in stack until handled
 
    public:
 
@@ -138,7 +160,8 @@ class Console
    void    disable();                  // disable console I/O
    void    done();
    void    enable();                   // enable console I/O
-   void    exe( const char * );        // execute a macro str located in ROM
+   void    exe( const char* );         // execute a macro str 
+   void    exeIn( const char*, Mode* );// execute a macro str within a specified mode
    boolean getByte( const char*, byte* );       // prompt for and get a byte (0:255)
    char    getDigit( const char*, byte );       // get '0' thru '9', (0 = aborted)
    boolean getDouble( const char*, double* );   // prompt for and get a double
@@ -152,12 +175,13 @@ class Console
    void    infoStr( const char*, const char* ); // print info on a named str
    void    infoULong( const char*, unsigned long ); // print info on named unsigned long
    void    init( Mode *mode, void (*)() );
+   boolean inMode( Mode* );            // returns true if arg is current mode
    void    input();
    void    newline();                  // go to beginning of next line
    void    newlntab();                 // go to beginning of next line and rtab
    void    newprompt();                // display a new prompt for current mode
    void    oneShotMenu();              // interpret next key as a menu selection
-   boolean ongoing( Mode * );
+   void    ongoing();                  // continue ongoing tasks for one cycle
    void    popMode();                  // pop the top mode on the mode stack
    void    postBut( byte, butAction ); // post a button event  
    void    postKeyDn( byte, byte );    // post a key-down event  
@@ -170,9 +194,10 @@ class Console
    void    romprint( const char * );   // print a string located in ROM
    byte    romstrlen( const char * );  // returns length of str in ROM
    void    rtab();                     // move to right of seam
-   void    runMode( Mode * );
+   void    runMode( Mode * );          // run a mode until it pops itself
+   void    runModeWhile( Mode*, boolean* ); // run a mode until a condition is met
    void    setIdle( void (*)() );      // specify routine to run when idling
-   void    setMode( Mode * );
+   void    setMode( Mode * );          // set the current (top) mode
    void    space();                    // print a space
    void    space( byte );              // print multiple spaces
 

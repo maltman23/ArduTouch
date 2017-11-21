@@ -27,16 +27,6 @@ class Tuning
 {
    public:
 
-   byte    minOctave;                     // minimum octave # (0-15)
-   byte    maxOctave;                     // maximum octave # (0-15)
-   byte    defOctave;                     // default octave # (0-15)
-
-   Tuning()
-   {
-      defOctave = 4;
-      maxOctave = 7;
-   }
-
    virtual double pitch( key ) = 0;       // return frequency for a given key
 
 } ;

@@ -33,7 +33,7 @@
 about_program( Multi Octave Keybrd, 1.00 )   // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class MultiOctaveSynth : public MonoSynth
+class MultiOctaveSynth : public Synth
 {
    public:
 
@@ -50,62 +50,47 @@ class MultiOctaveSynth : public MonoSynth
    // allows you to reset an object, mute an object (turn it off), unmute an object 
    // (turn it on), and add dynamics.
    //
-   // For example, the class hierarchy for MonoSynth is:
+   // For example, the class hierarchy for Synth is:
    //
-   //       Mode <- Control <- Phonic <- Synth <- MonoSynth
+   //       Mode <- Control <- Phonic <- Instrument <- StereoInstrument <- Synth 
    //
    // and the class hierarchy for Vibrato is:
    //
-   //       Mode <- Control <- TControl <- LFO <- FadeLFO <- Vibrato
+   //       Mode <- Control <- TControl <- Factor <- LFO <- FadeLFO <- Vibrato
    //
    // We are not concerned here with the intermediate classes in the above hierachies
    // only with Mode and Control.
    //
    // The evHandler() method we have been working with is a virtual method  
    // of Mode. By design ArduTouch classes pass unhandled events through to
-   // the class they inherited from, so that Mode::evHandler() ultimately
-   // gets called for any unhandled event. By "unhandled event, we mean any 
-   // event that is not explicitly processed in your synthesizer code 
-   // (but may be handled by default by the ArduTouch library).
-   //
-   // The Mode class contains an instance variable named: flags. 
-   // This is a byte whose bits are used by the system for interpreting the 
-   // current user interface (such as vibrato, as we've seen in a previous 
-   // example). One of these bits is named PLAYTHRU. By default this bit is 
-   // set (high). If the PLAYTHRU bit is set, the system intercepts BUT0_TAP 
-   // and BUT1_TAP events, converts them into special octave-shifting "meta" 
-   // events, and sends these meta events to evHandler(). 
-   // Mode::evHandler() contains logic for automatically processing meta events. 
-   // In the case of octave-shifts the button presses are handled by calling the 
-   // system's bumpOctave() routine.
-   //
-   // The above info is provided for you know so that you can see a bit of what's
-   // happening under the hood. This info will be repeated again when we come to 
-   // examples that explicitly use it (and it will make more sense when we do).
+   // the class they inherited from. By "unhandled event", we mean any event that 
+   // is not explicitly processed in your synthesizer code (but may be handled by 
+   // classes in the ArduTouch library that your object inberited from).
    
    void setup() 
    {                                         
-      osc.setTable( wave_descriptor(dVox) ); // use dVox wavetable from library
+      osc.setTable( wavetable(dVox) );       // use dVox wavetable from library
       osc.setFreq( 440.0 );                  // osc starts at A440
    }
 
    // In the event handler below we pass unhandled events to the class we
-   // inherited from. This insures that meta events (which are generated 
-   // by tapping on the left and right buttons) are ultimately handled 
-   // in a standard way by Mode::evHandler(). 
+   // inherited from. In this case, Instrument::evHandler() will ultimately
+   // handle button taps by bumping the keyboard octave up/down.
 
    boolean evHandler( obEvent e )            // event handler
    {
       switch ( e.type() )
       {
          case KEY_DOWN:                      // a key has been pressed
-
-            osc.setFreq( masterTuning->pitch( e.getKey() ) ); 
+         {                                   
+            key myKey = e.getKey();
+            myKey.setOctave( keybrd.getOctave() );
+            osc.setFreq( masterTuning->pitch( myKey ) ); 
             return true;                     
-
+         }
          default:       
 
-            return MonoSynth::evHandler(e);  // pass other events through
+            return Synth::evHandler(e);      // pass other events through
       }
    }
 
@@ -115,16 +100,6 @@ class MultiOctaveSynth : public MonoSynth
    }
 
 } myMultiOctaveSynth;
-
-//  ---------------------------------------------------------------------------
-//
-//                       A Note on the PLAYTHRU flag
-//                  
-//  Setting the PLAYTHRU flag has wider implications than just translating
-//  button-tap events into octave-shifting meta events, and will be discussed
-//  in a later example.
-//
-//  ---------------------------------------------------------------------------      
 
 
 void setup()

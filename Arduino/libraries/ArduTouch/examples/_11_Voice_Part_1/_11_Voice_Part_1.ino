@@ -34,16 +34,16 @@
 about_program( Voice Part 1, 1.00 )          // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class VoiceVibratoSynth : public MonoSynth
+class VoiceVibratoSynth : public Synth
 {
-   WaveOsc osc;                               // use a wave oscillator 
-   Voice   voc;                               // and a voice to run it in
+   WaveOsc    osc;                           // use a wave oscillator 
+   StockVoice voc;                           // and a stock voice to run it in
 
    public:
 
    void setup() 
    { 
-      osc.setTable( wave_descriptor( Sine ) );  // use Sine wave from library
+      osc.setTable( wavetable( Sine ) );     // use Sine wave from library
 
       // The voice object must be assigned an oscillator before it can be used
 
@@ -78,15 +78,21 @@ class VoiceVibratoSynth : public MonoSynth
       switch ( e.type() )                    // branch on event type
       {
          case KEY_DOWN:                      // a key has been pressed
+         {
+            key myKey = e.getKey(); 
+            myKey.setOctave( keybrd.getOctave() );
 
-            voc.noteOn( e.getKey() );        // notify voice of key press
+            voc.noteOn( myKey );             // notify voice of key press
             return true;                     // KEY_DOWN event was handled
-
+         }
          case KEY_UP:                        // key has been released
+         {
+            key myKey = e.getKey(); 
+            myKey.setOctave( keybrd.getOctave() );
 
-            voc.noteOff();                   // notify voice of key release
+            voc.noteOff( myKey );            // notify voice of key release
             return true;                     // KEY_UP event was handled
-
+         }
          case POT0:                          // top pot was moved
          case POT1:                          // bottom pot was moved
 
@@ -104,7 +110,7 @@ class VoiceVibratoSynth : public MonoSynth
 
          default:                            // pass unhandled events on (so 
                                              // that they are handled in a
-            return MonoSynth::evHandler(e);  // standard way)
+            return Synth::evHandler(e);      // standard way)
       }
    }
 

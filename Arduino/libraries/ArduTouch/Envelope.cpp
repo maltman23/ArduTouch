@@ -21,10 +21,25 @@
 #include "Console_.h"
 #include "Envelope.h"
 
-Envelope::Envelope()
-{
-   setScrollable(4);
-}
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +attack           - attack time
+ *        +flags.DONE       - control is ready to be triggered
+ *        +decay            - decay time
+ *        +phase            - current phase of envelope
+ *        +sustain          - sustain level
+ *        +relTime          - release time
+ *        +value            - current output value 
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
 
 boolean Envelope::charEv( char key )
 {
@@ -35,16 +50,16 @@ boolean Envelope::charEv( char key )
          flags &= ~DONE;
          phase = attPhase;
          if ( attack )
-            level = 0.0;
+            value = 0.0;
          else
          {
             --phase;
             if ( decay )
-               level = 1.0;
+               value = 1.0;
             else
             {
                --phase;
-               level = susLevel;
+               value = susLevel;
             }
          }
          break;
@@ -84,7 +99,7 @@ boolean Envelope::charEv( char key )
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
-         TControl::charEv( chrInfo );
+         super::charEv( chrInfo );
          console.infoByte( CONSTR("attack"), attack );
          console.infoByte( CONSTR("decay"), decay );
          console.infoByte( CONSTR("sustain"), sustain );
@@ -95,27 +110,45 @@ boolean Envelope::charEv( char key )
       case '.':                        // mute
       case '<':                        // unMute
 
-         level = 1.0;
+         value = 1.0;
          finish();
-         Control::charEv( key );
+         super::charEv( key );
          break;
 
       case '!':                        // reset
 
+         super::charEv( key );
          finish();
          setRelease(0);
          setSustain(255);
          setDecay(0);
          setAttack(0);
-
-         // fall thru to Control handler
+         setMute( false );             // enable envelope by default
+         break;
 
       default:
 
-         return TControl::charEv( key );
+         return super::charEv( key );
    }
    return true;
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb:  attStep          - change in attack per dynamic update
+ *         decay            - decay time
+ *         decStep          - change in decay per dynamic update
+ *        +phase            - current phase of envelope
+ *         relStep          - change in release per dynamic update
+ *         relTime          - release time
+ *         susLevel         - sustain level (0.0-1.0)
+ *        +value            - current output value 
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Envelope::dynamics()
 {
@@ -127,27 +160,27 @@ void Envelope::dynamics()
 
       case attPhase:
 
-         level += attStep;
-         if ( level > 1.0 )
+         value += attStep;
+         if ( value > 1.0 )
          {
             --phase;
             if ( decay )
-               level = 1.0 - decStep;
+               value = 1.0 - decStep;
             else
             {
                --phase;
-               level = susLevel;
+               value = susLevel;
             }
          }
          break;
 
       case decPhase:
 
-         level -= decStep;
-         if ( level < susLevel )
+         value -= decStep;
+         if ( value < susLevel )
          {
             --phase;
-            level = susLevel;
+            value = susLevel;
          }
          break;
 
@@ -155,15 +188,29 @@ void Envelope::dynamics()
 
          if ( relTime )
          {
-            level -= relStep;
-            if ( level < 0.0 )
-               level = 0.0;
+            value -= relStep;
+            if ( value < 0.0 )
+               value = 0.0;
             else
                break;
          }
          finish();
    }
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::evHandler
+ *
+ *  Desc:  Handle an onboard event.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Memb:  -- none -- 
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/      
 
 boolean Envelope::evHandler( obEvent ev )
 {
@@ -194,9 +241,23 @@ boolean Envelope::evHandler( obEvent ev )
 
       default:
 
-         return TControl::evHandler(ev);
+         return super::evHandler(ev);
    }
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::exptime
+ *
+ *  Desc:  Given an 8-bit number indicating a relative duration of time,
+ *         translate this into an absolution duration, as measured in  
+ *         dynamic update periods.
+ *
+ *  Args:  time             - relative duration of time (0=none, 255=longest)
+ *
+ *  Rets:  num_of_updates   - absolute duration as measured in dynamic updates
+ *
+ *----------------------------------------------------------------------------*/
 
 word Envelope::exptime( byte t )
 {
@@ -214,6 +275,17 @@ word Envelope::exptime( byte t )
    return nbufs;
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::finish
+ *
+ *  Desc:  Mark an envelope cycle as having been completed.
+ *
+ *  Memb: +flags.DONE       - control is ready to be triggered
+ *        +phase            - current phase of envelope
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Envelope::finish()
 {
    phase = finPhase;
@@ -221,6 +293,45 @@ void Envelope::finish()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Envelope::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  a  |   d   |  s  |  r  |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char Envelope::menu( key k )
 {
    switch ( k.position() )
@@ -229,9 +340,10 @@ char Envelope::menu( key k )
       case  2: return 'd';
       case  4: return 's';
       case  5: return 'r';
-      default: return TControl::menu( k );
+      default: return super::menu( k );
    }
 }
+
 #endif
 
 #ifdef CONSOLE_OUTPUT

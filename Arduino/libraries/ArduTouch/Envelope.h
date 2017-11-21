@@ -24,13 +24,17 @@
 #include "Control.h"
 #include "Scroller.h"
 
-class Envelope : public TControl, public Scroller
+class Envelope : public Factor, public Scroller
 {
+   typedef Factor super;         // superclass is Factor
+
    public:
 
-   double  level;                // current output level
-
-   Envelope();
+   Envelope()
+   {
+      setScrollable(4);
+      shortcut = 'e';
+   }
 
    boolean charEv( char );       // process a character event
    void    dynamics();           // update object dynamics
@@ -46,7 +50,7 @@ class Envelope : public TControl, public Scroller
    void    setRelease( byte );   // set release time
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // map key event to character 
+   char    menu( key );          // given a key, return a character 
    #endif
 
    #ifdef CONSOLE_OUTPUT

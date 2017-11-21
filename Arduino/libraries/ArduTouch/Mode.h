@@ -33,21 +33,24 @@ class Mode
 
    enum     { ECHO      = 0b00000001,  // echo character input to console
               MENU      = 0b00000010,  // charEv(menu()) pre-empts KEY_DOWN
-              PLAYTHRU  = 0b00000100,  // enable keyboard "playthru" interface
-              _FUTURE1  = 0b00001000,  // reserved for future expansion
-              _RESERVE0 = 0b00010000,  // reserved for use by derived classes
-              _RESERVE1 = 0b00100000,  // reserved for use by derived classes
-              _RESERVE2 = 0b01000000,  // reserved for use by derived classes
-              _RESERVE3 = 0b10000000,  // reserved for use by derived classes
+              _FUTURE1  = 0b00000100,  // reserved for future expansion
+              _RESERVE0 = 0b00001000,  // reserved for use by derived classes
+              _RESERVE1 = 0b00010000,  // reserved for use by derived classes
+              _RESERVE2 = 0b00100000,  // reserved for use by derived classes
+              _RESERVE3 = 0b01000000,  // reserved for use by derived classes
+              _RESERVE4 = 0b10000000,  // reserved for use by derived classes
             };
 
-   Mode();
+   Mode()
+   {
+      flags = ECHO;                    
+   }
 
    virtual boolean charEv( char );     // handle a character event
    virtual boolean evHandler(obEvent); // handle an onboard event
 
    #ifdef KEYBRD_MENUS
-   virtual char    menu( key );        // map key event to character
+   virtual char    menu( key );        // given a key, return a character
    #endif
 
    #ifdef CONSOLE_OUTPUT
@@ -55,6 +58,7 @@ class Mode
    #endif
 
    void    brief();                    // display brief object info 
+   void    execute( const char *);     // execute a macro 
    void    inform();                   // display object info, then new prompt 
 
 } ;

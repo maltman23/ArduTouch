@@ -22,111 +22,151 @@
 #define VOICE_H_INCLUDED
 
 #include "types.h"
-#include "Phonic.h"
+#include "Instrument.h"
 #include "Osc.h"
-#include "Effect.h"
+#include "Control.h"
 #include "Envelope.h"
-#include "LFO.h"
 #include "Scroller.h"
+#include "StdEffects.h"
 
+/******************************************************************************
+ *
+ *                                AmpMods
+ *
+ ******************************************************************************/
 
-class Tremolo : public TermLFO
+class AmpMods : public Factors      // chain of amplitude modifiers
 {
-   public:
-
-   boolean charEv( char );       // process a character event
-
    #ifdef CONSOLE_OUTPUT
-   const char*  prompt();        // return object's prompt string
+   const char*  prompt()            // return object's prompt string
+   {
+      return CONSTR("Amp");
+   }
    #endif
+} ;
 
+/******************************************************************************
+ *
+ *                               PitchMods
+ *
+ ******************************************************************************/
+
+class PitchMods : public Factors    // chain of pitch modifiers
+{
+   #ifdef CONSOLE_OUTPUT
+   const char*  prompt()            // return object's prompt string
+   {
+      return CONSTR("Pitch");
+   }
+   #endif
 } ;
 
 
-class Vibrato : public FadeLFO
+/******************************************************************************
+ *
+ *                                Voice 
+ *                                                                            
+ ******************************************************************************/
+
+class Voice : public Instrument, public Scroller
 {
+   typedef Instrument super;        // superclass is Instrument
+
    public:
 
-   void   evaluate();            // set output val (as a function of LFO pos)
-   void   iniPos();              // set initial osc position
+   enum {  // use these bits in the flags byte: 
 
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt();        // return object's prompt string
-   #endif
+           FREQ   = _RESERVE2,      // a freq change is pending
+           TRIG   = _RESERVE3       // a trigger is pending
 
-} ;
+        } ;
 
-class Voice : public MonoPhonic, public Scroller
-{
-   public:
+   byte   num;                      // voice # 
 
-   Osc    *osc;                  // ptr to raw oscillator
+   Osc    *osc;                     // ptr to raw oscillator
 
-   EffectsLoop effects;          // effects loop 
+   AmpMods     ampMods;             // amplitude modifiers
+   PitchMods   pitchMods;           // pitch modifiers
+   Effects     effects;             // effects chain 
 
-   Envelope envAmp;              // amplitude envelope
+   Envelope    envAmp;              // built-in amplitude envelope
 
-   Tremolo tremolo;              // built-in tremolo effect
-   Vibrato vibrato;              // built-in vibrato effect
+   Voice()
+   {
+      setScrollable(3);             // scrollable pots: vol, detune, glide
+      num = 0;
+      addAmpMod( &this->envAmp );
+   }
 
-   Voice();
-
-   void    addEffect( Effect* ); // add an effect to the effects loop
-   boolean charEv( char );       // process a character event
-   void    clearEffects();       // remove all effects from effects loop
-   void    dynamics();           // update dynamics
-   boolean evHandler( obEvent ); // handle an onboard event
-   void    output( char * );     // write output to an audio buffer
-   void    release();            // release components (on KeyUp)
-   void    setFreq( double );    // set the ideal playback frequency
-   void    setGlide( byte );     // set portamento speed
-   void    setGlobVol( byte );   // set the global volume level
-   void    setVol( byte );       // set the volume level
-   void    trigger();            // trigger components
-   void    useOsc( Osc* );       // specify oscillator to use
-
-   virtual void noteOn( key );   // initiate the playing of a note
-   virtual void noteOff();       // release playing the current note
+   void    addAmpMod( Factor* );    // add an amplitude modifier  
+   void    addEffect( Effect* );    // add an effect 
+   void    addPitchMod( Factor* );  // add a pitch modifier  
+   boolean charEv( char );          // process a character event
+   void    dynamics();              // update dynamics
+   boolean evHandler( obEvent );    // handle an onboard event
+   void    noteOn( key );           // turn a note on
+   void    noteOff( key );          // turn a note off
+   void    output( char * );        // write output to an audio buffer
+   void    release();               // release components (on KeyUp)
+   void    setFreq( double );       // set the ideal playback frequency
+   void    setGlide( byte );        // set portamento speed
+   void    setGlobVol( byte );      // set the global volume level
+   void    setVol( byte );          // set the volume level
+   void    trigger();               // trigger components
+   void    useOsc( Osc* );          // specify oscillator to use
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // map key event to character 
+   char    menu( key );             // given a key, return a character 
    #endif
 
    #ifdef CONSOLE_OUTPUT
-   const char *prompt();         // return object's prompt string
+   const char *prompt();            // return object's prompt string
    #endif
 
    protected:
 
-   byte    globVol;              // global volume level
-   Word    effVol;               // effective volume (msb: integral part,
-                                 //                   lsb: fractional part)
-   Int     instVol;              // instantaneous volume (msb: integral part,
-                                 //                       lsb: fractional part)
-   Int     segVol;               // if segue in process, ultimate instVol 
+   byte    globVol;                 // global volume level
+   Word    effVol;                  // effective volume (msb: integral part,
+                                    //                   lsb: fractional part)
+   Int     instVol;                 // instantaneous volume (msb: integral part,
+                                    //                       lsb: fractional part)
+   Int     segVol;                  // if segue in process, ultimate instVol 
+
+   double  pendFreq;                // set this frequency at next dynamic update
 
    private:
 
-   byte    glide;                // portamento speed (0 = off)
-   char    dirGlide;             // portamento direction +/-/0
-   double  instGlide;            // instantaneous portamento coefficient
-   double  multGlide;            // instGlide *= multGlide each dynamic update
+   byte    glide;                   // portamento speed (0 = off)
+   char    dirGlide;                // portamento direction +/-/0
+   double  instGlide;               // instantaneous portamento coefficient
+   double  multGlide;               // instGlide *= multGlide each dynamic update
 
-   void    calcEffVol();         // calculate the effective volume level
-   void    calcMultGlide();      // calculate dynamic glide multiplier
-   void    doneGlide();          // set real-time glide params to "done"
+   void    calcEffVol();            // calculate the effective volume level
+   void    calcMultGlide();         // calculate dynamic glide multiplier
+   void    doneGlide();             // set real-time glide params to "done"
 
 } ;
 
+/******************************************************************************
+ *
+ *                               StockVoice 
+ *                                                                            
+ ******************************************************************************/
 
-class XVoice : public Voice      // Voice with note transposition
+class StockVoice : public Voice     // a Voice with standard built-in controls
 {
+   typedef Voice super;             // superclass is Voice
+
    public:
 
-   char   xpose;                 // amount to transpose notes by
+   Vibrato vibrato;                 // built-in vibrato effect
 
-   boolean charEv( char code );  // handle a character event
-   void noteOn( key k );         // initiate the playing of a note 
+   StockVoice()
+   {
+      addPitchMod( &this->vibrato );
+   }
+
+   boolean charEv( char );          // process a character event
 
 } ;
 

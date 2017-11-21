@@ -28,28 +28,55 @@
  *                                                                            
  ******************************************************************************/
 
-Voice::Voice()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Voice::addAmpMod
+ *
+ *  Desc:  Add an amplitude modifier.
+ *
+ *  Args:  ampMod           - address of amplitude modifier to add
+ *
+ *  Memb:  ampMods          - applitude modifiers
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Voice::addAmpMod( Factor *ampMod )
 {
-   setScrollable(3);
+   ampMods.add( ampMod );
 }
 
 /*----------------------------------------------------------------------------*
  *
  *  Name:  Voice::addEffect
  *
- *  Desc:  Add an effect to the effects loop.
+ *  Desc:  Add an effect.
  *
  *  Args:  effect           - address of effect to add
  *
  *  Memb:  effects          - effects loop
  *
- *  Note:  The effect is appended to the end of the effects loop.
- *
  *----------------------------------------------------------------------------*/      
 
 void Voice::addEffect( Effect *e )
 {
-   effects.append( e );
+   effects.add( e );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Voice::addPitchMod
+ *
+ *  Desc:  Add a pitch modifier.
+ *
+ *  Args:  pitchMod         - address of pitch modifier to add
+ *
+ *  Memb:  pitchMods        - pitch modifiers
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Voice::addPitchMod( Factor *pitchMod )
+{
+   pitchMods.add( pitchMod );
 }
 
 /*----------------------------------------------------------------------------*
@@ -137,7 +164,11 @@ void Voice::calcMultGlide()
  *
  *  Args:  code             - character to process
  *
- *  Memb: +glide            - portamento speed 1:255 (0 = off)
+ *  Memb:  envAmp           - built-in amplitude envelope
+ *         ampMods          - amplitude modifiers
+ *         effects          - effects chain
+ *        +glide            - portamento speed 1:255 (0 = off)
+ *         pitchMods        - pitch modifiers
  *        +vol              - volume level 
  *
  *  Rets:  status           - true if character was handled
@@ -148,16 +179,16 @@ boolean Voice::charEv( char code )
 {
    switch ( code )
    {
-      #ifdef INTERN_CONSOLE
+      #ifdef INTERN_CONSOLE         // compile cases needed by macros
 
-      case 'e':                     // push effects loop
+      case 'A':                     // push amplitude modifiers
 
-         console.pushMode( &this->effects );
+         console.pushMode( &this->ampMods );
          break;
 
-      case 'E':                     // push envelope control
+      case 'E':                     // push effects chain
 
-         console.pushMode( &this->envAmp );
+         console.pushMode( &this->effects );
          break;
 
       case 'g':                     // input a portamento speed
@@ -171,69 +202,57 @@ boolean Voice::charEv( char code )
          console.pushMode( osc );
          break;
 
-      case 'T':                     // push tremolo control
+      case 'P':                     // push pitch modifiers
 
-         console.pushMode( &this->tremolo );
+         console.pushMode( &this->pitchMods );
          break;
 
-      case 'V':                     // push vibrato control
+      case 'e':                     // push amplitude envelope control
 
-         console.pushMode( &this->vibrato );
+         console.pushMode( &this->envAmp );
          break;
 
       #endif
 
       #ifdef CONSOLE_OUTPUT
+
       case chrInfo:                 // display object info to console
 
-         MonoPhonic::charEv( chrInfo );
+         super::charEv( chrInfo );
+         console.newlntab();
          osc->charEv( chrInLnfo );
          console.infoByte( CONSTR("glide"), glide );
          console.newlntab();
-         envAmp.brief();            
-         tremolo.brief();           
-         vibrato.brief();           
+         pitchMods.brief();            
          console.newlntab();
          effects.brief();
+         console.newlntab();
+         ampMods.brief();            
          break;
+
       #endif
 
       case '!':                     // perform a reset
 
-         osc->reset();              // reset oscillator
-
          setGlide( 0 );             // no portamento
-         envAmp.reset();            // reset envelope
-         envAmp.setMute( false );   // enable envelope by default
-         tremolo.reset();           // reset tremolo
-         vibrato.reset();           // reset vibrato 
-         effects.charEv( code );    // reset effects
 
-         // fall thru to MonoPhonic reset
+         osc->reset();              // reset oscillator
+         ampMods.reset();           // reset amplitude modifiers
+         pitchMods.reset();         // reset pitch modifiers
+         effects.reset();           // reset effects
+
+         flags &= ~(FREQ|TRIG);     // clear any pending freq change and trigger
+
+         // fall thru to super reset
             
       default:
 
-          if ( MonoPhonic::charEv( code ) )
+          if ( super::charEv( code ) )
             return true;
           else
             return osc->charEv( code );    // pass unhandled events to osc
    }
    return true;
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Voice::clearEffects
- *
- *  Desc:  Remove all effects from the effects loop.
- *
- *  Memb:  effects          - effects loop
- *
- *----------------------------------------------------------------------------*/      
-
-void Voice::clearEffects()
-{
-   effects.clear();
 }
 
 /*----------------------------------------------------------------------------*
@@ -266,14 +285,17 @@ void Voice::doneGlide()
  *         built-in controls, advance any ongoing portamento, and propagate 
  *         changes to the instantaneous volume and frequency of the voice.
  *
- *  Memb:  dirGlide         - ongoing portamento direction:
+ *  Memb: +dirGlide         - ongoing portamento direction:
  *                              > 0  pitch is increasing 
  *                              < 0  pitch is decreasing 
  *                              = 0  pitch is steady (portamento done)
  *         effVol           - effective volume 
+ *        +flags.FREQ       - if set, an ideal frequency change is pending
+ *        +flags.TRIG       - if set, a trigger is pending
+ *         glide            - portamento speed 1:255 (0 = off)
  *        +instGlide        - instantaneous portamento coefficient
- *        +instVol          - instantaneous volume
  *         multGlide        - dynamic multiplier for the instantaneous glide 
+ *         pendFreq         - pending ideal frequency  
  *        +segVol           - if segue in process, ultimate instVol
  *         vol              - volume level 
  *
@@ -281,24 +303,55 @@ void Voice::doneGlide()
 
 void Voice::dynamics()
 {
-   // update component dynamics
+   super::dynamics();
 
-   osc->dynamics();
-   envAmp.dynamics();
-   tremolo.dynamics();
-   vibrato.dynamics();
-   effects.dynamics();
+   if ( flags & FREQ )              // handle pending frequency change
+   {
+      if ( glide )                  // recompute any ongoing portamento
+      {
+         double instFreq = osc->getFreq() * instGlide;
+         if ( pendFreq != instFreq )
+         {
+            dirGlide  = ( pendFreq > instFreq ) ? 1 : -1;
+            instGlide = instFreq / pendFreq;
+            if ( instGlide )
+               calcMultGlide();
+            else
+               doneGlide();
+         }
+         else
+            doneGlide();
+      }
+      osc->setFreq( pendFreq );
+      flags &= ~FREQ;               
+   }
+
+   if ( flags & TRIG )              // handle pending trigger
+   {
+      osc->trigger();               
+      ampMods.trigger();
+      pitchMods.trigger();
+      effects.trigger();
+      flags &= ~TRIG;               
+   }
+   else                             // update components
+   {
+      osc->dynamics();
+      ampMods.dynamics();
+      pitchMods.dynamics();
+      effects.dynamics();
+   }
 
    /* manage instantaneous volume */
 
-   if ( amMute() )
+   if ( muted() )
    {
       segVol.val = 0;
    }
    else
    {
       segVol.val = effVol.val;
-      segVol.val *= envAmp.level * tremolo.val;
+      segVol.val *= ampMods.value();
    }
 
    /* manage instantaneous frequency */
@@ -317,8 +370,7 @@ void Voice::dynamics()
             doneGlide();
       }
    }
-
-   osc->modFreq( instGlide * vibrato.val );
+   osc->modFreq( instGlide * pitchMods.value() );
 }
 
 /*----------------------------------------------------------------------------*
@@ -344,49 +396,45 @@ boolean Voice::evHandler( obEvent ev )
          case 2:  osc->setDetune( val-128 ); break;      
          case 3:  setGlide( val );           break;
       }
-     return true;
    }
-
-   switch ( ev.type() )
+   else
    {
-      case KEY_DOWN:
+      switch ( ev.type() )
+      {
+         case BUT0_PRESS:
 
-         noteOn( ev.getKey() );
-         return true;
+            scrollUp();
+            break;
 
-      case KEY_UP:
+         case BUT1_PRESS:
 
-         noteOff();
-         return true;
+            scrollDn();
+            break;
 
-      case BUT0_PRESS:
+         default:
 
-         scrollUp();
-         return true;
-
-      case BUT1_PRESS:
-
-         scrollDn();
-         return true;
-
-      default:
-
-         return MonoPhonic::evHandler( ev );
+            return super::evHandler( ev );
+      }
    }
+
+   return true;
 }
 
 /*----------------------------------------------------------------------------*
  *
  *  Name:  Voice::noteOn
  *
- *  Desc:  Initiate the playing of a note
+ *  Desc:  Turn a note on.
  *
- *  Args:  note             - key of note to be played  
+ *  Args:  note             - note to turn on  
+ *
+ *  Memb:  xpose            - transpose notes by this many intervals
  *
  *----------------------------------------------------------------------------*/      
 
 void Voice::noteOn( key note )
 {
+   note.transpose( xpose ); 
    setFreq( masterTuning->pitch( note ) );
    trigger();
 }
@@ -395,11 +443,13 @@ void Voice::noteOn( key note )
  *
  *  Name:  Voice::noteOff
  *
- *  Desc:  Release playing the current note
+ *  Desc:  Turn a note off.
+ *
+ *  Args:  note             - note to turn off  
  *
  *----------------------------------------------------------------------------*/      
 
-void Voice::noteOff()
+void Voice::noteOff( key note )
 {
    release();
 }
@@ -480,18 +530,61 @@ void Voice::output( char *buf )
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Voice::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   | A |   | P |   |   |   |   | k |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  E  |       |  e  |     |   x   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char Voice::menu( key k )
 {
    switch ( k.position() )
    {
       case  0: return 'E';
-      case  1: return 'V';
-      case  3: return 'T';
+      case  1: return 'A';
+      case  3: return 'P';
       case  4: return 'e';
       default: 
       {
-         if ( char parent = MonoPhonic::menu( k ) )
-            return parent;
+         // pass key to the menu() of the superclass. 
+         // if this returns a non-null character, return it.
+         // otherwise, return whatever the oscillator's menu() returns.
+
+         if ( char superChar = super::menu(k) )  
+            return superChar;
          else
             return osc->menu(k);
       }
@@ -500,10 +593,13 @@ char Voice::menu( key k )
 #endif
 
 #ifdef CONSOLE_OUTPUT
-const char *Voice::prompt()                     
+
+const char *Voice::prompt()                   
 {
-   return CONSTR("voice");
+   static const char ids[] PROGMEM = {"v0\0v1\0v2\0v3\0v4\0v5\0v6\0v7\0"};
+   return &ids[num*3];
 }
+
 #endif
 
 /*----------------------------------------------------------------------------*
@@ -517,8 +613,9 @@ const char *Voice::prompt()
 void Voice::release()
 {
    osc->release();               
-   envAmp.release();
+   ampMods.release();
    effects.release();
+   pitchMods.release();
 }
 
 /*----------------------------------------------------------------------------*
@@ -529,38 +626,15 @@ void Voice::release()
  *
  *  Args:  freq             - new frequency
  *
- *  Memb: +dirGlide         - ongoing portamento direction:
- *                              > 0  pitch is increasing 
- *                              < 0  pitch is decreasing 
- *                              = 0  pitch is steady (portamento done)
- *         glide            - portamento speed 1:255 (0 = off)
- *        +instGlide        - instantaneous portamento coefficient
+ *  Memb: +flags.FREQ       - if set, a frequency change is pending
+ *        +pendFreq         - pending frequency  
  *
  *----------------------------------------------------------------------------*/      
 
 void Voice::setFreq( double newFreq )
 {
-   if ( glide )         // recompute any ongoing portamento
-   {
-      double instFreq = osc->getFreq() * instGlide;
-
-      if ( newFreq != instFreq )
-      {
-         dirGlide  = ( newFreq > instFreq ) ? 1 : -1;
-         instGlide = instFreq / newFreq;
-         if ( instGlide )
-            calcMultGlide();
-         else
-            doneGlide();
-      }
-      else
-      {
-         doneGlide();
-      }
-   }
-
-   osc->setFreq( newFreq );
-   osc->modFreq( instGlide * vibrato.val );
+   pendFreq = newFreq;
+   flags |= FREQ;
 }
 
 /*----------------------------------------------------------------------------*
@@ -610,13 +684,11 @@ void Voice::setGlobVol( byte x )
  *
  *  Args:  vol              - volume level
  *
- *  Memb: +vol              - volume level (0:255)
- *
  *----------------------------------------------------------------------------*/      
 
 void Voice::setVol( byte x )
 {
-   MonoPhonic::setVol(x);
+   super::setVol(x);
    calcEffVol();
 }
 
@@ -626,15 +698,16 @@ void Voice::setVol( byte x )
  *
  *  Desc:  Trigger voice components.
  *
+ *  Memb: +flags.TRIG       - if set, a trigger is pending
+ *
+ *  Note:  This routine sets a flag. The actual triggering is defered until
+ *         the next dynamic update.
+ *
  *----------------------------------------------------------------------------*/      
 
 void Voice::trigger()
 {
-   osc->trigger();               
-   envAmp.trigger();
-   tremolo.trigger();
-   vibrato.trigger();
-   effects.trigger();
+   flags |= TRIG;
 }
 
 /*----------------------------------------------------------------------------*
@@ -656,173 +729,43 @@ void Voice::useOsc( Osc *o )
 
 /******************************************************************************
  *
- *                                  XVoice 
- *
+ *                               StockVoice 
+ *                                                                            
  ******************************************************************************/
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  XVoice::charEv
+ *  Name:  StockVoice::charEv
  *
  *  Desc:  Process a character event.
  *
  *  Args:  code             - character to process
  *
- *  Memb: +xpose            - # of intervals to transpose notes by
+ *  Memb:  vibrato          - built-in vibrato effect
  *
  *  Rets:  status           - true if character was handled
  *
  *----------------------------------------------------------------------------*/      
 
-boolean XVoice::charEv( char code )       // handle a character event
-{
-   switch( code )
-   {
-      #ifdef INTERN_CONSOLE               // compile cases needed by macros
-
-      case 'x':                           // set transposition amount
-
-         console.getSByte( CONSTR("xpose"), &this->xpose );
-         return true;
-
-      #endif
-
-      #ifdef CONSOLE_OUTPUT               // compile cases that display to console 
-
-      case chrInfo:                       // display voice info to console
-
-         Voice::charEv( chrInfo );
-         console.newlntab();
-         console.infoInt( CONSTR("xpose"), xpose );
-         return true;
-
-      #endif
-
-      default:
-
-         return Voice::charEv( code );
-   }
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  XVoice::noteOn
- *
- *  Desc:  Initiate the playing of a note
- *
- *  Args:  note             - key of note to be played  
- *
- *  Memb:  xpose            - # of intervals to transpose notes by
- *
- *----------------------------------------------------------------------------*/      
-
-void XVoice::noteOn( key k )              
-{
-   k.transpose( xpose ); 
-   Voice::noteOn( k ); 
-}
-
-
-/******************************************************************************
- *
- *                               Tremolo 
- *                                                                            
- ******************************************************************************/
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Tremolo::charEv
- *
- *  Desc:  Process a character event.
- *
- *  Args:  code             - character to process
- *
- *  Memb:  +val              - current output value
- *
- *  Rets:  status           - if true, character was handled
- *
- *----------------------------------------------------------------------------*/
-
-boolean Tremolo::charEv( char code )
+boolean StockVoice::charEv( char code )    
 {
    switch ( code )
    {
-      case '.':                        // mute
+      #ifdef INTERN_CONSOLE         // compile cases needed by macros
 
-         TermLFO::charEv('.');
-         val = 1.0;
+      case 'V':                     // push vibrato control
+
+         console.pushMode( &this->vibrato );
          break;
 
-      case '!':                        // reset
-
-        iniOsc( .4, 2.5 );  
-        // fall thru
+      #endif
 
       default:
 
-         return TermLFO::charEv( code );
+         super::charEv( code );
    }
    return true;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char* Tremolo::prompt()
-{
-   return CONSTR("tremolo");
-}
-#endif
 
 
-/******************************************************************************
- *
- *                               Vibrato 
- *                                                                            
- ******************************************************************************/
-
-#define RATIO_SEMITONE   1.059463   // frequency ratio between adjacent pitches
-#define INVERT_SEMITONE   .943874   // 1 / RATIO_SEMITONE
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Vibrato::evaluate
- *
- *  Desc:  Compute output value based on oscillator position.
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +fader            - current fader value
- *         pos              - current position within oscillation range
- *        +val              - current output value
- *
- *----------------------------------------------------------------------------*/
-
-void Vibrato::evaluate()
-{
-   double spos = fader * ((2.0 * pos) - depth);
-   if ( spos >= 0 )
-      val = 1.0 + (spos * (RATIO_SEMITONE-1.0) );
-   else
-      val = 1.0 + (spos * (1.0 - INVERT_SEMITONE));
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Vibrato::iniPos
- *
- *  Desc:  Set initial oscillator position.
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +pos              - cur position within oscillation range
- *
- *----------------------------------------------------------------------------*/
-       
-void Vibrato::iniPos()
-{
-   pos = depth * 0.5;
-}
-
-#ifdef CONSOLE_OUTPUT
-const char* Vibrato::prompt()
-{
-   return CONSTR("vibrato");
-}
-#endif

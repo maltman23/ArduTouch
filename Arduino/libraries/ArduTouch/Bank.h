@@ -54,6 +54,11 @@ class Bank : public Mode
 {
    public:
 
+   Bank() 
+   { 
+      flags |= MENU;                   // persistent keybrd menu
+   }
+   
    boolean choose();                   // wait for user to choose a member
                                        // (return false if no member chosen)
    byte    choice();                   // returns index of chosen member
@@ -69,7 +74,7 @@ class Bank : public Mode
    byte    select( byte );             // select nth member of bank
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );                // map key event to character 
+   char    menu( key );                // given a key, return a character 
    #endif
 
    protected:

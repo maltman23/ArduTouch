@@ -22,9 +22,6 @@
 #include "Console_.h"                        // declarations for console module
 #include "Phonic.h"
 
-boolean Phonic::mute_at_reset;               // object should be muted at reset
-
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  Phonic::charEv
@@ -52,21 +49,20 @@ boolean Phonic::charEv( char code )
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                 // display object info to console
 
-         Control::charEv( chrInfo );
+         super::charEv( chrInfo );
          console.infoByte( CONSTR("vol"), vol );
          break;
       #endif
 
       case '!':                     // reset
 
-         Control::charEv('!');      // perform generic reset 1st
+         super::charEv('!');        // perform generic reset 1st
          setVol( 255 );             // full volume
-         setMute( false );          // by definition Phonic not muted at reset   
          break;                     
 
       default:
 
-         return Control::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }
@@ -94,7 +90,7 @@ boolean Phonic::evHandler( obEvent ev )
 
       default:
 
-         return Control::evHandler( ev );
+         return super::evHandler( ev );
    }
 }
 

@@ -1,5 +1,42 @@
 Versions:
 
+   1.07  use wavetable_named() macro 
+         sync with lib 1.00 
+         [30262 / 973] 
+   1.06  remove explicit reset at end of ArpSynth::setup()
+         (library nixes QuadSynth::Voicing typedef)
+         sync with lib 0.99 
+         [30256 / 973] 
+   1.05  sync with lib 0.99a (::envAmp moved from StockVoice to Voice)
+         [30220 / 951] 
+         [30018 / 951] 0.98
+   1.04  typecast vox[0] as (StockVoice *) in charEv()
+         sync with lib 0.98
+         [30098 / 951] {281}
+         ---- in 0.98s : "Streaker" reset card due to low RAM {151}
+   1.03  ArpSynth sets top/def octaves via keybrd member
+         local replaced by keybrd mute status
+         sync with lib 0.96
+         [30828 / 946] {269}
+   1.02  ArpSynth::setup() sets ::flags.RSTMUTE 
+         sync with lib 0.94
+         [30760 / 914] 
+   1.01  break newOsc() out from setup()
+         local is always set to ! autoPilot
+         typedef ARP_BASE_CLASS as super
+         sync with lib 0.93
+         [30902 / 931] 
+   1.00  sync with lib 0.92
+         [30828 / 922] 
+   0.99  noteOff() takes key arg
+         syncs with lib 0.91
+         [30676 / 912]
+   0.98  no explicit reset in ArpSynth::setup()
+         syncs with lib 0.90 
+         [30730 / 908]
+   0.97  syncs with lib 0.89
+         in setup(), load presets before calling reset()
+         [30646 / 906]
    0.96  bugfix: ArpSynth::charEv(!) must call refreshLEDS()
          Streaker preset uses minor tonality
          [30756 / 908]

@@ -74,7 +74,7 @@ boolean Osc::charEv( char code )
 
       case chrInfo:                 // display object info to console
 
-         TControl::charEv( code );
+         super::charEv( code );
 
       case chrInLnfo:               // display object info inline to console
 
@@ -86,14 +86,14 @@ boolean Osc::charEv( char code )
 
       case '!':                     // perform a reset
 
-         TControl::charEv('!');
+         super::charEv('!');
          setDetune(0);
          extFactor = 1.0;
          break;
 
       default:
 
-         return TControl::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }

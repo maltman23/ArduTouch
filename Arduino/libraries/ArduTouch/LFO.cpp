@@ -94,7 +94,7 @@ boolean LFO::charEv( char key )
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
-         TControl::charEv( chrInfo );
+         super::charEv( chrInfo );
          console.infoDouble( CONSTR("freq"), freq );
          console.infoDouble( CONSTR("depth"), depth );
          break;
@@ -103,17 +103,18 @@ boolean LFO::charEv( char key )
       case '.':                        // mute
 
          iniVal();                     // set to initial position
-         TControl::charEv( key );
+         super::charEv( key );
          break;
 
       case '!':                        // reset
 
          iniOsc( DEF_DEPTH, DEF_LOW_FREQ );
-         // fall thru to Control handler
+
+         // fall thru to superclass handler
 
       default:
 
-         return TControl::charEv( key );
+         return super::charEv( key );
    }
    return true;
 }
@@ -133,7 +134,7 @@ boolean LFO::charEv( char key )
        
 void LFO::dynamics()
 {
-   if ( ! amMute() )
+   if ( ! muted() )
    {
       pos += step;                     // bump oscillator position
 
@@ -166,7 +167,7 @@ void LFO::dynamics()
        
 void LFO::evaluate()
 {
-   val = 1.0 - pos;
+   value = 1.0 - pos;
 }
 
 /*----------------------------------------------------------------------------*
@@ -207,7 +208,7 @@ boolean LFO::evHandler( obEvent ev )
       }
       default:
 
-         return TControl::evHandler(ev);
+         return super::evHandler(ev);
    }
 }
 
@@ -296,15 +297,55 @@ void LFO::iniVal()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  f  |   d   |     |     |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char LFO::menu( key k )
 {
    switch ( k.position() )
    {
       case  0: return 'f';                   // set oscillator frequency
       case  2: return 'd';                   // set oscillator depth
-      default: return Control::menu( k );
+      default: return super::menu( k );
    }
 }
+
 #endif
 
 /*----------------------------------------------------------------------------*
@@ -411,7 +452,7 @@ boolean FadeLFO::charEv( char code )
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
-         LFO::charEv( chrInfo );
+         super::charEv( chrInfo );
          console.infoByte( CONSTR("time"), time );
          console.space();
          console.print( ( flags & FADEOUT ) ? '-' : '+' );
@@ -423,7 +464,7 @@ boolean FadeLFO::charEv( char code )
       case '~':                        // set legato triggering
       case '\'':                       // set stacato triggering
 
-         LFO::charEv( code );
+         super::charEv( code );
          flags |= DONE;                // set for immediate re-triggering
          break;
 
@@ -443,7 +484,7 @@ boolean FadeLFO::charEv( char code )
 
          console.getByte( CONSTR("time"), &this->time );
 
-         flags != DONE;
+         flags |= DONE;
          if ( time > 0 )               // if fade enabled
          {
             fadeStep = 8.0 / (time * dynaRate);
@@ -461,11 +502,11 @@ boolean FadeLFO::charEv( char code )
          fadeStep = 0.0;               
          iniFader();
 
-         // fall thru to LFO handler
+         // fall thru to superclass handler
 
       default:
 
-         return LFO::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }
@@ -486,7 +527,7 @@ boolean FadeLFO::charEv( char code )
 
 void FadeLFO::dynamics()
 {
-   LFO::dynamics();
+   super::dynamics();
    fader += fadeStep;
    if (flags & FADEOUT)
    {
@@ -527,6 +568,45 @@ void FadeLFO::iniFader()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FadeLFO::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   | + |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  f  |   d   |  t  |  -  |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char FadeLFO::menu( key k )
 {
    switch ( k.position() )
@@ -534,9 +614,10 @@ char FadeLFO::menu( key k )
       case  4: return 't';
       case  5: return '-';
       case  6: return '+';
-      default: return LFO::menu( k );
+      default: return super::menu( k );
    }
 }
+
 #endif
 
 /******************************************************************************
@@ -607,7 +688,7 @@ boolean TermLFO::charEv( char code )
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
-         LFO::charEv( chrInfo );
+         super::charEv( chrInfo );
          console.infoByte( CONSTR("trig"), trav );
          console.space();
          console.print( ( flags & PEAK ) ? '+' : '-' );
@@ -619,10 +700,10 @@ boolean TermLFO::charEv( char code )
          flags &= ~(DONE|PEAK);        // "not done, trig from trough"
          trav  = 0;                    // "free-running"
          runDC = 0;                    // "not traversing"
-                                       // fall thru to LFO reset
+                                       // fall thru to super reset
       default:
 
-         return LFO::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }
@@ -641,12 +722,13 @@ boolean TermLFO::charEv( char code )
  *        +pos              - cur position within oscillation range
  *        +runDC            - downcounter (in half-cycles) to end of traversal
  *         step             - change in osc position per dynamic update
+ *         trav             - traverse this many half-cycles (0 = run forever)
  *
  *----------------------------------------------------------------------------*/
        
 void TermLFO::dynamics()
 {
-   if ( flags & (MUTE|DONE) )          // return if LFO is muted or done
+   if ( flags&MUTE || (trav && flags&DONE) )  // return if LFO is muted or done
    {
       return;
    }
@@ -707,6 +789,45 @@ void TermLFO::iniPos()
 }
 
 #ifdef KEYBRD_MENUS
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  TermLFO::menu
+ *
+ *  Desc:  Given a key, return a character (to be processed via charEv()). 
+ *
+ *  Args:  k                - key
+ *
+ *  Rets:  c                - character (0 means "no character")
+ *
+ *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
+ *         can be used to map the onboard keys to characters which the system 
+ *         will automatically feed to the charEv() method.
+ *
+ *         This method is only called by the system if the MENU flag in this
+ *         object is set (in the ::flags byte inherited from Mode), or if the
+ *         keyboard is in a "oneShot menu selection" state.
+ *
+ *         The key mapping (inclusive of super class) is as follows:
+ *
+ *           -------------------------------------------------
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   |
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   | + |   | ' |   | . |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |   |   |   |   |   |   |   |   |   |   |   |   | 
+ *           |    ___     ___    |    ___     ___     ___    | 
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           |  f  |   d   |  t  |  -  |   ~   |   <   |  !  |
+ *           |     |       |     |     |       |       |     |
+ *           |     |       |     |     |       |       |     |
+ *           -------------------------------------------------
+ *
+ *----------------------------------------------------------------------------*/      
+
 char TermLFO::menu( key k )
 {
    switch ( k.position() )
@@ -714,8 +835,9 @@ char TermLFO::menu( key k )
       case  4: return 't';
       case  5: return '-';
       case  6: return '+';
-      default: return LFO::menu( k );
+      default: return super::menu( k );
    }
 }
+
 #endif
 

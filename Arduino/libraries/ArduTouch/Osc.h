@@ -25,6 +25,8 @@
 
 class Osc : public TControl
 {
+   typedef TControl super;          // superclass is TControl
+
    private:
 
    char    detune;                  // local detuning (total range = 1/4 tone)

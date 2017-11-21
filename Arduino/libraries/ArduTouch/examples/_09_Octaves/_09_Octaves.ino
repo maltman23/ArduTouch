@@ -30,7 +30,7 @@
 about_program( Octaves, 1.00 )               // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class MultiOctaveSynth : public MonoSynth
+class MultiOctaveSynth : public Synth
 {
    public:
 
@@ -38,11 +38,11 @@ class MultiOctaveSynth : public MonoSynth
 
    void setup() 
    {                                         
-      osc.setTable( wave_descriptor(dVox) ); // use dVox wavetable from library
+      osc.setTable( wavetable(dVox) );       // use dVox wavetable from library
       osc.setFreq( 440.0 );
    }
 
-   // The system maintains a current octave setting for the keyboard. 
+   // The system maintains a current octave setting for the synth. 
    // There are three library routines which can be used to access or change 
    // the octave setting:
    //
@@ -61,9 +61,9 @@ class MultiOctaveSynth : public MonoSynth
    //      byte pos = k.position();
    //      byte oct = k.octave();
    //
-   // In past examples we haven't seen it, but the key struct returned by e.getKey() 
-   // has both key position and key octave.  In this example, we are changing the octave 
-   // info passed along with getKey().
+   // Later examples will show how you can derive your synth from a more
+   // advanced base class which will automatically handle changing the octave
+   // setting of the keyboard.
 
    boolean evHandler( obEvent e )            // event handler
    {
@@ -71,22 +71,24 @@ class MultiOctaveSynth : public MonoSynth
       {
          case BUT0_TAP:                      // left button was tapped
 
-            downOctave();                    // lower keyboard by 1 octave
+            keybrd.downOctave();             // lower keyboard by 1 octave
             return true;
 
          case BUT1_TAP:                      // right button was tapped
 
-            upOctave();                      // raise keyboard by 1 octave
+            keybrd.upOctave();               // raise keyboard by 1 octave
             return true;
 
          case KEY_DOWN:                      // a key has been pressed
-
-            osc.setFreq( masterTuning->pitch( e.getKey() ) ); 
+         {                                   // set it's octave from keybrd
+            key myKey = e.getKey();
+            myKey.setOctave( keybrd.getOctave() );
+            osc.setFreq( masterTuning->pitch( myKey ) ); 
             return true;                     
-
+         }
          default:       
 
-            return MonoSynth::evHandler(e);  // pass other events to base class
+            return Synth::evHandler(e);      // pass other events to base class
       }
    }
 

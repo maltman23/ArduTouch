@@ -29,7 +29,7 @@
 about_program( Button Events, 1.00 )         // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class VibratoSynth : public MonoSynth        // combined synths from example _07_
+class VibratoSynth : public Synth            // combined synths from example _07_
 {
    public:
 
@@ -73,12 +73,12 @@ class ButtonSynth : public VibratoSynth
       {
          case BUT0_PRESS:                    // left button was pressed
 
-            vibrato.setMute( false );        // turn vibrato on
+            vibrato.setMute( false );        // unmute the vibrato (turn it on)
             return true;                     // "event was handled"
 
          case BUT1_PRESS:                    // right button was pressed
 
-            vibrato.setMute( true );         // turn vibrato off
+            vibrato.setMute( true );         // mute the vibrato (turn it off)
             return true;                     // "event was handled"
 
          case BUT0_TPRESS:                   // left button was tap-pressed
@@ -86,21 +86,27 @@ class ButtonSynth : public VibratoSynth
 
             return true;                     // not used in this example
 
-         // the following 3 button events are used in certain circumstances
-         // by the system to generate "meta-events" (to be discussed in later 
-         // examples) and should be avoided for the time being
+         // the following 2 button events are conventionally used by the library
+         // to manipulate the octave setting of the keyboard (to be discussed in 
+         // later examples) and should be avoided for the time being
 
          case BUT0_TAP:                      // left button was tapped
          case BUT1_TAP:                      // right button was tapped
-         case BUT1_DTAP:                     // right button was double-tapped
 
-         // the following button event is conventionally used by library classes
+         // the following button event is conventionally used by the library 
          // to "pop the current mode" (to be discussed in a later example) and 
          // should be avoided for the time being
 
          case BUT0_DTAP:                     // left button was double-tapped
 
-         // pass all other events to the synth class we inherited
+         // the following button event is conventionally used by the library 
+         // as a signal to interpret the next key-down event as a menu selection
+         // (to be discussed in a later example) and should be avoided for the 
+         // time being
+
+         case BUT1_DTAP:                     // right button was double-tapped
+
+         // pass the above 4 events on to our super class 
 
          default:                            
 
@@ -127,7 +133,7 @@ void loop()
 
 void VibratoSynth::setup() 
 {                                         
-   osc.setTable( wave_descriptor(Sine) );    // use Sine wavetable from library
+   osc.setTable( wavetable(Sine) );          // use Sine wavetable from library
    osc.setFreq( 440.0 );
    vibrato.reset();                          // initialize vibrato
 }
@@ -135,7 +141,7 @@ void VibratoSynth::setup()
 void VibratoSynth::dynamics()                // perform a dynamic update
 {
    vibrato.dynamics();                       // update the vibrato control
-   osc.modFreq( vibrato.val );               // apply vibrato to ideal freq
+   osc.modFreq( vibrato.value );             // apply vibrato to ideal freq
 }
 
 boolean VibratoSynth::evHandler( obEvent e )  
@@ -146,8 +152,12 @@ boolean VibratoSynth::evHandler( obEvent e )
       case POT1:                             // bottom pot was moved
          return vibrato.evHandler(e);        // pass pot events to vibrato
       case KEY_DOWN:                         
-         osc.setFreq( masterTuning->pitch( e.getKey() ) ); 
+      {
+         key myKey = e.getKey();            // get key from event
+         myKey.setOctave( 4 );              // set the key's octave to 4
+         osc.setFreq( masterTuning->pitch( myKey ) ); 
          return true;                     
+      }
       default:       
          return false;                       
    }

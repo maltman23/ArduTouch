@@ -1,7 +1,7 @@
 /*
     Synth.h  
 
-    Declaration of the Synth base class for all synthesizers.
+    Declaration of various Synth base classes.
 
     ---------------------------------------------------------------------------
  
@@ -22,8 +22,10 @@
 #define SYNTH_H_INCLUDED
 
 #include "Console_.h"
-#include "Phonic.h"
+#include "Instrument.h"
+#include "Voice.h"
 #include "Bank.h"
+#include "Pan.h"
 
 #define define_preset(x, y)                                                \
                                                                            \
@@ -49,51 +51,150 @@ class PresetBank : public MacroBank
 
 extern PresetBank presets;             // bank of synth presets
 
-class Synth : public Phonic
+/******************************************************************************
+ *
+ *                                Synth 
+ *                                                                            
+ ******************************************************************************/
+
+class Synth : public StereoInstrument  // basic synthesizer class
 {
+   typedef StereoInstrument super;     // superclass is StereoInstrument
+
+   boolean preset_loading;             // a preset is in the process of loading
+   boolean quiet_reset;                // preset has performed a quiet reset 
+
    public:
 
-   boolean charEv( char );             // process a character event
-   boolean inStereo();                 // true if synth produces stereo 
-                                       // output (else, output is mono)
-   #ifdef KEYBRD_MENUS
-   char    menu( key );                // map key event to character 
-   #endif
+   virtual void setup() {};            // executed at system startup
+   virtual void welcome() {};          // perform post-reset startup tasks
 
-   virtual void setup();               // executed during system setup
+   boolean charEv( char );             // process a character event
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // given a key, return a character 
+   #endif
 
    #ifdef CONSOLE_OUTPUT
    const char *prompt();               // return object's prompt string
    #endif
 
+} ;
+
+
+/******************************************************************************
+ *
+ *                                 VoxSynth 
+ *
+ ******************************************************************************/
+
+class VoxSynth : public Synth          // synthesizer with voices   
+{
+   typedef Synth super;                // superclass is Synth
+
    protected:
 
-   boolean    stereo;                  // true if synth is stereo-capable
+   static const byte MaxVox = 8;       // max allowable number of voices
+
+   byte  numVox;                       // number of voices
+   Voice *vox[ MaxVox ];               // array of voices
+
+   public:
+
+   VoxSynth()
+   {
+      numVox = 0;
+   }
+
+   boolean charEv( char );             // process a character event 
+   void dynamics();                    // perform a dynamic update
+   virtual Osc   *newOsc( byte nth );  // create oscillator for nth voice
+   virtual Voice *newVox( byte nth );  // create nth voice 
+   void noteOn( key );                 // turn a note on
+   void noteOff( key );                // turn a note off
+   void setAttack( byte attack );      // set envAmp attack for all voices
+   void setDecay( byte decay );        // set envAmp decay for all voices
+   void setRelease( byte release );    // set envAmp release for all voices
+   void setSustain( byte sustain );    // set envAmp sustain for all voices
+   void setVoicing( char* v );         // set transposition interval per voice
+   void setupVoices( byte numVox );    // sets up vox[] via newVox()/newOsc()
+   void setVol( byte );                // set volume level of synth
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // given a key, return a character 
+   #endif
+
+} ;                                     
+
+/******************************************************************************
+ *
+ *                                OneVoxSynth 
+ *
+ ******************************************************************************/
+
+class OneVoxSynth : public VoxSynth    // stock one voice (monophonic) synth
+{
+   typedef VoxSynth super;             // superclass is VoxSynth
+
+   public:
+
+   void setup();                       // executed at system startup
+   void output( char* );               // write mono output to an audio buffer
+
+   #ifdef KEYBRD_MENUS
+   char    menu( key );                // given a key, return a character 
+   #endif
 
 } ;
 
-class MonoSynth : public Synth
+/******************************************************************************
+ *
+ *                                TwoVoxSynth 
+ *
+ ******************************************************************************/
+
+class TwoVoxSynth : public VoxSynth    // stock two voice (stereo) synth
 {
+   typedef VoxSynth super;             // superclass is VoxSynth
+
    public:
 
-   virtual void output( char* ) 
-   {
-      // write output to one (mono) audio buffer
-   };     
+   void setup();                       // executed at system startup
+   void output( char*, char* );        // write stereo output to audio buffers
 
 } ;
 
-class StereoSynth : public Synth
+/******************************************************************************
+ *
+ *                              TwoVoxPanSynth 
+ *
+ ******************************************************************************/
+
+class TwoVoxPanSynth : public TwoVoxSynth // two voice stereo synth with panning
 {
+   typedef TwoVoxSynth super;             // superclass is VoxSynth
+
+   protected:
+
+   // panPos determines the static pan position for vox[0] and vox[1].
+   //
+   //    panPos == 0   means vox[0] is panned completely to the left 
+   //    panPos == 128 means vox[0] is centered in the stereo field
+   //    panPos == 255 means vox[0] is panned completely to the right
+   //
+   // The pan position for vox[1] is the complement of that for vox[0].
+
+   byte        panPos;                 // static pan position for voices  
+   PanControl *panControl;             // dynamic controller of panPos
+
    public:
 
-   StereoSynth() { stereo = true; }
+   void setup();                       // executed at system startup
 
-   virtual void output( char*, char* ) 
-   {
-      // write output to a left-right pair of audio buffers
-   };  
+   boolean charEv( char code );        // handle a character event
+   void dynamics();                    // perform a dynamic update
+   void output( char*, char* );        // write stereo output to audio buffers
 
-} ; 
-   
+} ;
+
 #endif   // ifndef SYNTH_H_INCLUDED

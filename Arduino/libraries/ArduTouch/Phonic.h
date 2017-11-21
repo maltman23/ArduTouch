@@ -1,7 +1,7 @@
 /*
     Phonic.h  
 
-    Declaration of the Phonic, MonoPhonic, and Stereophonic classes.
+    Declaration of the Phonic and Stereophonic classes.
 
     ---------------------------------------------------------------------------
  
@@ -23,34 +23,29 @@
 
 #include "Control.h"
 
-class Phonic : public Control
+class Phonic : public DynaControl
 {
+   typedef DynaControl super;       // superclass is DynaControl
+
    public:
 
-   /* The static state variable mute_at_reset is meant to be set true at
-      the beginning of loading a preset string, and set false at its end. 
-   */
-
-   static boolean mute_at_reset;    // object should be muted at reset
+   Phonic()
+   {
+      flags &= ~RSTMUTE;            // by default, a Phonic is not muted
+   }
 
    boolean charEv( char );          // process a character event
    boolean evHandler( obEvent );    // handle an onboard event
    virtual void setVol( byte );     // set the volume level (0-255)
 
+   virtual void output( char* ) 
+   {
+      // write mono output to an audio buffer
+   };     
+
    protected:
 
    byte    vol;                     // volume level (0-255)  
-
-} ;
-
-class MonoPhonic : public Phonic
-{
-   public:
-
-   virtual void output( char* ) 
-   {
-      // write output to one (mono) audio buffer
-   };     
 
 } ;
 
@@ -60,10 +55,9 @@ class StereoPhonic : public Phonic
 
    virtual void output( char*, char* ) 
    {
-      // write output to a left-right pair of audio buffers
+      // write stereo output to a left-right pair of audio buffers
    };  
 
 } ; 
-   
 
 #endif   // ifndef PHONIC_H_INCLUDED

@@ -27,7 +27,7 @@
 about_program( Master Tuning, 1.00 )         // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
-class EqualTempSynth : public MonoSynth
+class EqualTempSynth : public Synth
 {
    public:
 
@@ -35,7 +35,7 @@ class EqualTempSynth : public MonoSynth
 
    void setup() 
    {                                         
-      osc.setTable( wave_descriptor(Rood) ); // choose the Rood wavetable from library
+      osc.setTable( wavetable(Rood) );       // choose the Rood wavetable from library
       osc.setFreq( 440.0 );
    }
 
@@ -48,10 +48,22 @@ class EqualTempSynth : public MonoSynth
    {
       switch ( e.type() )
       {
-         case KEY_DOWN:                      // a key has been pressed
+         // on a key down event we fetch the key information, set the octave
+         // of the key to 4, pass the key to the master tuning object's
+         // pitch method and set the oscillator's frequency to this value.
+         //
+         // Note: later examples will demonstrate how to use the ArduTouch's
+         //       built-in multi-octave keyboard routines, so that you don't
+         //       need to set the octave.
 
-            osc.setFreq( masterTuning->pitch( e.getKey() ) ); 
+         case KEY_DOWN:                      // a key has been pressed
+         {
+            key myKey = e.getKey();          // get key from event
+            myKey.setOctave( 4 );            // set the key's octave to 4
+
+            osc.setFreq( masterTuning->pitch( myKey ) ); 
             return true;                     
+         }
 
          default:       
             return false;                    // pass over all other events

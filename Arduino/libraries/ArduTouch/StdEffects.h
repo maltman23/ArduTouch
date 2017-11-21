@@ -22,7 +22,7 @@
 #define STD_EFFECTS_H_INCLUDED
 
 #include "types.h"
-#include "Effect.h"
+#include "Control.h"
 #include "LFO.h"
 
 class LPFilter : public Effect      // low-pass filter (via exponential movavg)
@@ -39,7 +39,10 @@ class LPFilter : public Effect      // low-pass filter (via exponential movavg)
 
    byte  cutoff;                    // cutoff level (n/255) 
 
-   LPFilter(); 
+   LPFilter() 
+   {
+      shortcut = 'l';
+   }
 
    virtual void calcWeight();       // calculate weighting applied to input term
 
@@ -75,7 +78,10 @@ class BSFilter : public Effect      // bit-shift filter
 
    public:
 
-   BSFilter(); 
+   BSFilter()
+   { 
+      shortcut = 'b';
+   }
 
    boolean charEv( char );          // process a character event
    boolean evHandler( obEvent );    // handle an onboard event
@@ -109,7 +115,10 @@ class AutoWah : public LPFilter     // oscillating low-pass filter
 
    public:
 
-   AutoWah();
+   AutoWah()
+   {
+      shortcut = 'a';
+   }
 
    void    calcWeight();            // calculate weighting applied to input term
    boolean charEv( char );          // process a character event
@@ -117,6 +126,43 @@ class AutoWah : public LPFilter     // oscillating low-pass filter
 
    #ifdef CONSOLE_OUTPUT
    const  char  *prompt();          // return object's prompt string
+   #endif
+
+} ;
+
+
+class Tremolo : public TermLFO      // stock tremolo
+{
+   public:
+
+   Tremolo()
+   {
+      shortcut = 't';
+   }
+
+   boolean charEv( char );          // process a character event
+
+   #ifdef CONSOLE_OUTPUT
+   const char*  prompt();           // return object's prompt string
+   #endif
+
+} ;
+
+
+class Vibrato : public FadeLFO      // stock vibrato
+{
+   public:
+
+   Vibrato()
+   {
+      shortcut = 'v';
+   }
+
+   void   evaluate();               // set output val (as a function of LFO pos)
+   void   iniPos();                 // set initial osc position
+
+   #ifdef CONSOLE_OUTPUT
+   const char*  prompt();           // return object's prompt string
    #endif
 
 } ;

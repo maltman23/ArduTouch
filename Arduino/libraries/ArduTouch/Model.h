@@ -36,9 +36,9 @@
 
 // ---------  declare your model using one of the lines below  ---------------
 
-   #define __FULLHOST__
+// #define __FULLHOST__
 // #define __LITEHOST__
-// #define __STNDLONE__
+   #define __STNDLONE__
 // #define __BAREBONE__
 
 /* ---------------------------------------------------------------------------

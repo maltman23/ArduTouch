@@ -54,7 +54,7 @@ class WhiteNoiseSynth : public OneVoxSynth
       super::setup();
       vox[0]->addEffect( &this->lowpass ); 
    }
-
+   
    bool charEv( char code )         // handle a character event
    {
       switch ( code )
@@ -101,11 +101,11 @@ class WhiteNoiseSynth : public OneVoxSynth
       return new WhiteNoise();
    }
 
-} synth;
+} mySynth;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

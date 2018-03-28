@@ -50,6 +50,22 @@ void Osc::calcEffFreq()
    onFreq();
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Osc::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +detune           - local detuning amount
+ *         effFreq          - effective frequency (includes local detuning)
+ *        +extFactor        - external detuning factor
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
 boolean Osc::charEv( char code )
 {
    switch ( code )

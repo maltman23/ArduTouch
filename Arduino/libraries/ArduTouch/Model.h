@@ -43,6 +43,27 @@
 
 /* ---------------------------------------------------------------------------
 
+    The ArduTouch library and sample synths were developed using Arduino 
+    build 1.6.6. For sketches involving large-scale synths, build 1.6.6 
+    generates significantly smaller executables than the current hourly 
+    builds (1.8.6 at the time of this release). 
+
+    If you are using build 1.6.6 you may want to uncomment the BUILD_166 
+    define statement below.
+
+    Sketches for the ArduTouch supplied by Cornfield Electronics may contain 
+    conditional compilation sections that make use of the extra program 
+    storage space afforded by the compiler in build 1.6.6.
+
+    (Note: the current hourly builds actually generate *smaller* executables
+    than 1.6.6 for simple sketches -- go figure).
+
+   ------------------------------------------------------------------------ */
+
+// #define BUILD_166
+
+/* ---------------------------------------------------------------------------
+
     The following optional features can be omitted by commenting out the
     relevant defines below. This will free up extra memory (both RAM and 
     ROM) and reduce CPU overhead for synths which have no need for these 

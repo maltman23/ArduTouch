@@ -3,7 +3,7 @@
 // 
 //  This example synth demonstrates how to turn the ArduTouch keyboard into
 //  a drum pad by using the ArduTouch Library's built-in drum sounds, and
-//  loading them into a special SampleOsc.
+//  loading them into a special oscillator: SampleOsc.
 //
 //  How To Use:
 //
@@ -114,14 +114,35 @@ class DrumVoice : public Voice
       trigger();
    }
 
-   // Note: We have used only a few of the drum sounds available in the library.
-   //       Here is a full list:
+   //          ================        NOTES       ===============
+   //
+   // We have used only a few of the drum sounds available in the library.
+   // Here is a full list:
    //
    //             Kick01, Kick02, Kick03
    //             Tom01, Tom02, Tom03, Tom04, Tom05
    //             Snare01, Snare02, Snare03
    //             Rim01, Rim02, Rim03
    //             Hat01, Hat02, Hat03, Hat04, Hat05, Hat06
+   //
+   // The ArduTouch library provides "lofi" versions of all the above samples. 
+   // These versions take up half as much space as the normal samples. For
+   // low frequency sounds, such as kick drums or bass toms, there is almost no
+   // drop-off in sound quality between the normal and lofi versions.
+   //
+   // By convention lofi samples are given the same name as the normal samples,
+   // with a prefix of "lofi_" added:
+   //
+   //             lofi_Kick01, lofi_Kick02, lofi_Kick03
+   //             lofi_Tom01, lofi_Tom02, lofi_Tom03, lofi_Tom04, lofi_Tom05
+   //             lofi_Snare01, lofi_Snare02, lofi_Snare03
+   //             lofi_Rim01, lofi_Rim02, lofi_Rim03
+   //             lofi_Hat01, lofi_Hat02, lofi_Hat03 
+   //             lofi_Hat04, lofi_Hat05, lofi_Hat06
+   //
+   // If you are running out of program storage space you may want to mix
+   // "lofi" versions of the kick drum with normal versions of the other
+   // percussion sounds.
 
 } ;
 
@@ -147,11 +168,11 @@ class DrumSynth : public OneVoxSynth
       return new DrumVoice();
    }
 
-} synth;
+} mySynth;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

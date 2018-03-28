@@ -97,7 +97,7 @@ class MultiOctaveSynth : public Synth
       osc.output( buf );                     // pass buffer to oscillator
    }
 
-} synth;
+} mySynth;
 
 //  ---------------------------------------------------------------------------
 //
@@ -110,7 +110,7 @@ class MultiOctaveSynth : public Synth
 
 void setup()
 {
-   ardutouch_setup( &synth );                   // initialize ardutouch resources
+   ardutouch_setup( &mySynth );                 // initialize ardutouch resources
 }
 
 void loop()

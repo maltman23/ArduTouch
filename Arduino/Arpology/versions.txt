@@ -1,5 +1,8 @@
 Versions:
 
+   1.08  synth renamed arpSynth
+         sync with lib 1.03 
+         [30534 / 976] 
    1.07  use wavetable_named() macro 
          sync with lib 1.00 
          [30262 / 973] 

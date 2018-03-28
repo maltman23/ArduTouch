@@ -81,7 +81,7 @@
 /* ----------------------    private functions    -------------------------- */
 
 
-void     audio_setup( Synth * ) __attribute__((always_inline));
+void     audio_setup() __attribute__((always_inline));
 boolean  readKey( byte keyNum );
 void     readPot( byte num );
 boolean  render_audio();
@@ -90,10 +90,10 @@ void     scanKeys();
 
 /* ----------------------     public variables    -------------------------- */
 
+Synth  *synth;                         // ptr to the runtime synth 
+
 #ifdef MONITOR_CPU
-
 byte     cpu;                          // %CPU used rendering audio (parts per 256) 
-
 #endif
 
 /* ----------------------    private variables    -------------------------- */
@@ -144,7 +144,7 @@ volatile signed char curKey = -1;      // currently pressed key (-1 means none)
  *  Desc:  Initialize ardutouch resources.
  *         Invoke synthesizer's setup() method.
  *
- *  Args:  syn              - ptr to synthesizer object 
+ *  Args:  x                - ptr to synthesizer object 
  *
  *  Glob:  audioBufSz       - size of an audio buffer
  *        +bufsPerScan      - # buffers to render per I/O scan
@@ -154,15 +154,18 @@ volatile signed char curKey = -1;      // currently pressed key (-1 means none)
  *        +potVal[]         - last value read per pot
  *        +scanDC           - downcounter (in bufs) to next I/O scan
  *         scanRate         - rate at which to scan hardware
+ *        +synth            - ptr to runtime synth
  *
  *  Note:  This routine should be called from the sketch's setup() routine.
  *
  *----------------------------------------------------------------------------*/      
 
-void ardutouch_setup( Synth *syn )
+void ardutouch_setup( Synth *x )
 {
-   console_setup( (Mode *) syn );      // initialize console module
-   audio_setup( syn );                 // initialize audio module
+   synth = x;                          // set global ptr to runtime synth
+
+   console_setup( (Mode *) x );        // initialize console module
+   audio_setup();                      // initialize audio module
 
    bufsPerScan = audioRate / (scanRate * audioBufSz);
    scanDC      = bufsPerScan;
@@ -193,10 +196,10 @@ void ardutouch_setup( Synth *syn )
 
    #endif
 
-   syn->setup();                       // set up the synth
-   syn->reset();                       // reset the synth
+   x->setup();                         // set up the synth
+   x->reset();                         // reset the synth
    audio::enable();                    // enable audio output
-   syn->welcome();                     // execute any post-reset code
+   x->welcome();                       // execute any post-reset code
 }
 
 /*----------------------------------------------------------------------------*
@@ -656,8 +659,6 @@ const double dynaRate     = bufRate / bufsPerDyna;
 
 byte    dynaDC;                        // downcounter to next dynamic update
 
-Synth  *matrix;                        // ptr to synth that generates the audio
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  audio_setup
@@ -670,7 +671,6 @@ Synth  *matrix;                        // ptr to synth that generates the audio
  *        +dynaDC           - downcounter (in bufs) to next dynamic update
  *        +eor              - idx to end of current read buffer 
  *        +lock[]           - write-lock status per buffer
- *        +matrix           - ptr to synth which generates the audio
  *        +r                - idx of record being read from
  *        +rBuf             - buffer # being read from
  *        +w                - idx of record being written to
@@ -678,11 +678,10 @@ Synth  *matrix;                        // ptr to synth that generates the audio
  *
  *----------------------------------------------------------------------------*/      
 
-void audio_setup( Synth *x )
+void audio_setup()
 {
    /* initialize soft parameters */
 
-   matrix       = x;
    dynaDC       = bufsPerDyna;
 
    /* initialize audio output buffers */
@@ -741,9 +740,8 @@ void audio_setup( Synth *x )
  *
  *  Name:  render_audio
  *
- *  Desc:  Render the next free audio buffer, if available, via the matrix 
- *         synth's output() method. Manage the matrix synth's dynamics.
- *         Update any ledState LEDs.
+ *  Desc:  Render the next free audio buffer, if available, via the runtime
+ *         synth's output() method. Manage the synth's dynamics. Update LEDs.
  *
  *  Rets:  status           - if true, a buffer was rendered
  *
@@ -753,7 +751,7 @@ void audio_setup( Synth *x )
  *        +blinkEdge        - if true, turn ledState LEDs on at transition
  *        +dynaDC           - downcounter to next dynamic update
  *        +lock[]           - write-lock status per buffer
- *         matrix           - ptr to synth which generates the audio
+ *         synth            - ptr to runtime synth 
  *        +usingCpu         - currently using CPU to render audio 
  *        +w                - idx of record being written to
  *        +wBuf             - buffer # being written to
@@ -769,11 +767,11 @@ boolean render_audio()
       usingCpu = true;
    #endif
 
-   matrix->output( (char *)&audioL[w], (char *)&audioR[w] ); 
+   synth->output( (char *)&audioL[w], (char *)&audioR[w] ); 
 
    if ( --dynaDC == 0 )                // manage dynamics 
    {
-      matrix->dynamics();              // perform a dynamic update
+      synth->dynamics();               // perform a dynamic update
 
       #ifndef USE_SERIAL_PORT       
       if ( --blinkDC == 0 )            // update any ledState LEDs 

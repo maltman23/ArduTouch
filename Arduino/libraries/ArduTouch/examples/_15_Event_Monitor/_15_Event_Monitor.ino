@@ -54,11 +54,11 @@ class EvMonitor : public Synth
       return CONSTR("monitor"); 
    }
 
-} synth;                                      
+} mySynth;                                      
 
 void setup()
 {
-   ardutouch_setup( &synth );                // initialize ardutouch resources
+   ardutouch_setup( &mySynth );              // initialize ardutouch resources
 }
 
 void loop()

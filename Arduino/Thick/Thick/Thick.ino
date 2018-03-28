@@ -34,108 +34,12 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.64 )                 // specify sketch name & version
+about_program( Thick, 0.68 )                 // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE                       // required for setup macro to work
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
 #endif
-
-/******************************************************************************
- *
- *                               SawTooth 
- *
- ******************************************************************************/
-
-class SawTooth : public Osc                  // a sawtooth oscillator
-{
-   DWord outVal;                             // current output value, kept as a
-                                             // fixed pt, 32-bit number. High byte
-                                             // is integral part, lower 3 bytes 
-                                             // are the fractional part.
-
-   unsigned long delta;                      // bump outVal this much per tick
-   double        coeff;                      // delta = frequency * coeff
-
-   public:
-
-   SawTooth();                               // initialize state vars
-   void onFreq();                            // compute freq dependent state vars
-   void output( char *buf );                 // write one buffer of output
-
-} ;
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  SawTooth::SawTooth
- *
- *  Desc:  SawTooth constructor.
- *
- *  Glob:  audioRate        - audio playback rate
- *
- *  Memb: +coeff            - this multiplied by osc frequency gives delta
- *
- *----------------------------------------------------------------------------*/      
-
-SawTooth::SawTooth()
-{
-   coeff = pow(2, 24) * (256 / audioRate);
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  SawTooth::onFreq
- *
- *  Desc:  Compute frequency-dependent state vars.
- *
- *  Memb:  coeff            - multiply this by osc frequency to get delta
- *         effFreq          - effective frequency (includes internal detuning)
- *         extFactor        - external detuning factor
- *        +delta            - amount to increment outVal per tick
- *
- *  Note:  onFreq() is a virtual method of Osc, and is automatically called
- *         whenever there is a change in frequency for the oscillator. This change
- *         in frequency can come from one of 3 sources: the oscillator is locally
- *         detuned, the "ideal" frequency of the oscillator is set, or an external
- *         (transient) detuning is applied (such as from an ongoing vibrato).
- *
- *         There are 2 implicit inputs to onFreq(), Osc::effFreq and 
- *         Osc::extFactor. Multiplying these together gives the current 
- *         frequency of the oscillator.
- * 
- *----------------------------------------------------------------------------*/      
-
-void SawTooth::onFreq()
-{
-   delta = effFreq * extFactor * coeff;
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  SawTooth::output
- *
- *  Desc:  Write one buffer of output.
- *
- *  Glob:  audioBufSz       - size of system audio buffers
- *
- *  Memb:  outVal           - current output value
- *        +delta            - amount to increment outVal per tick
- *
- *----------------------------------------------------------------------------*/      
-
-void SawTooth::output( char *buf )
-{
-   byte icnt = audioBufSz;                // write this many ticks of output
-
-   while ( icnt-- )
-   {
-      outVal.val += delta;                // update outVal       
-      byte rounded = outVal._.msw._.msb;  // move high byte to rounded
-      if ( outVal._.msw._.lsb > 127 )     // and round 
-         ++rounded;
-      *buf++ = rounded;                   // write rounded to buffer and bump
-   }
-}
 
 /******************************************************************************
  *
@@ -407,12 +311,12 @@ class ThickSynth : public QuadSynth
       oscTuning = t;
    }
 
-} synth;                                     
+} thick;                                     
 
 
 void setup()
 {
-   ardutouch_setup( &synth );                // initialize ardutouch resources
+   ardutouch_setup( &thick );                // initialize ardutouch resources
 }
 
 void loop()

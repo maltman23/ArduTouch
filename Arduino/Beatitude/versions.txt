@@ -1,0 +1,239 @@
+Versions:
+
+   0.94  add conditional compilation sections re BUILD_166
+   0.93  add header comments re Bass
+   0.92  Beatitude([) propagates to drum sequencer
+   0.91  right channel 3/4 bass 1/4 drums
+   0.90  bass utilizes DualOsc
+         setup() constrains octaves
+   0.89  live bass playing over drums playback
+   0.88  Metronome class renamed ClickTrack
+         Beatitude::metro       renamed ::click
+         Beatitude::metronomeOn renamed ::clickOn
+         [31306 / 724] __STNDLONE__ 
+   0.87  add Beatitude::noteOff()
+         [31306 / 724] __STNDLONE__ 
+   0.86  nix metroON
+         metroOFF renamed sqncOVER
+         reorder sequencer messages
+         [31376 / 724] __STNDLONE__ 
+   0.85  add Beatitude::liveBass
+         metroTICK renamed sqncDNBEAT
+         metroTOCK renamed sqncUPBEAT
+         [31390 / 724] __STNDLONE__ 
+   0.84  no need for RealtimeSequencer::done() to send synth an "UNCUE"
+         [31364 / 723] __STNDLONE__ 
+   0.83  metroCUE renamed sqncCUE
+         metroUNCUE renamed sqncRECORD
+         [31402 / 723] __STNDLONE__ 
+   0.82  add sqncPLAYON, sqncPLAYOFF commands
+         LED0 blinking/off now controlled by synth
+         [31402 / 723] __STNDLONE__ 
+   0.81  DrumSynth renamed Beatitude
+         [31152 / 965]  
+   0.80  working drums -- liveplay/record/playback -- with local sequencer
+         [31152 / 965]  
+   0.79  Kit renamed DrumKit
+         move sequencer from DrumSynth to DrumKit
+         [31214 / 965]  
+   0.78  Metronome overrides dynamics() and output() methods
+   0.77  metro becomes member ptr, instantiated in DrumSynth()
+         [32052 / 965]  
+   0.76  RealTimeSequencer sends all metronome events to synth, not target
+         [32054 / 965]  
+   0.75  restore metroTICK/TOCK messages from 0.70
+         add DrumSynth::dynamics()
+         DrumSynth resets metro
+         [32026 / 965]  
+   0.74  Metronome() sets global volume to 255
+         [31998 / 965]  
+   0.73  synth renamed mySynth
+   0.72  nix messaging for metroTICK, metroTOCK
+         use lofi version of Tom02 for ! USE_SERIAL_PORT
+         [31990 / 965]  {CPU 28.5}
+   0.71  metro becomes a global pointer to a global instantiated Metronome
+         DrumSynth reduced to 2 voices
+   0.70  instantiate bass voice -- not explicitly called
+         use lofi version of Tom02 (when USE_SERIAL_PORT)
+         replace calls to setTable() with setSample()
+         [31976 / 965]  {CPU 28.5}
+         [31230 / 869]  {CPU 21}
+   0.69  add metro, drums shortcut ptrs
+         [31230 / 869]  {CPU 21}
+   0.68  DrumSynth derives from VoxSynth, explicitly calls setupVoices(2)
+         [31204 / 865] 
+   0.67  add Bass class (not instantiated)
+         [31198 / 865] __FULLHOST__ 1.03o
+   0.66  sketch name remonikered to "Beatitude" (was "Drumatix")
+         add instructions to sketch header
+         add comments
+         [31790 / 865] 
+   0.65  migrate BUT0_PRESS from DrumSynth to RealtimeSequencer
+         [31790 / 865] 
+   0.64  add DrumSynth(L)
+         add placeholder preset 0
+         [31760 / 865] 
+   0.63  RealTimeSequencer::evHandler() compiles prior duration only if recON
+         --- fixes issue where note during recTRANS produces bogus initial rest
+         [31478 / 865] 1.02q
+   0.62  RealtimeSequencer('[', '|') check for playing() after call to base class
+         nix check of sqnc[1] == tokenEOS in RealtimeSequencer('[', '|')
+         [31474 / 865] 1.02q
+         [31440 / 865] 1.02p
+         [31414 / 865] 1.02o
+         [31366 / 865] 1.02n
+   0.61  nix "if ( recording() ) return true" for RealtimeSequencer transport cmds
+         -- fixes introduced rest in __STNDLONE__ model
+         [31370 / 865] 1.02n
+   0.60  add Tom when USE_SERIAL_PORT
+         working pots
+         [30952 / 865] VERBOSE_INFO 
+   0.59  full kit when compiled using __STNDLONE__
+         set beats/measures only if ! playing / recording
+         --- in __STNDLONE__ model a rest is introduced at sqnc start
+   0.58  LED 1 on at cue, blinking during record
+         LED 0 blinking during playback
+   0.57  add RealtimeSequencer::setMeasures()
+         BUT0_TPRESS sets both beats-per-measure and # measures
+         [27278 / 864] VERBOSE_INFO 
+   0.56  BUT0_TPRESS sets beats per measure
+         [27240 / 864] VERBOSE_INFO 
+   0.55  add measureMenu, beatMenu (not accessed)
+         [27192 / 863] VERBOSE_INFO 
+   0.54  cull 0 duration entries
+         [27040 / 831] VERBOSE_INFO 
+   0.53  reduce jiffsPerBeat from 8 to 4
+         --- getting 0 duration entries
+   0.52  RealtimeSequencer::done() culls last entry if duration == 0
+         --- have witnessed sumJiffs > 128
+   0.51  add quantization of entries
+         --- it is possible to have a last entry with 0 duration
+         [26982 / 831] VERBOSE_INFO 1.01m
+   0.50  DrumSynth(!) sets sequencer target muting to false 
+         syncs with lib 1.01k
+         [26886 / 831] VERBOSE_INFO
+   0.49  transition phase logic in RealtimeSequencer::dynamics() & evHandler()
+         --- if sqnc playback stopped before long unMute then sync remains muted
+         [26840 / 831] VERBOSE_INFO
+   0.48  add recTRANS
+         add RealtimeSequencer::jiffsToTrans ::transDC
+         break RealtimeSequencer::setBeats() out from RealtimeSequencer('b')
+         --- noted: recording is a bit "jerky"
+                    need to quantize to nearest jiff
+         [26816 / 831] VERBOSE_INFO
+   0.47  add RealtimeSequencer('b') - sets beatsPerMeasure
+         add RealtimeSequencer('m') - sets numMeasures
+         add RealtimeSequencer('?')
+         [26784 / 831] VERBOSE_INFO
+   0.46  DrumSynth BUT0_PRESS toggles sequencer playback
+         DrumSynth BUT1_PRESS records sequence
+         (this supresses issue in 0.44)
+         [26612 / 831] VERBOSE_INFO
+   0.45  move NoiseOsc, WhiteNoise classes to library
+         syncs with lib 1.01j
+         [26614 / 831] VERBOSE_INFO
+   0.44  DrumSynth BUT1_TAP/PRESS toggles sequencer playback
+         DrumSynth BUT1_DTAP records sequence
+         DrumSynth POT1 sets tempo
+         --- problem with tap or double tap events initiating record funtion
+             in 1st case: bizarre speed up of tempo
+             in 2nd case: 1st note after cue does not play
+         [26598 / 831] VERBOSE_INFO
+   0.43  RealtimeSequencer::charEv() eats playback cmds if recording
+         [26506 / 831] VERBOSE_INFO
+   0.42  RealtimeSequencer pot1 sets tempo
+         midTempo as a define
+         [26476 / 831] VERBOSE_INFO
+   0.41  midTempo as static double
+         [26388 / 835] VERBOSE_INFO
+   0.40  initial recording logic throughout
+         [26374 / 831] VERBOSE_INFO
+   0.39  add DrumSynth::noteOn() -- suppresses notes during cueing
+         [26026 / 831] VERBOSE_INFO
+   0.38  type of RealtimeSequencer::recording changed to byte from boolean
+         add recON, recOFF, recCUE status byte constants
+         add metroCUE, metroUNCUE messages
+         [26012 / 830] VERBOSE_INFO
+   0.37  2nd attempt, apparently working, using console.runModeWhile()
+         [25958 / 830] VERBOSE_INFO
+   0.36  add DrumSynth::evHandler() : button 1 press records a sequence
+         --- not working
+   0.35  DrumSynth::output() plays 1/2 metronome + 1/2 drum track in right chnl
+         lower upbeat freq
+         lengthen Metronome decay to 4
+         [25836 / 830] VERBOSE_INFO
+   0.34  Metronome plays noise clicks for up and down beats
+         nix the unused NoiseVoice class
+         [25828 / 830] VERBOSE_INFO
+   0.33  Metronome::charEv() contains own reset code
+         [25812 / 830] VERBOSE_INFO
+   0.32  ClickTrack renames Metronome
+         add Metronome::downbeat() ::upbeat()
+         [25730 / 830] VERBOSE_INFO
+   0.31  add all beat/measure/end logic (no cue measure)
+         [25706 / 830] VERBOSE_INFO
+   0.30  add RealtimeSequencer::recording
+         RealtimeSequencer::dynamics() sends 1 metroTICK per jiff
+         DrumSynth( metroTICK ) prints a . to console
+         [25582 / 830] VERBOSE_INFO
+   0.29  add prompts for NoiseOsc WhiteNoise
+         (1) due to local kbrd on (metronomeOn also controls no local output)
+         (2) solved by lib 1.01e
+         [25424 / 830] VERBOSE_INFO
+   0.28  add defines for metronome commands
+         DrumSynth::metronomeOn replaces ::clickTrackOn
+         RealtimeSequencer sends metroOn to target
+         DrumSynth responds to metroOn by setting ::metronomeOn
+         --- (1) no sound on v1>
+         --- (2) 'S' in voices resets card
+   0.27  add RealtimeSequencer wrapper
+         DrumSynth() uses real time sequencer
+         [25328 / 830] VERBOSE_INFO
+         [25226 / 830]
+   0.26  Kit consists of Kick02, Snare01
+         [24304 / 800] __FULLHOST__
+   0.25  add boolean DrumSynth::clickTrackOn
+         add DrumSynth::output() which copies bufL to bufR if ! clickTrackOn
+         [28590 / 576]
+   0.24  SampleOsc moved to the library
+   0.23  samples moved to the library
+         syncs with lib 1.01b
+   0.22  re-order tables
+   0.21  swap names of TomXX samples so they are tuned in ascending order
+         bugfix: arg to console.exe() must be a PSTR() not CONSTR() !
+   0.19  many new drum samples
+         -- when __STNDLONE__ voice 1 plays constantly
+   0.18  TwoVoxSynth as base class 
+         v0 = Kit
+         v1 = WhiteNoise
+   0.17  use wavetable() macro [lib 1.00d]
+   0.16  Kit::noteOn() splits keybrd between bass and snare
+         [24036 / 742]
+   0.15  add Kit, which sets table to Kick01 each note
+         [20934 / 742]
+   0.14  remove commented out samples of Kick01 that had been hand-modified
+   0.13  add Snare01 wavetable
+   0.12  hand-modified samples to make louder
+   0.11  hand-modified samples to make louder
+   0.10  hand-modified samples to make louder
+   0.09  Kick01 wavetable generated by gg 2.56c (non-aligned, non-translated)
+   0.08  add Kick01 wave table, SampleOsc class
+         DrumSynth uses SampleOsc with Kick01
+         [23090 / 778]
+   0.07  break NoiseOsc out from WhiteNoise
+         [18500 / 776] 
+   0.06  NoiseVoice(!) sets freq to 0
+   0.05  NoiseVoice(!) must pushMode/popMode self around macro string
+         [18458 / 758] 
+   0.04  NoiseVoice with built-in BSFilter
+         NoiseVoice reset() sets envelope -- but is not called by synth reset?
+         [18378 / 758] 
+   0.03  WhiteNoise updates output 32 times per wavelength
+         [17802 / 720] 
+   0.02  add WhiteNoise class (untuned)
+         add DrumSynth using WhiteNoise oscillator
+         {CPU 32}
+         [17790 / 720] 
+   0.01  OneVoxSynth using a sine wave.
+         {CPU 50}
+         [20666 / 778] 

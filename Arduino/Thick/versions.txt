@@ -1,6 +1,16 @@
 Versions:
 
+   0.68  synth renamed thick
+         [22444 / 862] 1.03r IMPLICIT_SEQ
+   0.67  SawTooth now in library
+         [22444 / 862] 1.03d IMPLICIT_SEQ
+   0.66  WavGen256 now in library
+         [22444 / 862] 1.03c IMPLICIT_SEQ
+   0.65  break WavGen256 class out from SawTooth
+         [22444 / 862] 1.03b IMPLICIT_SEQ
    0.64  sync with lib 0.99a (::envAmp moved from StockVoice to Voice)
+         [22406 / 844] 1.03b IMPLICIT_SEQ
+         [22336 / 844] 1.01
          [22082 / 819] 0.99a
    0.63  add a default envelope release
    0.62  edit presets to accomodate swap of Voice(e) and (E)

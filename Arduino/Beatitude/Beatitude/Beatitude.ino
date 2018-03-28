@@ -1,10 +1,16 @@
 //
 //  Beatitude.ino
 // 
-//  A drum machine with real-time sequencer for the ArduTouch. 
-// 
-//  (bass and other goodies coming soon :)
+//  A Drum and Bass synth with real-time drum sequencer for the ArduTouch. 
 //
+//   ************************** IMPORTANT NOTE ***************************
+//
+//           For the best sounding snare, use Arduino build 1.6.6
+//           and uncomment the line "//#define BUILD_166" in the
+//           file Model.h of the ArduTouch library.
+//
+//   *********************************************************************
+// 
 //  How To Use:
 //
 //              ------------       Playing Drums         ------------       
@@ -57,12 +63,22 @@
 //    To play back your drum sequence press the left button.
 //
 //    The red LED will start blinking, and your sequence will begin playing. 
-//    You can play along with it if you want.
 //
 //    When the sequence reaches its end it will loop back to the beginning
 //    and continue to play (forever) until you press the left button again.
 //
 //
+//              ------------       Playing Bass         ------------       
+//
+//    When a drum sequence is playing back, the ArduTouch keyboard will
+//    turn into a bass instrument, and you can play bass along with the
+//    recorded drums. The octave setting for the bass can be bumped up
+//    and down by tapping the right and left buttons respectively.
+//
+//    To revert to playing drums, stop the sequence (by pressing the
+//    left button).
+//
+// 
 //         -----------         Controlling the Tempo          -----------       
 //
 //    Rotate the bottom pot to slow down or speed up the tempo.
@@ -148,7 +164,7 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Beatitude, 0.66 )             // specify sketch name & version
+about_program( Beatitude, 0.94 )             // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 /*----------------------------------------------------------------------------*
@@ -175,134 +191,32 @@ end_bank()
 
 /******************************************************************************
  *
- *                                  Kit 
+ *                              ClickTrack
  *
  ******************************************************************************/
 
-class Kit : public Voice
-{
-   typedef Voice super;             // superclass is Voice
-   
-   public:
-
-   void    noteOn( key );           // turn a note on
-
-} ;
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Kit::noteOn
- *
- *  Desc:  Turn a note on.
- *
- *  Args:  note             - note to turn on  
- *
- *  Memb:  osc              - ptr to raw oscillator
- *
- *  Note:  If you want to use the __FULLHOST__ runtime model, comment out
- *         the "#error" statement near the top of this sketch. When compiled
- *         with the __FULLHOST__ model, a kit of just Bass and Snare is used.
- *
- *----------------------------------------------------------------------------*/      
-
-void Kit::noteOn( key note )
-{
-
-   SampleOsc *o = (SampleOsc *)osc;
-   byte     pos = note.position();
-
-   #ifdef USE_SERIAL_PORT  // use reduced kit when the console is enabled
-
-   switch ( pos )
-   {
-      case 0:
-      case 1:
-      case 2:
-      case 3:
-
-         o->setTable( wavetable( Kick02 ) );
-         break;
-
-      case 4:
-      case 5:
-
-         o->setTable( wavetable( Tom02 ) );
-         break;
-
-      case 6:
-      case 7:
-      case 8:
-      case 9:
-      case 10:
-      case 11:
-
-         o->setTable( wavetable( Snare01 ) );
-         break;
-   }
-
-   #else  // use full kit
-
-   switch ( pos )
-   {
-      case 0:
-      case 1:
-      case 2:
-
-         o->setTable( wavetable( Kick02 ) );
-         break;
-
-      case 3:
-      case 4:
-
-         o->setTable( wavetable( Tom02 ) );
-         break;
-
-      case 5:
-      case 6:
-      case 7:
-
-         o->setTable( wavetable( Snare01 ) );
-         break;
-
-      case 8:
-      case 9:
-
-         o->setTable( wavetable( Rim01 ) );
-         break;
-
-      case 10:
-      case 11:
-
-         o->setTable( wavetable( Hat03 ) );
-         break;
-   }
-
-   #endif
-
-   trigger();
-}
-
-/******************************************************************************
- *
- *                              Metronome
- *
- ******************************************************************************/
-
-class Metronome : public Voice
+class ClickTrack : public Voice
 {
    typedef Voice super;                // superclass is Voice
    
    public:
 
-   bool charEv( char code );           // handle a character event
-   void downbeat();                    // strike a downbeat
-   void upbeat();                      // strike an upbeat
+   ClickTrack()
+   {
+      useOsc( new WhiteNoise() );
+   }
+
+   bool  charEv( char );               // handle a character event
+   void  dynamics();                   // update dynamics
+   void  downbeat();                   // strike a downbeat
+   void  output( char * );             // write output to an audio buffer
+   void  upbeat();                     // strike an upbeat
 
 } ;
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Metronome::charEv
+ *  Name:  ClickTrack::charEv
  *
  *  Desc:  Process a character event.
  *
@@ -312,13 +226,14 @@ class Metronome : public Voice
  *
  *----------------------------------------------------------------------------*/      
 
-bool Metronome::charEv( char code )      
+bool ClickTrack::charEv( char code )      
 {
    switch ( code )
    {
       case '!':
 
          super::charEv( code );
+         setGlobVol( 255 );
          execute( PSTR( "k<`es0\\d4\\" ) );
          break;
 
@@ -329,16 +244,65 @@ bool Metronome::charEv( char code )
    return true;
 }
 
-void Metronome::downbeat()
+void ClickTrack::downbeat()
 {
    noteOn( key( 45 ) );
 }
 
-void Metronome::upbeat()
+void ClickTrack::upbeat()
 {
    noteOn( key( 30 ) );
 }
 
+void ClickTrack::dynamics()
+{
+   if ( flags & FREQ )              // handle pending frequency change
+   {
+      osc->setFreq( pendFreq );
+      flags &= ~FREQ;               
+   }
+
+   if ( flags & TRIG )              // handle pending trigger
+   {
+      osc->trigger();               
+      ampMods.trigger();
+      flags &= ~TRIG;               
+   }
+   else                             // update components
+   {
+      osc->dynamics();
+      ampMods.dynamics();
+   }
+
+   /* manage instantaneous volume */
+
+   /*
+   if ( muted() )
+   {
+      segVol.val = 0;
+   }
+   else
+   */
+   {
+      segVol.val = 256;
+      segVol.val *= ampMods.value();
+   }
+}
+
+void ClickTrack::output( char *buf )        
+{
+   byte numrecs = audioBufSz;     
+
+   osc->output( buf );
+
+   Int amp;
+   while ( numrecs-- ) 
+   {
+      amp.val  = segVol.val;
+      amp.val *= *buf;
+      *buf++   = amp._.msb;
+   }
+}
 
 /******************************************************************************
  *
@@ -511,14 +475,15 @@ bool MeasureMenu::evHandler( obEvent ev )
  *
  ******************************************************************************/
 
-   // the following are Metronome commands (generally issued by a Sequencer)
+   // the following status messages are sent to synth via its charEv() method
 
-#define metroON         -11            // turn metronome on
-#define metroOFF        -12            // turn metronome off
-#define metroTICK       -13            // sound metronome's downbeat
-#define metroTOCK       -14            // sound metronome's upbeat
-#define metroCUE        -15            // Cue the metronome and turn it on 
-#define metroUNCUE      -16            // Uncue the metronome (but keep it on) 
+#define sqncCUE         -12            // sequencer is cueing to record 
+#define sqncRECORD      -13            // sequencer is recording
+#define sqncDNBEAT      -14            // sequencer is at a downbeat
+#define sqncUPBEAT      -15            // sequencer is at an upbeat 
+#define sqncOVER        -16            // sequencer is done recording
+#define sqncPLAYON      -17            // sequencer is playing back 
+#define sqncPLAYOFF     -18            // sequencer has stopped playing back 
 
 class RealTimeSequencer : public Sequencer
 {
@@ -576,6 +541,8 @@ class RealTimeSequencer : public Sequencer
  *
  *  Args:  code             - character to process
  *
+ *  Glob:  synth            - ptr to runtime synth 
+ *
  *  Memb: +beatDC           - downcounter (in jiffs) to next beat
  *        +beatsPerMeasure  - # beats in one measure
  *        +endDC            - downcounter (in measures) to end of recording
@@ -587,7 +554,6 @@ class RealTimeSequencer : public Sequencer
  *        +numMeasures      - # measures in sequence
  *        +quantized        - if true, prior entry was quantized to next jiff
  *        +recording        - recording status
- *         target           - ptr to instrument being sequenced 
  *        +transDC          - downcounter (in jiffs) to transition phase
  *         ticksPerDyna     - # audio ticks per dynamic update 
  *         ticksPerJiff     - # audio ticks per jiff 
@@ -605,7 +571,7 @@ bool RealTimeSequencer::charEv( char code )
          super::charEv( code );
 
          recording = recCUE;
-         target->charEv( metroCUE );
+         synth->charEv( sqncCUE );
 
          idx       = 1;                // rewind to 1st record
          fullHouse = false;
@@ -631,13 +597,13 @@ bool RealTimeSequencer::charEv( char code )
 
          super::charEv( code );
          if ( playing() )
-            blinkLED( 0 );
+            synth->charEv( sqncPLAYON );
          break;
 
       case ']':
 
          super::charEv( code );
-         offLED( 0 );
+         synth->charEv( sqncPLAYOFF );
          break;
 
       #ifdef INTERN_CONSOLE
@@ -674,7 +640,7 @@ bool RealTimeSequencer::charEv( char code )
          setTempo( midTempo );
 
          recording = recOFF;
-         target->charEv( metroOFF );
+         synth->charEv( sqncOVER );
 
          jiffsPerBeat    = 4;
          setMeasures(4);
@@ -695,11 +661,12 @@ bool RealTimeSequencer::charEv( char code )
  *  Desc:  This routine should be called when a recording has ended or the 
  *         sequencer is popped.
  *
+ *  Glob:  synth            - ptr to runtime synth 
+ *
  *  Memb:  duration         - ongoing duration of note/rest in progress 
  *         fullHouse        - if true, sequence buffer is full
  *        +recording        - recording status
  *        +sqnc[]           - buffer for compiled sequence records
- *         target           - ptr to instrument being sequenced 
  *
  *----------------------------------------------------------------------------*/
 
@@ -707,9 +674,7 @@ void RealTimeSequencer::done()
 {
    if ( recording )
    {
-      if ( recording == recCUE )
-         target->charEv( metroUNCUE );    // uncue metronome 
-      else
+      if ( recording != recCUE )
       {
          if ( idx > 1 && ! fullHouse )    // compile duration for last entry
          {
@@ -720,8 +685,8 @@ void RealTimeSequencer::done()
          }
       }
       sqnc[ idx ] = tokenEOS;
-      recording = recOFF;           // turn recording off
-      target->charEv( metroOFF );   // turn metronome off
+      recording = recOFF;                 // turn recording off
+      synth->charEv( sqncOVER );          // "I'm through recording"
    }
 }
 
@@ -732,6 +697,8 @@ void RealTimeSequencer::done()
  *
  *  Desc:  Update the recording/playback of a sequence.
  *
+ *  Glob:  synth            - ptr to runtime synth 
+ *
  *  Memb: +beatDC           - downcounter (in jiffs) to next beat
  *        +duration         - ongoing duration of note/rest in progress 
  *        +endDC            - downcounter (in measures) to end of recording
@@ -739,7 +706,6 @@ void RealTimeSequencer::done()
  *         jiffsPerBeat     - # jiffs in one beat
  *        +quantized        - if true, prior entry was quantized to next jiff
  *        +recording        - recording status
- *         target           - ptr to instrument being sequenced 
  *         ticksPerDyna     - # audio ticks per dynamic update 
  *         ticksPerJiff     - # audio ticks per jiff 
  *        +transDC          - downcounter (in jiffs) to transition phase
@@ -759,7 +725,7 @@ void RealTimeSequencer::dynamics()
          if ( transDC && (--transDC == 0) )
          {
             // transition phase has arrived
-            target->charEv( metroUNCUE );       // uncue the metronome
+            synth->charEv( sqncRECORD );        // "I'm recording"
             recording = recTRANS;               // set recording status
          }
          else
@@ -786,10 +752,10 @@ void RealTimeSequencer::dynamics()
                if ( --endDC == 0 )              // end of sqnc has arrived
                   done();
                else
-                  target->charEv( metroTICK );  // downbeat for metronome
+                  synth->charEv( sqncDNBEAT );  // "I'm at a downbeat"
             }
             else
-               target->charEv( metroTOCK );     // upbeat for metronome
+               synth->charEv( sqncUPBEAT );     // "I'm at an upbeat"
          }
       }
       else                                      // next jiff not yet arrived
@@ -986,91 +952,401 @@ void RealTimeSequencer::informFull()
 
 /******************************************************************************
  *
- *                               DrumSynth 
+ *                                DrumKit 
  *
  ******************************************************************************/
 
-class DrumSynth : public TwoVoxSynth
+class DrumKit : public Voice
 {
-   typedef TwoVoxSynth super;       // superclass is OneVoxSynth
+   typedef Voice super;             // superclass is Voice
+   
+   public:
 
-   bool metronomeOn;                // if true, metronome is playing
-   bool cueing;                     // if true, metronome is cueing
+   DrumKit()
+   {
+      useSequencer( new RealTimeSequencer( 120 ) );
+   }
+
+   void    noteOn( key );           // turn a note on
+
+} ;
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DrumKit::noteOn
+ *
+ *  Desc:  Turn a note on.
+ *
+ *  Args:  note             - note to turn on  
+ *
+ *  Memb:  osc              - ptr to raw oscillator
+ *
+ *  Note:  If you want to use the __FULLHOST__ runtime model, comment out
+ *         the "#error" statement near the top of this sketch. When compiled
+ *         with the __FULLHOST__ model, a kit of just Bass and Snare is used.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void DrumKit::noteOn( key note )
+{
+   SampleOsc *o = (SampleOsc *)osc;
+   byte     pos = note.position();
+
+   #ifdef USE_SERIAL_PORT  // use reduced kit when the console is enabled
+
+   switch ( pos )
+   {
+      case 0:
+      case 1:
+      case 2:
+      case 3:
+
+         o->setSample( wavetable( lofi_Kick02 ) );
+         break;
+
+      case 4:
+      case 5:
+
+         o->setSample( wavetable( lofi_Tom02 ) );
+         break;
+
+      case 6:
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+
+         #ifdef BUILD_166
+            o->setSample( wavetable( Snare01 ) );
+         #else
+            o->setSample( wavetable( lofi_Snare01 ) );
+         #endif
+         break;
+   }
+
+   #else  // use full kit
+
+   switch ( pos )
+   {
+      case 0:
+      case 1:
+      case 2:
+
+         o->setSample( wavetable( lofi_Kick02 ) );
+         break;
+
+      case 3:
+      case 4:
+
+         o->setSample( wavetable( lofi_Tom02 ) );
+         break;
+
+      case 5:
+      case 6:
+      case 7:
+
+         #ifdef BUILD_166
+            o->setSample( wavetable( Snare01 ) );
+         #else
+            o->setSample( wavetable( lofi_Snare01 ) );
+         #endif
+         break;
+
+      case 8:
+      case 9:
+
+         o->setSample( wavetable( Rim01 ) );
+         break;
+
+      case 10:
+      case 11:
+
+         o->setSample( wavetable( Hat03 ) );
+         break;
+   }
+
+   #endif
+
+   trigger();
+}
+
+/******************************************************************************
+ *
+ *                                 DualOsc 
+ *
+ ******************************************************************************/
+
+class DualOsc : public Osc
+{
+   typedef Osc super;                     // superclass is Osc
 
    public:
 
-   DrumSynth()
+   Osc *osc0;                             // ptr to oscillator 0
+   Osc *osc1;                             // ptr to oscillator 1
+
+   bool  charEv( char );                  // process a character event
+   void  dynamics();                      // update dynamics
+   void  onFreq();                        // compute frequency dependent state vars
+   void  output( char* );                 // write one buffer of output
+
+} ;
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +detune           - local detuning amount
+ *         effFreq          - effective frequency (includes local detuning)
+ *        +extFactor        - external detuning factor
+ *         osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool DualOsc::charEv( char code )
+{
+   switch ( code )
    {
-      useSequencer( new RealTimeSequencer( 120 ) );
+      #ifdef INTERN_CONSOLE
+
+      case '0':
+
+         console.pushMode( osc0 );
+         break;
+
+      case '1':
+
+         console.pushMode( osc1 );
+         break;
+
+      #endif
+
+      case '!':                     // perform a reset
+
+         osc0->reset();
+         osc1->reset();
+
+      default:
+
+         return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb:  osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *----------------------------------------------------------------------------*/      
+
+void DualOsc::dynamics()
+{
+   osc0->dynamics();
+   osc1->dynamics();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::onFreq
+ *
+ *  Desc:  Compute frequency-dependent state vars.
+ *
+ *  Memb:  effFreq          - effective frequency (includes internal detuning)
+ *         extFactor        - external detuning factor
+ *         osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *----------------------------------------------------------------------------*/      
+
+void DualOsc::onFreq()
+{
+   double f = effFreq * extFactor;
+   osc0->setFreq( f );
+   osc1->setFreq( f * 1.01 );
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb:  osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *-------------------------------------------------------------------------*/      
+
+void DualOsc::output( char *buf ) 
+{
+   char  buf1[ audioBufSz ];     // temp buffer for for holding osc1 output
+
+   osc0->output( buf );
+   osc1->output( &buf1[0] );
+
+   int sum;
+   for ( byte i = 0 ; i < audioBufSz; i++ )
+   {
+      sum    = buf[i] + buf1[i];
+      buf[i] = sum >> 1;
+   }
+}
+
+/******************************************************************************
+ *
+ *                                  Bass
+ *
+ ******************************************************************************/
+
+class Bass : public Voice
+{
+   typedef Voice super;                // superclass is Voice
+   
+   public:
+
+   bool charEv( char code )            // handle a character event
+   {                                      
+      switch ( code )
+      {
+         case '!':                     // perform a reset
+
+            super::charEv( code );
+            execute( PSTR( "ed88\\s0\\r8\\`0c70\\p45\\lf.27\\<``1c70\\p96\\l<``" ));
+            break;
+
+         default:                         
+
+            return super::charEv( code );
+      }
+      return true;
+   }
+
+} ;
+
+/******************************************************************************
+ *
+ *                               Beatitude 
+ *
+ ******************************************************************************/
+
+class Beatitude : public VoxSynth
+{
+   typedef VoxSynth super;          // superclass is VoxSynth
+
+   bool clickOn;                    // if true, click track is playing
+   bool cueing;                     // if true, sequencer is cueing to record
+   bool liveBass;                   // if true, bass is being played live
+
+   ClickTrack *click;               // ptr to click track
+   DrumKit    *drums;               // ptr to drumkit voice
+   Bass       *bass;                // ptr to bass voice
+
+   public:
+
+   Beatitude()
+   {
+      setupVoices(2);
+      click = new ClickTrack();
       presets.load( myPresets );
    }
 
+   void setup()
+   {
+      super::setup();
+      keybrd.setTopOct( 2 );         // constrain keyboard to octaves 0-2
+      keybrd.setDefOct( 1 );         // start keyboard in octave 1
+   }
+
    bool   charEv( char code );      // handle a character event
+   void   dynamics();               // update dynamics
    bool   evHandler( obEvent );     // handle an onboard event
    Osc   *newOsc( byte nth );       // create oscillator for nth voice
    Voice *newVox( byte nth );       // create nth voice 
    void   noteOn( key );            // turn a note on
+   void   noteOff( key );           // turn a note off
    void   output( char*, char* );   // write stereo output to pair of audio buffers
 
 } ;
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::charEv
+ *  Name:  Beatitude::charEv
  *
  *  Desc:  Process a character event.
  *
  *  Args:  code             - character to process
  *
- *  Memb: +cueing           - if true, metronome is cueing
- *        +metronomeOn      - if true, metronome is playing
+ *  Memb: +cueing           - if true, sequencer is cueing to record
+ *         click            - ptr to click track  
+ *        +clickOn          - if true, click track is playing
+ *        +liveBass         - if true, bass is being played live
  *         sqnc             - ptr to sequencer object
- *         vox[1]           - ptr to metronome object
  *
  *  Rets:  status           - true if character was handled
  *
  *----------------------------------------------------------------------------*/      
 
-bool DrumSynth::charEv( char code )      
+bool Beatitude::charEv( char code )      
 {
    switch ( code )
    {
-      case metroTOCK:                  // metronome upbeat
+      case sqncUPBEAT:                 // sequencer is at an upbeat
 
-         ((Metronome *)vox[1])->upbeat();
+         click->upbeat();
          break;
 
-      case metroCUE:                   // cue the metronome 
+      case sqncCUE:                    // sequencer is cueing to record 
 
+         clickOn = true;
          cueing = true;
          onLED( 1 );
 
-         // fall thru to metroON
+         // fall thru to sqncDNBEAT
 
-      case metroON:                    // turn metronome on
+      case sqncDNBEAT:                 // sequencer is at a downbeat
 
-         metronomeOn = true;
-
-         // fall thru to metroTICK
-
-      case metroTICK:                  // metronome downbeat
-
-         ((Metronome *)vox[1])->downbeat();
+         click->downbeat();
          break;
 
-      case metroOFF:                   // turn metronome off
+      case sqncOVER:                   // sequencer is done recording
 
-         metronomeOn = false;
+         clickOn = false;
          cueing = false;
          offLED( 1 );
          break;
 
-         // fall thru to metroUNCUE
-
-      case metroUNCUE:                 // uncue the metronome 
+      case sqncRECORD:                 // sequencer is recording
 
          cueing = false;
-         blinkLED( 1 );
+         blinkLED( 1 );                // blink to indicate recording
+         break;
+
+      case sqncPLAYON:                 // sequencer is playing back
+
+         blinkLED( 0 );
+         liveBass = true;
+         break;
+
+      case sqncPLAYOFF:                // sequencer has stopped playing back
+
+         offLED( 0 );
+         liveBass = false;
          break;
 
       case 'L':                        // load a beat
@@ -1081,7 +1357,7 @@ bool DrumSynth::charEv( char code )
             switch ( sqncNum )
             {
                case 0:
-                  sqnc->load( beat0 );
+                  drums->sqnc->load( beat0 );
                   break;
                default: 
                   break;
@@ -1090,13 +1366,22 @@ bool DrumSynth::charEv( char code )
          break;
       }
 
+      case '[':
+
+         drums->sqnc->start();
+         break;
+
       case '!':                        // perform a reset
 
          super::charEv( code );
+         click->reset();
 
-         metronomeOn = false;
-         cueing      = false;
-         sqnc->setTargetMuting( false );
+         clickOn  = false;
+         cueing   = false;
+         liveBass = false;
+
+         drums->keybrd.setMute( false );
+         drums->sqnc->setTargetMuting( false );
          break;
 
       default:                         
@@ -1108,20 +1393,36 @@ bool DrumSynth::charEv( char code )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::evHandler
+ *  Name:  Beatitude::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb:  click            - ptr to click track  
+ *
+ *----------------------------------------------------------------------------*/
+
+void Beatitude::dynamics()
+{
+   super::dynamics();
+   click->dynamics();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Beatitude::evHandler
  *
  *  Desc:  Handle an onboard event.
  *
  *  Args:  ev               - onboard event
  *
- *  Memb:  metronomeOn      - if true, metronome is playing
- *         sqnc             - ptr to sequencer object
+ *  Memb:  clickOn          - if true, click track is playing
+ *         drums->sqnc      - ptr to drum kit's sequencer 
  *
  *  Rets:  status           - true if the event was handled
  *
  *----------------------------------------------------------------------------*/      
 
-bool DrumSynth::evHandler( obEvent ev )
+bool Beatitude::evHandler( obEvent ev )
 {
    switch ( ev.type() )
    {
@@ -1129,12 +1430,12 @@ bool DrumSynth::evHandler( obEvent ev )
       case BUT0_PRESS:                 // play/stop sequencer playback
       case BUT0_TPRESS:                // beats/measures
 
-         return sqnc->evHandler(ev);         
+         return drums->sqnc->evHandler(ev);         
 
       case BUT1_PRESS:                 // record a sequence
 
-         sqnc->record();
-         console.runModeWhile( sqnc, &this->metronomeOn );
+         drums->sqnc->record();
+         console.runModeWhile( drums->sqnc, &this->clickOn );
          break;
 
       default: 
@@ -1146,7 +1447,7 @@ bool DrumSynth::evHandler( obEvent ev )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::newOsc
+ *  Name:  Beatitude::newOsc
  *
  *  Desc:  Return a pointer to the oscillator which is to be used by the nth 
  *         voice.
@@ -1166,24 +1467,40 @@ bool DrumSynth::evHandler( obEvent ev )
  *
  *----------------------------------------------------------------------------*/
 
-Osc *DrumSynth::newOsc( byte nth )                
+Osc *Beatitude::newOsc( byte nth )                
 {
    switch( nth )
-   {
-      case 0: return new SampleOsc();
-      case 1: return new WhiteNoise();
+   {                                         
+      case 0:  // oscillator for drums
+
+         return new SampleOsc();        
+
+      case 1:  // oscillator for bass
+      {
+         Square *o0 = new Square();
+         Square *o1 = new Square();
+
+         DualOsc *dual = new DualOsc();
+         dual->osc0    = o0;
+         dual->osc1    = o1;
+
+         return dual;
+      }
    }
 }
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::newVox
+ *  Name:  Beatitude::newVox
  *
  *  Desc:  Return a pointer to the nth voice to be used by the synth.
  *
  *  Args:  nth              - voice # (0-based)
  *
  *  Rets:  ptrVox           - pointer to voice object.
+ *
+ *  Memb: +bass             - ptr to bass voice
+ *        +drums            - ptr to drumkit voice
  *
  *  Note:  This method is automatically called once per voice by setupVoices(). 
  *         It is not meant to be called from anywhere else!
@@ -1197,60 +1514,120 @@ Osc *DrumSynth::newOsc( byte nth )
  *
  *----------------------------------------------------------------------------*/ 
 
-Voice *DrumSynth::newVox( byte nth )              
+Voice *Beatitude::newVox( byte nth )              
 {
    switch( nth )
    {
-      case 0: return new Kit();
-      case 1: return new Metronome();
+      case 0: 
+      {
+         drums = new DrumKit();
+         return drums;
+      }
+      case 1: 
+      {
+         bass = new Bass();
+         return bass;
+      }
    }
 }
    
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::noteOn
+ *  Name:  Beatitude::noteOn
  *
  *  Desc:  Turn a note on.
  *
  *  Args:  note             - note to turn on  
  *
- *  Memb:  cueing           - if true, metronome is cueing
+ *  Memb:  bass             - ptr to bass voice
+ *         cueing           - if true, sequencer is cueing to record
+ *         drums            - ptr to drumkit voice
+ *         liveBass         - if true, bass is being played live
  *
  *----------------------------------------------------------------------------*/      
 
-void DrumSynth::noteOn( key note )
+void Beatitude::noteOn( key note )
 {
-   if ( cueing ) return;         // suppress notes during cueing
-   super::noteOn( note );
+   if ( cueing )                 // suppress notes during cueing
+      return;         
+
+   if ( liveBass )
+      bass->noteOn( note );
+   else
+      drums->noteOn( note );
+}
+
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Beatitude::noteOff
+ *
+ *  Desc:  Turn a note off.
+ *
+ *  Args:  note             - note to turn off  
+ *
+ *  Memb:  bass             - ptr to bass voice
+ *         cueing           - if true, sequencer is cueing to record
+ *         drums            - ptr to drumkit voice
+ *         liveBass         - if true, bass is being played live
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Beatitude::noteOff( key note )
+{
+   if ( cueing )                 // suppress notes during cueing
+      return;         
+
+   if ( liveBass )
+      bass->noteOff( note );
+   else
+      drums->noteOff( note );
 }
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  DrumSynth::output
+ *  Name:  Beatitude::output
  *
  *  Desc:  Write (stereo) output to a pair of audio buffers.
  *
  *  Args:  bufL             - ptr to left audio buffer  
  *         bufR             - ptr to right audio buffer  
  *
- *  Memb:  metronomeOn      - if true, metronome is playing
- *         vox[0]           - ptr to Kit 
- *         vox[1]           - ptr to metronome 
+ *  Memb:  bass             - ptr to bass voice
+ *         drums            - ptr to drumkit voice
+ *         click            - ptr to click track  
+ *         clickOn          - if true, click track is playing
+ *         liveBass         - if true, bass is being played live
  *
  *----------------------------------------------------------------------------*/      
 
-void DrumSynth::output( char *bufL, char *bufR )
+void Beatitude::output( char *bufL, char *bufR )
 {
-   vox[0]->output( bufL );  
+   drums->output( bufL );  
 
-   if ( metronomeOn )  // left channel audio = 1/2 metronome + 1/2 kit
+   if ( clickOn )
    {
-      vox[1]->output( bufR );
+      click->output( bufR );
+
       Int reg;
-      for ( byte i = 0; i < audioBufSz; i++ )
+      for ( byte i = 0; i < audioBufSz; i++ )  // right buf 1/2 click 1/2 drums
       {
          reg.val = bufR[i] + bufL[i];
          reg.val >>= 1;
+         bufR[i] = reg._.lsb;
+      }
+   }
+   else if ( liveBass )
+   {
+      bass->output( bufR );
+
+      Int reg;
+      for ( byte i = 0; i < audioBufSz; i++ )  // right buf 3/4 bass 1/4 drums
+      {
+         reg.val  = bufR[i] ;
+         reg.val *= 3;
+         reg.val += bufL[i];
+         reg.val >>= 2;
          bufR[i] = reg._.lsb;
       }
    }
@@ -1261,11 +1638,11 @@ void DrumSynth::output( char *bufL, char *bufR )
    }
 }
 
-DrumSynth synth;
+Beatitude mySynth;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

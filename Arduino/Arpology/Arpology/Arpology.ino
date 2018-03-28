@@ -74,7 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.07 )              // specify sketch name & version
+about_program( Arpology, 1.08 )              // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 // Specify whether the voices of Arpology can be panned in stereo by 
@@ -1204,11 +1204,11 @@ class ArpSynth : public ARP_BASE_CLASS
       setVoicing( tonality->getVoicing( lastNote.position() ) );
    }
 
-} synth;                                     
+} arpSynth;                                     
 
 void setup()
 {
-   ardutouch_setup( &synth );                // initialize ardutouch resources
+   ardutouch_setup( &arpSynth );             // initialize ardutouch resources
 }
 
 void loop()

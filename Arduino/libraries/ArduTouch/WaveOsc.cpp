@@ -161,8 +161,6 @@ char WaveOsc::menu( key k )
  *
  *  Desc:  Compute frequency-dependent state vars.
  *
- *  Args:  factor           - factor to apply
- *
  *  Memb:  coeff            - step = frequency * coeff
  *         effFreq          - effective frequency (includes internal detuning)
  *         extFactor        - external detuning factor
@@ -393,7 +391,8 @@ boolean SampleOsc::charEv( char key )
 
          flags &= ~DONE;
          samples_to_go = length;
-         tabptr = (word )table;
+         tabptr  = (word )table;
+         oddTick = false;
          break;
 
       case '!':                           // reset
@@ -447,16 +446,39 @@ void SampleOsc::output( char *buf )
 {
    byte icnt   = audioBufSz;       // write this many ticks of output
 
-   while ( icnt-- )
+   if ( loFi )                     // play 1 sample for 2 audio ticks
    {
-      if ( samples_to_go )                      
+      while ( icnt-- )
       {
-         *buf++ = (char )pgm_read_byte_near( tabptr++ );
-         --samples_to_go;
+         if ( samples_to_go )                      
+         {
+            *buf++ = (char )pgm_read_byte_near( tabptr );
+            if ( oddTick )
+            {
+               ++tabptr;
+               --samples_to_go;
+            }
+            oddTick = ! oddTick;
+         }
+         else
+         {
+            *buf++ = 0;
+         }
       }
-      else
+   }
+   else                            // "hiFi" - play 1 sample per tick
+   {
+      while ( icnt-- )
       {
-         *buf++ = 0;
+         if ( samples_to_go )                      
+         {
+            *buf++ = (char )pgm_read_byte_near( tabptr++ );
+            --samples_to_go;
+         }
+         else
+         {
+            *buf++ = 0;
+         }
       }
    }
 }
@@ -477,5 +499,6 @@ void SampleOsc::setSample( const desWavTab *d )
 {
    setTable( d );
    samples_to_go = 0;
+   loFi = ( period == 0.0 );
 }
 

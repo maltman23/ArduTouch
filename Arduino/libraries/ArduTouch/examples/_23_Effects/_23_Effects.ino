@@ -264,11 +264,11 @@ class EffectSynth : public OneVoxSynth
       return o;
    }
 
-} synth ;
+} mySynth ;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

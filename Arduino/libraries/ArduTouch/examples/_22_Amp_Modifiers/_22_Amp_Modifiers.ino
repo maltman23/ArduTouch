@@ -285,11 +285,11 @@ class AmpModSynth : public OneVoxSynth
       return new AmpModVoice();
    }
 
-} synth ;
+} mySynth ;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

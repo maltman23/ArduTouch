@@ -202,6 +202,16 @@ chrInfo         	KEYWORD3
 chrInLnfo       	KEYWORD3
 chrBrief        	KEYWORD3
 
+SampleOsc		KEYWORD1
+setSample		KEYWORD2
 
+SawTooth		KEYWORD1
+Square			KEYWORD1
+WaveGen256		KEYWORD1
 
+synth			KEYWORD2
+BUILD_166		KEYWORD3
+
+writeNVS		KEYWORD2
+readNVS			KEYWORD2
 

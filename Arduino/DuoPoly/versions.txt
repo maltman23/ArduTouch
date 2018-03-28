@@ -1,5 +1,8 @@
 Versions:
 
+   2.44  synth renamed duoSynth
+         syncs with 1.03
+         [30182 / 1229] 
    2.43  Chnl::charEv() no longer explicitly propagates sequencer commands
          in Chnl::evHandler() nix (redundant) handling of BUT1_DTAP
          syncs with 1.02

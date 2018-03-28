@@ -25,7 +25,7 @@
 #include "Audio.h"
 #include "Synth.h"
 
-#define LIBRARY_VERSION "1.02"
+#define LIBRARY_VERSION "1.03"
 
 /* ------------------------------------------------------------------------- */
 
@@ -48,10 +48,10 @@
 
 /* ------------------------      public vars      -------------------------- */
 
+extern Synth *synth;                   // ptr to the runtime synth 
+
 #ifdef MONITOR_CPU
-
 extern byte  cpu;                      // % CPU used rendering audio (parts per 256)
-
 #endif
 
 /* ----------------------     public functions     ------------------------- */

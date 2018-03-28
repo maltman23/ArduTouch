@@ -47,6 +47,7 @@
 #include "types.h"
 #include "Voice.h"
 #include "WaveBank.h"
+#include "WaveGen.h"
 #include "WaveOsc.h"
 #include "WaveTable.h"
 

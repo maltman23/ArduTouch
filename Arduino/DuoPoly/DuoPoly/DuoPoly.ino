@@ -22,7 +22,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.43 )            // specify program name & version
+about_program( DuoPoly, 2.44 )            // specify program name & version
 set_baud_rate( 115200 )                   // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE
@@ -186,11 +186,11 @@ class DuoSynth : public VoxSynth
 
 /*----------------------------------------------------------------------------*/      
 
-DuoSynth synth;                     // instantiate synthesizer 
+DuoSynth duoSynth;                  // instantiate synthesizer 
 
 void setup()
 {
-   ardutouch_setup( &synth );       // initialize ardutouch resources
+   ardutouch_setup( &duoSynth );    // initialize ardutouch resources
 }
 
 void loop()

@@ -350,11 +350,11 @@ class RamplerSynth : public OneVoxSynth
       return v;
    }
 
-} synth ;
+} mySynth ;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

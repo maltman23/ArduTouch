@@ -239,11 +239,11 @@ set_baud_rate( 115200 )
  *
  */
 
-OneVoxSynth synth;
+OneVoxSynth mySynth;
 
 void setup()
 {
-   ardutouch_setup( &synth );                   
+   ardutouch_setup( &mySynth );                   
 }
 
 void loop()

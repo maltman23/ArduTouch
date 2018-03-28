@@ -104,6 +104,9 @@ class SampleOsc : public WaveOsc          // plays a wavetable once, one sample 
    word   samples_to_go;                  // # of samples remaining to output
    word   tabptr;                         // current location in sample table
 
+   bool   loFi;                           // sample is "lofi" (half the audio rate)
+   bool   oddTick;                        // if loFi, # audio ticks since trigger is odd
+
    public:
 
    boolean charEv( char );                // process a character event

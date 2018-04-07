@@ -29,10 +29,12 @@ Console  console;
 /* ----------------------    private variables    -------------------------- */
 
 #ifdef CONSOLE_OUTPUT
-   char buf[16];                  // buffer for conversions to string
+   #define STR_BUFSZ 16
 #else
-   char buf[1];
+   #define STR_BUFSZ 1
 #endif
+
+char buf[ STR_BUFSZ ];                 // buffer for conversions to string
 
 /* ----------------------     public functions    -------------------------- */
 
@@ -71,55 +73,82 @@ void exit_sketch()
  *
  *  Name:  toStr
  *
- *  Desc:  Convert a double to a string with 2 decimal places.
+ *  Desc:  Convert a double to a string.
  *
  *  Args:  val              - a double value
  *         str              - address of buffer to store string  
  *
  *  Note:  Instead of calling the library routine dtostrf(), some inline logic
- *         using ltoa() saves 1138 bytes of ROM.
+ *         using ltoa() saves around 1100 bytes of ROM.
  *
- *         The integral portion is assumed to not exceed max value for a long.
- *
- *         The hundreths place is rounded up, unless it would cause the
- *         integral portion to be bumped.
+ *         The value to be converted must not exceed the max value for a long
+ *         when place-shifted by NUM_DEC_PLACES. 
  *
  *----------------------------------------------------------------------------*/      
+
+#define NUM_DEC_PLACES  3           // # of digits to display after decimal pt
+//#define USE_DTOSTRF               // uncomment to use Arduino library function
 
 void toStr( double val, char *str )
 {
 #ifdef CONSOLE_OUTPUT
 
-   // dtostrf( val, 2, 2, str ); 
+ #ifdef USE_DTOSTRF
 
-   /* convert integral portion */
+   dtostrf( val, STR_BUFSZ, NUM_DEC_PLACES, str ); 
 
-   long   integral   = val;
-   double fractional = val - integral;
+ #else   // override library routine (to save space)
 
-   ltoa( integral, str, 10 );
+   if ( val < 0 )
+   {
+      *str++ = '-';
+      val = -val;
+   }
+
+   // pre-pend '0's; place-shift val
+
+   for ( byte i = NUM_DEC_PLACES; i > 0; i-- )
+   {
+      if ( val < 1 )
+         *str++ = '0';
+      val *= 10;
+   }
+
+   long integral = val;
+   val -= integral;
+
+   if ( val > .99 ) ++integral; // round within .99 epsilon
+
+   ltoa( integral, str, 10 );   // convert place-shifted integral value to str
+
+   // prepend 0s of necessary 
+
+   // shift digits and insert decimal pt
 
    while ( *str != 0 ) str++;   // move to end of str
-   *str++ = '.';                // add decimal pt
+   str -= NUM_DEC_PLACES;       // move back to decimal insertion pt
 
-   /* convert 1st 2 places of fractional portion */
+   for ( char i = NUM_DEC_PLACES; i >= 0; i-- )
+      str[ i + 1 ] = str[i];
 
-   if ( fractional < 0 )
-      fractional = -fractional;
+   *str = '.';                  // insert decimal pt
 
-   fractional *= 100;
-   integral = fractional;
-   fractional -= integral;
-   if ( fractional >= .5 && integral < 99 )
-      integral++;
+ #endif // USE_DTOSTRF
 
-   if ( integral < 10 )
-     *str++ = '0';
-
-   ltoa( integral, str, 10 );
-
-#endif
+#endif  // CONSOLE_OUTPUT
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  toStr
+ *
+ *  Desc:  Convert a double to a string.
+ *
+ *  Args:  val              - a double value
+ *
+ *  Rets   str              - address of buffer to store string  
+ *
+ *----------------------------------------------------------------------------*/      
 
 char *toStr( double val )
 {

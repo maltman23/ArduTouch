@@ -1,5 +1,47 @@
 Versions:
 
+   1.06  add DelayVibrato class
+         break Vibrato module out from StdEffects module
+         break Tremolo.h out from StdEffects module
+         RealTimeSequencer::sendMsg() moved to Sequencer
+         sending of sqncPLAYON/OFF msgs moved from RealTimeSequencer to Sequencer
+         add Sequencer::sender
+         Sequencer::sendMsg() renamed ::msgSynth()
+         add Sequencer::msgAll()
+         sqncRECORD msg renamed sqncRECON
+         sqncOVER   msg renamed sqncRECOFF
+         nix sqncSQUELCH
+         add Voice( sqncPLAYON/OFF )
+         AutoWah::lfo made public
+         toStr() can display to varying decimal places (3 by default)
+         toStr() handles negative values
+         in Console module, add USE_DTOSTRF NUM_DEC_PLACES STR_BUFSZ
+   1.05  add SequencerRAM, SequencerROM classes
+         add DualOsc, FiltEnv classes
+         add Sequencer::at(byte) ::atIdxBump() ::rewind()
+         move ::load() ::read() ::write() from Sequencer to SequencerRAM
+         nix Sequencer::sqnc
+         Sequencer(']') issues a sqncSQUELCH to target
+         nix call to reset() within Osc constructor
+   1.04  add RealTimeSequencer, ClickTrack, ByteMenu classes
+         RealTimeSequencer handles both NoteOn and NoteOff events
+         add ClickTrack.h ClickTrack.cpp to library
+         add ByteMenu.h to library
+         break Commands.h out from Console_.h
+         add sequencer messages to Commands.h
+         Sequencer::tempo is in beats-per-minute (was jiffs-per-minute)
+         Sequencer::jiffPerBeat becomes global constant
+         jiffsPerBeat increased to 24 
+         add symbolic note durations 
+         RealTimeSequencer::ignoreKeyUp
+         RealTimeSequencer::dynamics() concatenates rest on duration overflow
+         MaxOctave reduced to 7 (from 15) so that octave field is 3 bits long
+         StepProgrammer sets default noteValue to QUART_
+         add StepProgrammer('Q'/'E'/'S') for setting note values
+         nix target muting logic in Sequencer classes
+         add sqncSQUELCH to Commands.h
+         Voice handles sqncSQUELCH
+         additions to KEYWORDS.TXT
    1.03  add WaveGen module
          add lofi versions of all drum samples
          add BUILD_166 define in Model.h

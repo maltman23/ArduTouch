@@ -22,7 +22,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.44 )            // specify program name & version
+about_program( DuoPoly, 2.47 )            // specify program name & version
 set_baud_rate( 115200 )                   // specify serial baud-rate
 
 #ifndef INTERN_CONSOLE
@@ -41,33 +41,34 @@ set_baud_rate( 115200 )                   // specify serial baud-rate
  *                                 presets
  *----------------------------------------------------------------------------*/      
 
+// Hive tempo = 244.0, noteValue(l) = eight
 
-define_preset( Hive, "'w1rEbs6c3<``k3z``lEb-s3c6<``St488\\r3jnhn``[`" )
+define_preset( Hive, "'w1rEbs6c3<``k3z``lEb-s3c6<``St244\\r3jnhn``[`" )
 
-// Keltos tempo = 68.75, noteValue = 1
+// Keltos tempo = 68.75, noteValue(l) = sixteenth
 
-define_preset( Keltos, "'w2r*1.5\\g230\\ea62\\d153\\s192\\<`Ebs2<```"
-                       "lEbs3<``"
-                        "St275\\r3c.m...c.m.....4gcx...s...3nm4sxs.3n.c.m...c.m.....4gcx...s...3nm4s3nm...`"
+define_preset( Keltos, "'w2r*1.5\\g230\\ea62\\d153\\s192\\<`Ebs2<``At<f2.2\\```"
+                       "lEbs3<``At<f2.2\\``"
+                        "St68.75\\rS3c.m...c.m.....4gcx...s...3nm4sxs.3n.c.m...c.m.....4gcx...s...3nm4s3nm...`"
                         "`[`" )
 
-// Industry tempo = 162.5. noteValue(l) = 20, noteValue(r) = 2
+// Industry tempo = 162.5, noteValue(l, r) = (5*quarter, eigth)
 
-define_preset( Industry, "'lw1Eb-s5c4<``St32.5\\r2zsvc```"
-                         "rEb-s2c1<``St325\\r7zc,bjbchvs```l`[" )
+define_preset( Industry, "'lw1Eb-s5c4<``St162.5\\rV120\\2zsvc```"
+                         "rEb-s2c1<``St162.5\\r7zc,bjbchvs```l`[" )
 
-// Omission tempo = 102.5 noteValue = 2
+// Omission tempo = 102.5 noteValue(l,r) = (eight, eight)
 
 define_preset( Omission, "'rv205\\Tf.64\\d.375\\t1\\L<`Vf5.3\\d.46\\t26\\-<`"
-                         "St205\\r4.cb5x.........4cb5s.........4cb5z........z4m..........```"
-                         "lw1Tf4\\d1\\t3\\~<`St205\\r2c..3c.x.2b.nx.```[" )
+                         "St102.5\\r4.cb5x.........4cb5s.........4cb5z........z4m..........```"
+                         "lw1Tf4\\d1\\t3\\~<`St102.5\\r2c..3c.x.2b.nx.```[" )
 
-// Cadiz tempo = 120 noteValue(l) = 2
+// Cadiz tempo = 120 noteValue(l,r) = (eight, quarter)
 
 define_preset( Cadiz, "'rw1V<f4.4\\d.13\\`"
-                      "St30\\r1j......2j...3v..g.v.d.x.2m1j``f54\\g14\\`" 
+                      "St30\\rQ1j......2j...3v..g.v.d.x.2m1j``f54\\g14\\`" 
                       "lw1g248\\"
-                      "St240\\r2j4xv3j4jx3j4h2j4xv3j4jx3j4h2j4dg3j4jd3j4h2j4dg3j4gv3m4d```[" )
+                      "St120\\r2j4xv3j4jx3j4h2j4xv3j4jx3j4h2j4dg3j4jd3j4h2j4dg3j4gv3m4d```[" )
 
 begin_bank( myPresets )             // these presets will be loaded
 

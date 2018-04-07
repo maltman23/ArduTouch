@@ -1,8 +1,20 @@
 Versions:
 
+   2.47  add tremolo to Keltos preset
+         [30364 / 1219] 
+   2.46  Chnl uses SequencerRAM 
+         syncs with 1.05
+         [30282 / 1217] 
+   2.45  preset tempos denominated in beats-per-minute
+         preset note durations denoted symbolically
+         presets sets note durations via StepProgrammer cmds 'Q', 'E', 'S'
+         syncs with 1.04
+         [30192 / 1227] 
    2.44  synth renamed duoSynth
          syncs with 1.03
          [30182 / 1229] 
+         [30180 / 1229] 1.04m
+         [30124 / 1229] 1.04n
    2.43  Chnl::charEv() no longer explicitly propagates sequencer commands
          in Chnl::evHandler() nix (redundant) handling of BUT1_DTAP
          syncs with 1.02

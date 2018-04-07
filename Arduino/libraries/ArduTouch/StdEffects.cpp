@@ -249,6 +249,111 @@ void LPFilter::setCutoff( byte c )
 
 /******************************************************************************
  *
+ *                                 FiltEnv 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FiltEnv::calcWeight
+ *
+ *  Desc:  Calculate the weighting applied to the input term
+ *
+ *  Memb:  cutoff           - filter cutoff (n/255)
+ *         env.value        - instantaneous scaling coefficient for cutoff
+ *        +weight           - weighting applied to input term (n/255)
+ *
+ *----------------------------------------------------------------------------*/      
+
+void FiltEnv::calcWeight()
+{
+   weight = cutoff * env.value;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FiltEnv::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  env              - envelope which scales the cutoff value
+ *
+ *  Rets:  status           - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+
+boolean FiltEnv::charEv( char code )
+{
+   switch ( code )
+   {
+      case chrTrigger:                 // trigger control
+      case chrRelease:                 // release trigger
+
+         env.charEv( code );           // propagate to envelope
+         break;
+
+      #ifdef CONSOLE_OUTPUT
+
+      case chrInfo:                    // display object info to console
+
+         LPFilter::charEv( chrInfo );
+         env.brief();
+         break;
+
+      #endif
+
+      #ifdef INTERN_CONSOLE
+
+      case 'e':                        // push envelope
+
+         console.pushMode( &this->env );
+         break;
+
+      case '~':                        // set legato triggering
+      case '\'':                       // set staccato triggering
+
+      #endif
+
+      case '<':                        // unMute
+      case '!':                        // perform a reset
+
+         env.charEv( code );           // propagate to envelope
+                                       // fall thru
+      default:
+
+         return LPFilter::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FiltEnv::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb:  lfo              - LFO which scales the cutoff value
+ *
+ *----------------------------------------------------------------------------*/      
+
+void FiltEnv::dynamics()
+{
+   env.dynamics();                     // update envelope dynamics
+   calcWeight();                       // recalculate the weight for input term
+}
+
+#ifdef CONSOLE_OUTPUT
+const char *FiltEnv::prompt()
+{
+   return CONSTR("filtenv");
+}
+#endif
+
+
+/******************************************************************************
+ *
  *                                 BSFilter 
  *
  *  A "bit-shift" filter using an exponential moving average (powers of 2)
@@ -575,106 +680,5 @@ boolean WahLFO::charEv( char code )
    return true;
 }
 
-/******************************************************************************
- *
- *                               Tremolo 
- *                                                                            
- ******************************************************************************/
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Tremolo::charEv
- *
- *  Desc:  Process a character event.
- *
- *  Args:  code             - character to process
- *
- *  Memb:  +value           - current output value
- *
- *  Rets:  status           - if true, character was handled
- *
- *----------------------------------------------------------------------------*/
-
-boolean Tremolo::charEv( char code )
-{
-   switch ( code )
-   {
-      case '.':                        // mute
-
-         TermLFO::charEv('.');
-         value = 1.0;
-         break;
-
-      case '!':                        // reset
-
-        iniOsc( .4, 2.5 );  
-        // fall thru
-
-      default:
-
-         return TermLFO::charEv( code );
-   }
-   return true;
-}
-
-#ifdef CONSOLE_OUTPUT
-const char* Tremolo::prompt()
-{
-   return CONSTR("tremolo");
-}
-#endif
 
 
-/******************************************************************************
- *
- *                               Vibrato 
- *                                                                            
- ******************************************************************************/
-
-#define RATIO_SEMITONE   1.059463   // frequency ratio between adjacent pitches
-#define INVERT_SEMITONE   .943874   // 1 / RATIO_SEMITONE
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Vibrato::evaluate
- *
- *  Desc:  Compute output value based on oscillator position.
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +fader            - current fader value
- *         pos              - current position within oscillation range
- *        +value            - current output value
- *
- *----------------------------------------------------------------------------*/
-
-void Vibrato::evaluate()
-{
-   double spos = fader * ((2.0 * pos) - depth);
-   if ( spos >= 0 )
-      value = 1.0 + (spos * (RATIO_SEMITONE-1.0) );
-   else
-      value = 1.0 + (spos * (1.0 - INVERT_SEMITONE));
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Vibrato::iniPos
- *
- *  Desc:  Set initial oscillator position.
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +pos              - cur position within oscillation range
- *
- *----------------------------------------------------------------------------*/
-       
-void Vibrato::iniPos()
-{
-   pos = depth * 0.5;
-}
-
-#ifdef CONSOLE_OUTPUT
-const char* Vibrato::prompt()
-{
-   return CONSTR("vibrato");
-}
-#endif

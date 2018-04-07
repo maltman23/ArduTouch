@@ -23,44 +23,14 @@
 
 #include "types.h"
 #include "Control.h"
+#include "Envelope.h"
 #include "LFO.h"
 
-class LPFilter : public Effect      // low-pass filter (via exponential movavg)
-{
-   private:
-
-   char  last;                      // last output value   
-
-   protected:
-
-   byte  weight;                    // weighting applied to input term (n/255)
-
-   public:
-
-   byte  cutoff;                    // cutoff level (n/255) 
-
-   LPFilter() 
-   {
-      shortcut = 'l';
-   }
-
-   virtual void calcWeight();       // calculate weighting applied to input term
-
-   boolean charEv( char );          // process a character event
-   boolean evHandler( obEvent );    // handle an onboard event
-   void   process( char* );         // process an input buffer 
-   void   setCutoff( byte );        // set cutoff value
-
-   #ifdef KEYBRD_MENUS
-   char    menu( key );             // map key event to character 
-   #endif
-
-   #ifdef CONSOLE_OUTPUT
-   const  char  *prompt();          // return object's prompt string
-   #endif
-
-} ;  // LPFilter
-
+/******************************************************************************
+ *
+ *                                 BSFilter 
+ *
+ ******************************************************************************/
 
 class BSFilter : public Effect      // bit-shift filter
 {
@@ -100,24 +70,64 @@ class BSFilter : public Effect      // bit-shift filter
 } ;  // BSFilter
 
 
-class WahLFO : public LFO           // LFO used as component of AutoWah
+/******************************************************************************
+ *
+ *                                 LPFilter 
+ *
+ ******************************************************************************/
+
+class LPFilter : public Effect      // low-pass filter (via exponential movavg)
 {
+   private:
+
+   char  last;                      // last output value   
+
+   protected:
+
+   byte  weight;                    // weighting applied to input term (n/255)
+
    public:
+
+   byte  cutoff;                    // cutoff level (n/255) 
+
+   LPFilter() 
+   {
+      shortcut = 'l';
+   }
+
+   virtual void calcWeight();       // calculate weighting applied to input term
 
    boolean charEv( char );          // process a character event
+   boolean evHandler( obEvent );    // handle an onboard event
+   void   process( char* );         // process an input buffer 
+   void   setCutoff( byte );        // set cutoff value
 
-} ;
+   #ifdef KEYBRD_MENUS
+   char    menu( key );             // map key event to character 
+   #endif
+
+   #ifdef CONSOLE_OUTPUT
+   const  char  *prompt();          // return object's prompt string
+   #endif
+
+} ;  // LPFilter
 
 
-class AutoWah : public LPFilter     // oscillating low-pass filter
+/******************************************************************************
+ *
+ *                                 FiltEnv 
+ *
+ ******************************************************************************/
+
+class FiltEnv : public LPFilter     // filter envelope
 {
-   WahLFO  lfo;
+   Envelope  env;
 
    public:
 
-   AutoWah()
+   FiltEnv()
    {
-      shortcut = 'a';
+      shortcut = 'f';
    }
 
    void    calcWeight();            // calculate weighting applied to input term
@@ -130,39 +140,37 @@ class AutoWah : public LPFilter     // oscillating low-pass filter
 
 } ;
 
+/******************************************************************************
+ *
+ *                                  AutoWah 
+ *
+ ******************************************************************************/
 
-class Tremolo : public TermLFO      // stock tremolo
+class WahLFO : public LFO           // LFO used as component of AutoWah
 {
    public:
-
-   Tremolo()
-   {
-      shortcut = 't';
-   }
 
    boolean charEv( char );          // process a character event
 
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt();           // return object's prompt string
-   #endif
-
 } ;
 
-
-class Vibrato : public FadeLFO      // stock vibrato
+class AutoWah : public LPFilter     // oscillating low-pass filter
 {
    public:
 
-   Vibrato()
+   WahLFO  lfo;
+
+   AutoWah()
    {
-      shortcut = 'v';
+      shortcut = 'a';
    }
 
-   void   evaluate();               // set output val (as a function of LFO pos)
-   void   iniPos();                 // set initial osc position
+   void    calcWeight();            // calculate weighting applied to input term
+   boolean charEv( char );          // process a character event
+   void    dynamics();              // update dynamics
 
    #ifdef CONSOLE_OUTPUT
-   const char*  prompt();           // return object's prompt string
+   const  char  *prompt();          // return object's prompt string
    #endif
 
 } ;

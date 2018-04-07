@@ -25,7 +25,7 @@
 #include "Audio.h"
 #include "Synth.h"
 
-#define LIBRARY_VERSION "1.03"
+#define LIBRARY_VERSION "1.06"
 
 /* ------------------------------------------------------------------------- */
 
@@ -56,7 +56,7 @@ extern byte  cpu;                      // % CPU used rendering audio (parts per 
 
 /* ----------------------     public functions     ------------------------- */
 
-void ardutouch_info();                 // perform ongoing ardutouch tasks
+void ardutouch_info();                 // display ArduTouch library info to console
 void ardutouch_loop();                 // perform ongoing ardutouch tasks
 void ardutouch_setup( Synth * );       // initialize ardutouch resources
 void device_io();                      // manage device I/O

@@ -32,8 +32,7 @@ class KeyBrd : public Control
    byte    defOctave;                           // default octave # 
    byte    topOctave;                           // top octave # 
 
-   static const byte   MaxOctave = 15;          // maximum possible octave #
-
+   static const byte   MaxOctave = 7;           // maximum possible octave #
    static const byte   NumNotes = 13;           // number of notes in an octave (+1)
 
    static const char   keycode_[ NumNotes ];    // ascii keycodes mapped to notes

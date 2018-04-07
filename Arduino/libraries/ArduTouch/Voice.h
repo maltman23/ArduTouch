@@ -22,12 +22,13 @@
 #define VOICE_H_INCLUDED
 
 #include "types.h"
+#include "Console_.h"
 #include "Instrument.h"
 #include "Osc.h"
 #include "Control.h"
 #include "Envelope.h"
 #include "Scroller.h"
-#include "StdEffects.h"
+#include "Vibrato.h"
 
 /******************************************************************************
  *
@@ -83,7 +84,7 @@ class Voice : public Instrument, public Scroller
 
    byte   num;                      // voice # 
 
-   Osc    *osc;                     // ptr to raw oscillator
+   Osc    *osc;                     // ptr to resident oscillator
 
    AmpMods     ampMods;             // amplitude modifiers
    PitchMods   pitchMods;           // pitch modifiers

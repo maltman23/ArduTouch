@@ -1,7 +1,7 @@
 /*
     Voice.cpp  
 
-    Implementation of the Voice, Tremolo and Vibrato classes.
+    Implementation of the Voice and StockVoice classes.
 
     ---------------------------------------------------------------------------
  
@@ -243,7 +243,16 @@ boolean Voice::charEv( char code )
 
          flags &= ~(FREQ|TRIG);     // clear any pending freq change and trigger
 
-         // fall thru to super reset
+      #ifdef IMPLICIT_SEQUENCER
+
+      case sqncPLAYON:              // squelch any ongoing output
+      case sqncPLAYOFF:        
+      
+      #endif     
+
+         setFreq(0.0);
+
+         // fall thru to super 
             
       default:
 
@@ -285,17 +294,21 @@ void Voice::doneGlide()
  *         built-in controls, advance any ongoing portamento, and propagate 
  *         changes to the instantaneous volume and frequency of the voice.
  *
- *  Memb: +dirGlide         - ongoing portamento direction:
+ *  Memb:  ampMods          - amplitude modifiers
+ *        +dirGlide         - ongoing portamento direction:
  *                              > 0  pitch is increasing 
  *                              < 0  pitch is decreasing 
  *                              = 0  pitch is steady (portamento done)
+ *         effects          - effects chain
  *         effVol           - effective volume 
  *        +flags.FREQ       - if set, an ideal frequency change is pending
  *        +flags.TRIG       - if set, a trigger is pending
  *         glide            - portamento speed 1:255 (0 = off)
  *        +instGlide        - instantaneous portamento coefficient
  *         multGlide        - dynamic multiplier for the instantaneous glide 
+ *         osc              - ptr to resident oscillator
  *         pendFreq         - pending ideal frequency  
+ *         pitchMods        - pitch modifiers
  *        +segVol           - if segue in process, ultimate instVol
  *         vol              - volume level 
  *
@@ -464,7 +477,9 @@ void Voice::noteOff( key note )
  *
  *  Glob:  audioBufSz       - size of system audio buffers
  *
- *  Memb: +instVol          - instantaneous volume
+ *  Memb:  effects          - effects chain
+ *        +instVol          - instantaneous volume
+ *         osc              - ptr to resident oscillator
  *         segVol           - if segue in process, ultimate instVol
  *
  *  Note:  if a segue is in progress, this method will gradually adjust the 

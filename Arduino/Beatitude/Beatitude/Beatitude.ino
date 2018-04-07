@@ -3,14 +3,6 @@
 // 
 //  A Drum and Bass synth with real-time drum sequencer for the ArduTouch. 
 //
-//   ************************** IMPORTANT NOTE ***************************
-//
-//           For the best sounding snare, use Arduino build 1.6.6
-//           and uncomment the line "//#define BUILD_166" in the
-//           file Model.h of the ArduTouch library.
-//
-//   *********************************************************************
-// 
 //  How To Use:
 //
 //              ------------       Playing Drums         ------------       
@@ -132,6 +124,15 @@
 //
 //    The red LED will now turn off.
 //
+//
+//   ************************** IMPORTANT NOTE ***************************
+//
+//           For the best sounding snare, use Arduino build 1.6.6
+//           and uncomment the line "//#define BUILD_166" in the
+//           file Model.h of the ArduTouch library.
+//
+//   *********************************************************************
+// 
 //  ---------------------------------------------------------------------------
 //
 //  Target:   ArduTouch board
@@ -164,24 +165,23 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Beatitude, 0.94 )             // specify sketch name & version
+about_program( Beatitude, 0.97 )             // specify sketch name & version
 set_baud_rate( 115200 )                      // specify serial baud-rate
 
 /*----------------------------------------------------------------------------*
  *                                 presets
  *----------------------------------------------------------------------------*/      
 
-
 define_preset( Beat0, "L0\\[" )
 
 const byte beat0[] PROGMEM = 
 { 
    31,
-   0, 4, 7, 6, 0, 2, 7, 4,
-   0, 4, 7, 6, 0, 2, 7, 4,
-   0, 4, 7, 6, 0, 2, 7, 6,
-   0, 4, 0, 4, 0, 6, 255 
-} ;
+   0, QUART_, 7, QUART__, 0, EIGHT_, 7, QUART_,
+   0, QUART_, 7, QUART__, 0, EIGHT_, 7, QUART_,
+   0, QUART_, 7, QUART__, 0, EIGHT_, 7, QUART__,
+   0, QUART_, 0, QUART_,  0, QUART__, 255 
+} ;             
 
 begin_bank( myPresets )             // these presets will be loaded
 
@@ -191,157 +191,9 @@ end_bank()
 
 /******************************************************************************
  *
- *                              ClickTrack
- *
- ******************************************************************************/
-
-class ClickTrack : public Voice
-{
-   typedef Voice super;                // superclass is Voice
-   
-   public:
-
-   ClickTrack()
-   {
-      useOsc( new WhiteNoise() );
-   }
-
-   bool  charEv( char );               // handle a character event
-   void  dynamics();                   // update dynamics
-   void  downbeat();                   // strike a downbeat
-   void  output( char * );             // write output to an audio buffer
-   void  upbeat();                     // strike an upbeat
-
-} ;
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  ClickTrack::charEv
- *
- *  Desc:  Process a character event.
- *
- *  Args:  code             - character to process
- *
- *  Rets:  status           - true if character was handled
- *
- *----------------------------------------------------------------------------*/      
-
-bool ClickTrack::charEv( char code )      
-{
-   switch ( code )
-   {
-      case '!':
-
-         super::charEv( code );
-         setGlobVol( 255 );
-         execute( PSTR( "k<`es0\\d4\\" ) );
-         break;
-
-      default:                         
-         
-         return super::charEv( code );
-   }
-   return true;
-}
-
-void ClickTrack::downbeat()
-{
-   noteOn( key( 45 ) );
-}
-
-void ClickTrack::upbeat()
-{
-   noteOn( key( 30 ) );
-}
-
-void ClickTrack::dynamics()
-{
-   if ( flags & FREQ )              // handle pending frequency change
-   {
-      osc->setFreq( pendFreq );
-      flags &= ~FREQ;               
-   }
-
-   if ( flags & TRIG )              // handle pending trigger
-   {
-      osc->trigger();               
-      ampMods.trigger();
-      flags &= ~TRIG;               
-   }
-   else                             // update components
-   {
-      osc->dynamics();
-      ampMods.dynamics();
-   }
-
-   /* manage instantaneous volume */
-
-   /*
-   if ( muted() )
-   {
-      segVol.val = 0;
-   }
-   else
-   */
-   {
-      segVol.val = 256;
-      segVol.val *= ampMods.value();
-   }
-}
-
-void ClickTrack::output( char *buf )        
-{
-   byte numrecs = audioBufSz;     
-
-   osc->output( buf );
-
-   Int amp;
-   while ( numrecs-- ) 
-   {
-      amp.val  = segVol.val;
-      amp.val *= *buf;
-      *buf++   = amp._.msb;
-   }
-}
-
-/******************************************************************************
- *
  *                                 BeatMenu 
  *
- ******************************************************************************/
-
-class BeatMenu : public Mode
-{
-   typedef Mode super;                 // superclass is Mode
-   
-   public:
-
-   byte   numBeats;                    // number of beats
-   bool   waiting;                     // if true, waiting for key press
-
-   void getBeats( byte iniBeats )
-   {
-      numBeats = iniBeats;
-      waiting  = true;
-      console.runModeWhile( this, &this->waiting );
-   }
-
-   bool   evHandler( obEvent );        // handle an onboard event
-
-}  beatMenu ;
-
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  BeatMenu::evHandler
- *
- *  Desc:  Set the number of beats per measure by pressing a key.
- *
- *  Args:  ev               - onboard event
- *
- *  Rets:  status           - true if the event was handled
- *
- *         The number of beats per meaure is set as follows:
+ *            The number of beats per meaure is set as follows:
  *
  *           -------------------------------------------------
  *           |   |   |   |   |   |   |   |   |   |   |   |   |
@@ -359,68 +211,23 @@ class BeatMenu : public Mode
  *           |     |       |     |     |       |       |     |
  *           -------------------------------------------------
  *
- *----------------------------------------------------------------------------*/      
+ ******************************************************************************/
 
-bool BeatMenu::evHandler( obEvent ev )
+class BeatMenu : public ByteMenu
 {
-   switch ( ev.type() )
-   {
-      case KEY_DOWN:
-      
-         numBeats = ev.getKey().position() + 1; 
-         break;
-      
-      case KEY_UP:
+   public:
 
-         waiting = false;
-         break;
+   byte evaluate( byte keypos ) { return keypos+1; }
 
-      default:                 
-
-         return super::evHandler( ev );
-   }
-   return true;                 
-}
+}  beatMenu ;
 
 
 /******************************************************************************
  *
  *                                MeasureMenu 
  *
- ******************************************************************************/
-
-class MeasureMenu : public Mode
-{
-   typedef Mode super;                 // superclass is Mode
-   
-   public:
-
-   byte   numMeasures;                 // number of meaures
-   bool   waiting;                     // if true, waiting for key press
-
-   void getMeasures( byte iniMeasures )
-   {
-      numMeasures = iniMeasures;
-      waiting  = true;
-      console.runModeWhile( this, &this->waiting );
-   }
-
-   bool   evHandler( obEvent );        // handle an onboard event
-
-}  measureMenu ;
-
-
-/*----------------------------------------------------------------------------*
  *
- *  Name:  MeasureMenu::evHandler
- *
- *  Desc:  Set the number of measures by pressing a key.
- *
- *  Args:  ev               - onboard event
- *
- *  Rets:  status           - true if the event was handled
- *
- *         The number of meaures is set as follows:
+ *               The number of meaures is set as follows:
  *
  *           -------------------------------------------------
  *           |   |   |   |   |   |   |   |   |   |   |   |   |
@@ -438,517 +245,24 @@ class MeasureMenu : public Mode
  *           |     |       |     |     |       |       |     |
  *           -------------------------------------------------
  *
- *----------------------------------------------------------------------------*/      
-
-bool MeasureMenu::evHandler( obEvent ev )
-{
-   switch ( ev.type() )
-   {
-      case KEY_DOWN:
-      {
-         key k    = ev.getKey();
-         byte pos = k.position();
-         if ( pos <= 9 )
-            numMeasures = pos+1;
-         else if ( pos == 10 )
-            numMeasures = 12;
-         else
-            numMeasures = 16;
-         break;
-      }
-      case KEY_UP:
-
-         waiting = false;
-         break;
-
-      default:                 
-
-         return super::evHandler( ev );
-   }
-   return true;                 
-}
-
-
-/******************************************************************************
- *
- *                           RealTimeSequencer
- *
  ******************************************************************************/
 
-   // the following status messages are sent to synth via its charEv() method
-
-#define sqncCUE         -12            // sequencer is cueing to record 
-#define sqncRECORD      -13            // sequencer is recording
-#define sqncDNBEAT      -14            // sequencer is at a downbeat
-#define sqncUPBEAT      -15            // sequencer is at an upbeat 
-#define sqncOVER        -16            // sequencer is done recording
-#define sqncPLAYON      -17            // sequencer is playing back 
-#define sqncPLAYOFF     -18            // sequencer has stopped playing back 
-
-class RealTimeSequencer : public Sequencer
+class MeasureMenu : public ByteMenu
 {
-   typedef Sequencer super;            // superclass is Sequencer
-
-   using Sequencer::Sequencer;         // use Sequencer constructor
-
-   protected:
-
-   // recording status values:
-
-   static  const byte recOFF   = 0;    // not recording 
-   static  const byte recCUE   = 2;    // cueing before recording
-   static  const byte recTRANS = 3;    // transitioning from cueing to recording
-   static  const byte recON    = 4;    // recording
-
-   byte  recording;                    // recording status
-
-   byte  beatDC;                       // downcounter (in jiffs) to next beat
-   byte  transDC;                      // downcounter (in jiffs) to transition phase
-   byte  measureDC;                    // downcounter (in beats) to next measure
-   byte  endDC;                        // downcounter (in measures) to end of recording
-
-   byte  jiffsPerBeat;                 // # jiffs in one beat
-   byte  jiffsToTrans;                 // # jiffs from start of cueing to transition phase
-   byte  beatsPerMeasure;              // # beats in one measure
-   byte  numMeasures;                  // # measures in sequence
-
-   byte  duration;                     // ongoing duration of prior entry being recorded
-   bool  quantized;                    // if true, prior entry was quantized to next jiff
-   bool  fullHouse;                    // if true, sequence buffer is full
-
-   void  done();                       // executed at end of recording
-   void  informFull();                 // print 'buffer full' msg on console
-
    public:
 
-   bool  charEv( char code );          // handle a character event
-   void  dynamics();                   // perform a dynamic update 
-   bool  evHandler( obEvent );         // handle an onboard event
-   void  setBeats( byte );             // set the number of beats per measure
-   void  setMeasures( byte );          // set the number of measures in sqnc
-
-} ;
-
-#define midTempo    384.0              // default tempo (a medium gait)
-#define maxBeats    11                 // maximum beats per measure
-#define maxMeasures 16                 // maximum # of measures
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::charEv
- *
- *  Desc:  Process a character event.
- *
- *  Args:  code             - character to process
- *
- *  Glob:  synth            - ptr to runtime synth 
- *
- *  Memb: +beatDC           - downcounter (in jiffs) to next beat
- *        +beatsPerMeasure  - # beats in one measure
- *        +endDC            - downcounter (in measures) to end of recording
- *        +fullHouse        - if true, sequence buffer is full
- *        +idx              - index of next record in sqnc[] 
- *        +jiffDC           - downcounter (in audio ticks) to next jiff
- *        +jiffsPerBeat     - # jiffs in one beat
- *        +measureDC        - downcounter (in beats) to next measure
- *        +numMeasures      - # measures in sequence
- *        +quantized        - if true, prior entry was quantized to next jiff
- *        +recording        - recording status
- *        +transDC          - downcounter (in jiffs) to transition phase
- *         ticksPerDyna     - # audio ticks per dynamic update 
- *         ticksPerJiff     - # audio ticks per jiff 
- *
- *  Rets:  status           - true if character was handled
- *
- *----------------------------------------------------------------------------*/      
-
-bool RealTimeSequencer::charEv( char code )      
-{
-   switch ( code )
-   {
-      case 'r':                        // record a sequence
-
-         super::charEv( code );
-
-         recording = recCUE;
-         synth->charEv( sqncCUE );
-
-         idx       = 1;                // rewind to 1st record
-         fullHouse = false;
-         quantized = false;
-
-         // initialize downcounters
-
-         jiffDC    = ticksPerJiff;        
-         beatDC    = jiffsPerBeat;
-         measureDC = beatsPerMeasure;
-         endDC     = numMeasures+1; 
-         transDC   = jiffsToTrans;
-
-         break;
-
-      case focusPOP: 
-
-         done();
-         break;
-      
-      case '[':                        // playback-transport cmds
-      case '|':
-
-         super::charEv( code );
-         if ( playing() )
-            synth->charEv( sqncPLAYON );
-         break;
-
-      case ']':
-
-         super::charEv( code );
-         synth->charEv( sqncPLAYOFF );
-         break;
-
-      #ifdef INTERN_CONSOLE
-
-      case 'b':                        // set beatsPerMeasure
-
-         console.getByte( CONSTR("beats"), &beatsPerMeasure );
-         setBeats( beatsPerMeasure );
-         break;
-
-      case 'm':                        // set # measures in sequence
-
-         console.getByte( CONSTR("measures"), &numMeasures );
-         setMeasures( numMeasures );
-         break;
-
-      #endif // INTERN_CONSOLE
-
-      #ifdef CONSOLE_OUTPUT
-
-      case chrInfo:
-
-         super::charEv( code );
-         console.newlntab();
-         console.infoByte( CONSTR("beats"), beatsPerMeasure );
-         console.infoByte( CONSTR("measures"), numMeasures );
-         break;
-
-      #endif // CONSOLE_OUTPUT
-
-      case '!':                        // reset sequencer
-
-         super::charEv( code );
-         setTempo( midTempo );
-
-         recording = recOFF;
-         synth->charEv( sqncOVER );
-
-         jiffsPerBeat    = 4;
-         setMeasures(4);
-         setBeats(4);
-         break; 
-
-      default:                         
-         
-         return super::charEv( code );
+   byte evaluate( byte keypos ) 
+   { 
+      if ( keypos <= 9 )
+         return keypos+1;
+      else if ( keypos == 10 )
+         return 12;
+      else
+         return 16;
    }
-   return true;
-}
 
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::done
- *
- *  Desc:  This routine should be called when a recording has ended or the 
- *         sequencer is popped.
- *
- *  Glob:  synth            - ptr to runtime synth 
- *
- *  Memb:  duration         - ongoing duration of note/rest in progress 
- *         fullHouse        - if true, sequence buffer is full
- *        +recording        - recording status
- *        +sqnc[]           - buffer for compiled sequence records
- *
- *----------------------------------------------------------------------------*/
+}  measureMenu ;
 
-void RealTimeSequencer::done()
-{
-   if ( recording )
-   {
-      if ( recording != recCUE )
-      {
-         if ( idx > 1 && ! fullHouse )    // compile duration for last entry
-         {
-            if ( duration )
-               sqnc[ idx++ ] = duration; 
-            else
-               idx--;                     // on zero duration cull last entry
-         }
-      }
-      sqnc[ idx ] = tokenEOS;
-      recording = recOFF;                 // turn recording off
-      synth->charEv( sqncOVER );          // "I'm through recording"
-   }
-}
-
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::dynamics
- *
- *  Desc:  Update the recording/playback of a sequence.
- *
- *  Glob:  synth            - ptr to runtime synth 
- *
- *  Memb: +beatDC           - downcounter (in jiffs) to next beat
- *        +duration         - ongoing duration of note/rest in progress 
- *        +endDC            - downcounter (in measures) to end of recording
- *        +jiffDC           - downcounter (in audio ticks) to next jiff
- *         jiffsPerBeat     - # jiffs in one beat
- *        +quantized        - if true, prior entry was quantized to next jiff
- *        +recording        - recording status
- *         ticksPerDyna     - # audio ticks per dynamic update 
- *         ticksPerJiff     - # audio ticks per jiff 
- *        +transDC          - downcounter (in jiffs) to transition phase
- *
- *  Note:  This method is to be called once per system dynamic update.       
- *
- *----------------------------------------------------------------------------*/
-
-void RealTimeSequencer::dynamics()
-{
-   if ( recording )
-   {
-      if ( jiffDC <= ticksPerDyna )             // process next jiff
-      {
-         jiffDC += ticksPerJiff - ticksPerDyna; // reload jiff downcounter
-
-         if ( transDC && (--transDC == 0) )
-         {
-            // transition phase has arrived
-            synth->charEv( sqncRECORD );        // "I'm recording"
-            recording = recTRANS;               // set recording status
-         }
-         else
-         {
-            duration++;                         // bump ongoing duration
-            if ( quantized )                    // prior entry quantized up
-            {
-               duration--;                      //
-               quantized = false;
-            }
-         }
-
-         if ( --beatDC == 0 )                   // next beat has arrived
-         {
-            beatDC = jiffsPerBeat;              // reload downcounter
-            if ( --measureDC == 0 )             // next measure has arrived
-            {
-               if ( recording == recTRANS )     // true recording phase has arrived
-               {
-                  recording = recON;            // set recording status
-                  duration = 0;                 // reset duration
-               }
-               measureDC = beatsPerMeasure;
-               if ( --endDC == 0 )              // end of sqnc has arrived
-                  done();
-               else
-                  synth->charEv( sqncDNBEAT );  // "I'm at a downbeat"
-            }
-            else
-               synth->charEv( sqncUPBEAT );     // "I'm at an upbeat"
-         }
-      }
-      else                                      // next jiff not yet arrived
-         jiffDC -= ticksPerDyna;                // update jiff downcounter
-   }
-   else
-      super::dynamics();
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::evHandler
- *
- *  Desc:  Handle an onboard event.
- *
- *  Args:  ev               - onboard event
- *
- *  Memb:  beatsPerMeasure  - # beats in one measure
- *        +fullHouse        - if true, sequence buffer is full
- *        +duration         - ongoing duration of note/rest in progress 
- *        +idx              - index of next record in sqnc[] 
- *         jiffDC           - downcounter (in audio ticks) to next jiff
- *         numMeasures      - # measures in sequence
- *        +quantized        - if true, prior entry was quantized to next jiff
- *         recording        - recording status
- *         target           - ptr to instrument being sequenced 
- *         ticksPerHalf     - # ticks per 1/2 jiff
- *        +sqnc[]           - buffer for compiled sequence records
- *
- *  Rets:  status           - true if the event was handled
- *
- *----------------------------------------------------------------------------*/      
-
-bool RealTimeSequencer::evHandler( obEvent ev )
-{
-   switch ( ev.type() )
-   {
-      case KEY_DOWN:
-      {
-         if ( recording < recTRANS ) 
-            return super::evHandler( ev );
-
-         // we are either in transition or true recording phase
-
-         if ( fullHouse )           // if sequencer buffer is full, eat key
-         {
-            informFull();
-            return true;            
-         }
-      
-         if ( jiffDC < ticksPerHalf ) // quantize to next Jiff
-         {
-            duration++;
-            quantized = true;
-         }
-
-         if ( recording == recON )
-         {
-            if ( idx > 1 )             // compile duration for prior note/rest
-            {
-               if ( duration )
-                  sqnc[ idx++ ] = duration;
-               else                    // cull prior entry on 0 duration
-                  --idx;
-            }
-            else if ( duration > 0 )   // compile a Rest-duration-UnMute sequence
-            {
-               sqnc[ idx++ ] = tokenRest;  
-               sqnc[ idx++ ] = duration;  
-               sqnc[ idx++ ] = tokenUnMute;  
-            }
-         }
-
-         /*  --- Begin the compilation of a new note, space permitting --- */
-      
-         if ( idx > sqnc[0] - 3 )    // no space for another note + EOS
-         {
-            fullHouse = true;
-            informFull();
-            return true;
-         }
-         else
-         {
-            //ev.setOctave( octave );    // set octave info in event
-
-            key k = ev.getKey();
-
-            sqnc[ idx++ ] = k.val;     // compile 1st byte of new note record
-            duration      = 0;         // set initial duration
-
-            //ev.setOctOn();             // flag as containing octave info
-
-            target->evHandler( ev );   // and play on target instrument
-            break;
-         }
-      }
-
-      case POT1:                       // set Tempo
-      {
-         // create a tempo that ranges nicely around midTempo
-
-         int relVal = (ev.getPotVal() - 128) * 2;
-
-         if ( relVal > 0 ) 
-            relVal *= 4;
-         relVal += 1000;
-
-         setTempo( midTempo * (double )relVal/1000.0 );
-         break;
-      }
-
-      case BUT0_PRESS:                 // play/stop sequencer playback
-      
-         if ( playing() )
-            stop();
-         else
-            start();
-         break;
-
-      case BUT0_TPRESS:                // set beats and measures
-
-         if ( ! recording && ! playing() )
-         {
-            onLED( 0 );
-            beatMenu.getBeats( beatsPerMeasure );
-            setBeats( beatMenu.numBeats );
-            measureMenu.getMeasures( numMeasures );
-            setMeasures( measureMenu.numMeasures );
-            offLED( 0 );
-         }
-         break;   
-
-      default:                 
-
-         return super::evHandler( ev );
-   }
-   return true;                 
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::setBeats
- *
- *  Desc:  Set the number of beats per measure
- *
- *  Args:  bpm              - beats per measure
- *
- *  Memb: +beatsPerMeasure  - # beats in one measure
- *        +jiffsToTrans     - # jiffs from start of cueing to transition phase
- *
- *  Note: The "transition phase" is a short period of time at the end of cueing 
- *        when any played notes are considered to be "on the 1st beat" of the
- *        1st measure of the recorded sequence.
- *
- *----------------------------------------------------------------------------*/      
-
-void RealTimeSequencer::setBeats( byte bpm )
-{
-   if ( bpm > maxBeats )
-      bpm = maxBeats;
-   else if ( ! bpm )
-      bpm = 1;
-
-   beatsPerMeasure = bpm;
-   jiffsToTrans    = (jiffsPerBeat * beatsPerMeasure) - 1;
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  RealTimeSequencer::setMeasures
- *
- *  Desc:  Set the number of measures for the sequence.
- *
- *  Args:  measures         - # of measures in sequence
- *
- *  Memb: +numMeasures      - # of measures in sequence
- *
- *----------------------------------------------------------------------------*/      
-
-void RealTimeSequencer::setMeasures( byte measures )
-{
-   if ( measures > maxMeasures )
-      measures = maxMeasures;
-   else if ( ! measures )
-      measures = 1;
-   numMeasures = measures;
-}
-
-void RealTimeSequencer::informFull()
-{
-   console.romprint( CONSTR("full!") );
-   console.newprompt();
-}
 
 /******************************************************************************
  *
@@ -1073,143 +387,6 @@ void DrumKit::noteOn( key note )
 
 /******************************************************************************
  *
- *                                 DualOsc 
- *
- ******************************************************************************/
-
-class DualOsc : public Osc
-{
-   typedef Osc super;                     // superclass is Osc
-
-   public:
-
-   Osc *osc0;                             // ptr to oscillator 0
-   Osc *osc1;                             // ptr to oscillator 1
-
-   bool  charEv( char );                  // process a character event
-   void  dynamics();                      // update dynamics
-   void  onFreq();                        // compute frequency dependent state vars
-   void  output( char* );                 // write one buffer of output
-
-} ;
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  DualOsc::charEv
- *
- *  Desc:  Process a character event.
- *
- *  Args:  code             - character to process
- *
- *  Memb: +detune           - local detuning amount
- *         effFreq          - effective frequency (includes local detuning)
- *        +extFactor        - external detuning factor
- *         osc0             - ptr to oscillator 0
- *         osc1             - ptr to oscillator 1
- *
- *  Rets:  status           - true if character was handled
- *
- *----------------------------------------------------------------------------*/      
-
-bool DualOsc::charEv( char code )
-{
-   switch ( code )
-   {
-      #ifdef INTERN_CONSOLE
-
-      case '0':
-
-         console.pushMode( osc0 );
-         break;
-
-      case '1':
-
-         console.pushMode( osc1 );
-         break;
-
-      #endif
-
-      case '!':                     // perform a reset
-
-         osc0->reset();
-         osc1->reset();
-
-      default:
-
-         return super::charEv( code );
-   }
-   return true;
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  DualOsc::dynamics
- *
- *  Desc:  Perform a dynamic update.
- *
- *  Memb:  osc0             - ptr to oscillator 0
- *         osc1             - ptr to oscillator 1
- *
- *----------------------------------------------------------------------------*/      
-
-void DualOsc::dynamics()
-{
-   osc0->dynamics();
-   osc1->dynamics();
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  DualOsc::onFreq
- *
- *  Desc:  Compute frequency-dependent state vars.
- *
- *  Memb:  effFreq          - effective frequency (includes internal detuning)
- *         extFactor        - external detuning factor
- *         osc0             - ptr to oscillator 0
- *         osc1             - ptr to oscillator 1
- *
- *----------------------------------------------------------------------------*/      
-
-void DualOsc::onFreq()
-{
-   double f = effFreq * extFactor;
-   osc0->setFreq( f );
-   osc1->setFreq( f * 1.01 );
-}
-
-/*-------------------------------------------------------------------------*
- *
- *  Name:  DualOsc::output
- *
- *  Desc:  Write output to an audio buffer.
- *
- *  Args:  buf              - ptr to audio buffer  
- *
- *  Glob:  audioBufSz       - size of system audio buffers
- *
- *  Memb:  osc0             - ptr to oscillator 0
- *         osc1             - ptr to oscillator 1
- *
- *-------------------------------------------------------------------------*/      
-
-void DualOsc::output( char *buf ) 
-{
-   char  buf1[ audioBufSz ];     // temp buffer for for holding osc1 output
-
-   osc0->output( buf );
-   osc1->output( &buf1[0] );
-
-   int sum;
-   for ( byte i = 0 ; i < audioBufSz; i++ )
-   {
-      sum    = buf[i] + buf1[i];
-      buf[i] = sum >> 1;
-   }
-}
-
-/******************************************************************************
- *
  *                                  Bass
  *
  ******************************************************************************/
@@ -1273,6 +450,11 @@ class Beatitude : public VoxSynth
       keybrd.setDefOct( 1 );         // start keyboard in octave 1
    }
 
+   void welcome()
+   {
+      execute( PSTR("L0\\") );      // load beat 0 when 1st started
+   }
+
    bool   charEv( char code );      // handle a character event
    void   dynamics();               // update dynamics
    bool   evHandler( obEvent );     // handle an onboard event
@@ -1281,6 +463,12 @@ class Beatitude : public VoxSynth
    void   noteOn( key );            // turn a note on
    void   noteOff( key );           // turn a note off
    void   output( char*, char* );   // write stereo output to pair of audio buffers
+
+   void   setCueing( bool status )  // set cueing on/off
+   {
+      cueing = status;
+      drums->setMute( status );
+   }
 
 } ;
 
@@ -1314,7 +502,7 @@ bool Beatitude::charEv( char code )
       case sqncCUE:                    // sequencer is cueing to record 
 
          clickOn = true;
-         cueing = true;
+         setCueing( true );
          onLED( 1 );
 
          // fall thru to sqncDNBEAT
@@ -1324,17 +512,18 @@ bool Beatitude::charEv( char code )
          click->downbeat();
          break;
 
-      case sqncOVER:                   // sequencer is done recording
+      case sqncRECON:                  // sequencer recording switched on
 
-         clickOn = false;
-         cueing = false;
-         offLED( 1 );
+         drums->setMute( false );      // unmute
+         setCueing( false );
+         blinkLED( 1 );                // blink to indicate recording
          break;
 
-      case sqncRECORD:                 // sequencer is recording
+      case sqncRECOFF:                 // sequencer recording switched off
 
-         cueing = false;
-         blinkLED( 1 );                // blink to indicate recording
+         clickOn = false;
+         setCueing( false );
+         offLED( 1 );
          break;
 
       case sqncPLAYON:                 // sequencer is playing back
@@ -1372,18 +561,21 @@ bool Beatitude::charEv( char code )
          break;
 
       case '!':                        // perform a reset
-
+      {
          super::charEv( code );
          click->reset();
 
          clickOn  = false;
-         cueing   = false;
+         setCueing( false );
          liveBass = false;
 
          drums->keybrd.setMute( false );
-         drums->sqnc->setTargetMuting( false );
-         break;
 
+         RealTimeSequencer *sqnc = (RealTimeSequencer *)drums->sqnc;
+         sqnc->ignoreKeyUp = true;
+
+         break;
+      }
       default:                         
          
          return super::charEv( code );
@@ -1424,19 +616,36 @@ void Beatitude::dynamics()
 
 bool Beatitude::evHandler( obEvent ev )
 {
+   RealTimeSequencer *sqnc = (RealTimeSequencer *)drums->sqnc;
+
    switch ( ev.type() )
    {
       case POT1:                       // set Tempo
       case BUT0_PRESS:                 // play/stop sequencer playback
-      case BUT0_TPRESS:                // beats/measures
 
-         return drums->sqnc->evHandler(ev);         
+         return sqnc->evHandler(ev);         
 
       case BUT1_PRESS:                 // record a sequence
 
          drums->sqnc->record();
-         console.runModeWhile( drums->sqnc, &this->clickOn );
+         console.runModeWhile( sqnc, &this->clickOn );
          break;
+
+      case BUT0_TPRESS:                // set beats and measures
+
+         if ( ! sqnc->recording() && ! sqnc->playing() )
+         {
+            onLED( 0 );
+
+            beatMenu.waitKey();
+            sqnc->setBeats( beatMenu.value );
+
+            measureMenu.waitKey();
+            sqnc->setMeasures( measureMenu.value );
+
+            offLED( 0 );
+         }
+         break;   
 
       default: 
                       
@@ -1476,16 +685,8 @@ Osc *Beatitude::newOsc( byte nth )
          return new SampleOsc();        
 
       case 1:  // oscillator for bass
-      {
-         Square *o0 = new Square();
-         Square *o1 = new Square();
 
-         DualOsc *dual = new DualOsc();
-         dual->osc0    = o0;
-         dual->osc1    = o1;
-
-         return dual;
-      }
+         return new DualOsc( new Square(), new Square() );
    }
 }
 

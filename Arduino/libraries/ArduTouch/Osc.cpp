@@ -1,7 +1,7 @@
 /*
     Osc.cpp  
 
-    Implementation of the Osc class (abstract oscillator).
+    Implementation of the Osc and DualOsc classes (abstract oscillators).
 
     ---------------------------------------------------------------------------
  
@@ -19,7 +19,14 @@
 */
 
 #include "Console_.h"
+#include "Audio.h"
 #include "Osc.h"
+
+/******************************************************************************
+ *
+ *                                   Osc 
+ *
+ ******************************************************************************/
 
 /*----------------------------------------------------------------------------*
  *
@@ -184,3 +191,132 @@ void Osc::setFreq( double newFreq )
    idealFreq = newFreq;
    calcEffFreq();
 }
+
+/******************************************************************************
+ *
+ *                                 DualOsc 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +detune           - local detuning amount
+ *         effFreq          - effective frequency (includes local detuning)
+ *        +extFactor        - external detuning factor
+ *         osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool DualOsc::charEv( char code )
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE
+
+      case '0':
+
+         console.pushMode( osc0 );
+         break;
+
+      case '1':
+
+         console.pushMode( osc1 );
+         break;
+
+      #endif
+
+      case '!':                     // perform a reset
+
+         osc0->reset();
+         osc1->reset();
+
+      default:
+
+         return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb:  osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *----------------------------------------------------------------------------*/      
+
+void DualOsc::dynamics()
+{
+   osc0->dynamics();
+   osc1->dynamics();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::onFreq
+ *
+ *  Desc:  Compute frequency-dependent state vars.
+ *
+ *  Memb:  effFreq          - effective frequency (includes internal detuning)
+ *         extFactor        - external detuning factor
+ *         osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *----------------------------------------------------------------------------*/      
+
+void DualOsc::onFreq()
+{
+   double f = effFreq * extFactor;
+   osc0->setFreq( f );
+   osc1->setFreq( f * 1.01 );
+}
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  DualOsc::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb:  osc0             - ptr to oscillator 0
+ *         osc1             - ptr to oscillator 1
+ *
+ *-------------------------------------------------------------------------*/      
+
+void DualOsc::output( char *buf ) 
+{
+   char  buf1[ audioBufSz ];     // temp buffer for for holding osc1 output
+
+   osc0->output( buf );
+   osc1->output( &buf1[0] );
+
+   int sum;
+   for ( byte i = 0 ; i < audioBufSz; i++ )
+   {
+      sum    = buf[i] + buf1[i];
+      buf[i] = sum >> 1;
+   }
+}
+
+#ifdef CONSOLE_OUTPUT
+const char *DualOsc::prompt()                     
+{
+   return CONSTR("dual");
+}
+#endif
+

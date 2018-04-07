@@ -1,6 +1,27 @@
 Versions:
 
+   0.97  Beatitude::welcome() loads beat0
+         sqncRECORD msg renamed sqncRECON
+         sqncOVER   msg renamed sqncRECOFF
+         syncs with library 1.06
+         [31970 / 736] __STNDLONE__
+   0.96  DualOsc class moved to library
+         Beatitude::newOsc() uses DualOsc(Osc*, Osc*) constructor
+         syncs with library 1.05
+         [31996 / 734] __STNDLONE__
+         [32024 / 736] 1.06
+   0.95  setting of beats/measures moved from RealTimeSequencer to Beatitude
+         RealTimeSequencer class moved to library 
+         ClickTrack class moved to library 
+         BeatMenu and MeasureMenu derive from the library class ByteMenu
+         Beatitude explicitly handles mute/unmute of drums for cue/record
+         Beatitude(!) sets sqnc->ignoreKeyUp
+         add Beatitude::setCueing()
+         sequence durations in preset uses global symbolic constants
+         syncs with library 1.04
+         [31990 / 742] __STNDLONE__ 
    0.94  add conditional compilation sections re BUILD_166
+         [32032 / 740] __STNDLONE__ 
    0.93  add header comments re Bass
    0.92  Beatitude([) propagates to drum sequencer
    0.91  right channel 3/4 bass 1/4 drums
@@ -35,9 +56,12 @@ Versions:
          [31152 / 965]  
    0.79  Kit renamed DrumKit
          move sequencer from DrumSynth to DrumKit
+         --- notes do not migrate to DrumKit
          [31214 / 965]  
    0.78  Metronome overrides dynamics() and output() methods
+         --- seems to cure issue with 1st downbeat
    0.77  metro becomes member ptr, instantiated in DrumSynth()
+         --- if you power down the card, the 1st downbeat is not enveloped
          [32052 / 965]  
    0.76  RealTimeSequencer sends all metronome events to synth, not target
          [32054 / 965]  

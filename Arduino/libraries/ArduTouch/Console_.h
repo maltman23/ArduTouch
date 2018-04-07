@@ -119,6 +119,7 @@
 
 #include "Arduino.h"
 #include "Mode.h"
+#include "Commands.h"
 
 /******************************************************************************
  *
@@ -208,25 +209,10 @@ class Console
 
 } ;
 
-/* character codes for selected nonalphanumeric characters */
+// character codes for selected nonalphanumeric characters:
 
 #define chrCR           13             // <CR>
 #define chrESC          27             // <ESC>
-#define chrTrigger      -2             // command: trigger 
-#define chrRelease      -3             // command: release 
-#define chrInfo         -4             // command: display object info
-#define chrInLnfo       -5             // command: display object info inline
-#define chrBrief        -6             // command: display an object brief
-
-   // following 3 commands are issued by console on change of focus
-
-#define focusPUSH       -7             // mode is being pushed on stack
-#define focusPOP        -8             // mode is being popped from stack
-#define focusRESTORE    -9             // mode is restored after pop of child
-
-   // following command issued by LFO when depth parameter is set/changed
-
-#define lfoOnDepth      -10            // LFO depth has been set/changed
 
 /* ------------------------      public vars      -------------------------- */
 

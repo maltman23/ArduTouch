@@ -248,5 +248,18 @@ ClickTrack		KEYWORD1
 downbeat		KEYWORD2
 upbeat			KEYWORD2
 
+DualOsc			KEYWORD1
+freqRatio		KEYWORD2
+
+MixOsc			KEYWORD1
+setMix			KEYWORD2
+setSpectrum		KEYWORD2
+
+XorOsc			KEYWORD1
+RingMod			KEYWORD1
+
+OneVoxSynth		KEYWORD1
+TwoVoxSynth		KEYWORD1
+vox			KRYWORD2
 
 

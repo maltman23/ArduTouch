@@ -165,8 +165,7 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Beatitude, 0.97 )             // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
+about_program( Beatitude, 0.99 )             // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -404,7 +403,8 @@ class Bass : public Voice
          case '!':                     // perform a reset
 
             super::charEv( code );
-            execute( PSTR( "ed88\\s0\\r8\\`0c70\\p45\\lf.27\\<``1c70\\p96\\l<``" ));
+            execute( PSTR( "ed88\\s0\\r8\\" ));
+            execute( PSTR( "Or1.006\\0c70\\p45\\lf.27\\<``1c70\\p96\\l<" ));
             break;
 
          default:                         

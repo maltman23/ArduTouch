@@ -1,5 +1,9 @@
 Versions:
 
+   0.92  set_baud_rate() nixed
+         syncs with 1.08
+   0.91  Bass(!) explicitly sets freq ratio between oscillators
+         syncs with library 1.07
    0.90  add instructions on use
          drone0 renamed droneA
          drone1 renamed droneB
@@ -16,9 +20,6 @@ Versions:
          [29892 / 989] [FreeRam 152 : CPU 188.25] 
    0.84  DelayVibrato moved to libary
          syncs with library 1.06j
-         --- moving DelayVibrato to library squanders 118 ROM and 18 RAM !
-         [29890 / 999] 1.06j [FreeRam 181] __FULLHOST__ MONITOR_RAM
-         [29786 / 999] 1.06k [FreeRam 181] __FULLHOST__ MONITOR_RAM
          [29862 / 1003] 1.06k [FreeRam 177 : CPU 186] 
    0.83  Mantra(!) mutes drone keybrds using loop logic
          Mantra(!) loads Drone0 directly (not via macro)
@@ -35,9 +36,6 @@ Versions:
    0.77  add MantraTuning::scalar
          add Drone::tuning
          [29560 / 983] [FreeRam 197] __FULLHOST__ MONITOR_RAM 1.05o
-   0.76d further simplified obligato1
-   0.76c simplified obligato1
-   0.76b simplified bass1
    0.76  add drone1 with initial bass and obligato
    0.75  Drone structs kept in ROM
          [29420 / 985] [FreeRam 199] __FULLHOST__ MONITOR_RAM 1.05o

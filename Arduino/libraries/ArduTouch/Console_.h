@@ -104,18 +104,11 @@
 
 #endif
 
-#ifdef USE_SERIAL_PORT
-
-   #define set_baud_rate(x)                           \
-                                                      \
-      extern const unsigned long __BAUDRATE__;        \
-      const unsigned long __BAUDRATE__ = x;           \
-
-#else
+// As of version 1.08 the baud rate is specified in Model.h of the library
+// and not in the sketch via the (now deprecated) set_baud_rate macro
 
    #define set_baud_rate(x)
 
-#endif
 
 #include "Arduino.h"
 #include "Mode.h"
@@ -163,6 +156,7 @@ class Console
    void    enable();                   // enable console I/O
    void    exe( const char* );         // execute a macro str 
    void    exeIn( const char*, Mode* );// execute a macro str within a specified mode
+   boolean getBool( const char*, bool* );       // prompt for and get a boolean
    boolean getByte( const char*, byte* );       // prompt for and get a byte (0:255)
    char    getDigit( const char*, byte );       // get '0' thru '9', (0 = aborted)
    boolean getDouble( const char*, double* );   // prompt for and get a double
@@ -170,6 +164,7 @@ class Console
    boolean getSByte( const char*, char* );      // prompt for and get byte (-128:127)
    boolean getStr( const char*, char** );       // prompt for and get a String 
    boolean getULong( const char*, unsigned long* ); // info on unsigned long
+   void    infoBool( const char*, bool );       // print info on a named boolean
    void    infoByte( const char*, byte );       // print info on a named byte
    void    infoInt( const char*, int );         // print info on a named int
    void    infoDouble( const char*, double );   // print info on a named double 

@@ -39,7 +39,6 @@
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
 about_program( White Noise, 1.00 )           // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
 
 class WhiteNoiseSynth : public OneVoxSynth
 {

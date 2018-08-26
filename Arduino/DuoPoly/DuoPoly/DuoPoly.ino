@@ -22,8 +22,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.47 )            // specify program name & version
-set_baud_rate( 115200 )                   // specify serial baud-rate
+about_program( DuoPoly, 2.48 )            // specify program name & version
 
 #ifndef INTERN_CONSOLE
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)

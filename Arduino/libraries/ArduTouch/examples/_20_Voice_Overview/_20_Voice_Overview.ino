@@ -193,11 +193,6 @@
  *
  */
 
-#include "ArduTouch.h"                       
-
-about_program( Voice Overview, 1.00 )       
-set_baud_rate( 115200 )                      
-
 /* Our synth in this example is not customized.
  * We simply instantiate a OneVoxSynth object from the library.
  * This will give us a single voice synth.
@@ -238,6 +233,10 @@ set_baud_rate( 115200 )
  *           -------------------------------------------------
  *
  */
+
+#include "ArduTouch.h"                       
+
+about_program( Voice Overview, 1.00 )       
 
 OneVoxSynth mySynth;
 

@@ -117,8 +117,12 @@ byte WaveOsc::evaluate()
    fore.val  *= idx._.lsw._.msb;
    interp.val = aft.val + fore.val;
 
+   /* ---- Note: rounding makes no discernible difference
+
    if ( interp._.lsb & 0x80 )    // round interpolated value
       ++interp._.msb;
+
+   */
 
    return interp._.msb;    
 }
@@ -313,7 +317,13 @@ void FastWaveOsc::onFreq()
 
    longAggStep.val  = step.val;
    longAggStep.val *= audioBufSz;
-   aggEnd = length - longAggStep._.msw.val - 1;
+
+   word integralAggStep = longAggStep._.msw.val + 1;
+
+   if ( length > integralAggStep )
+      aggEnd = length - integralAggStep;
+   else
+      aggEnd = 0;
 }
 
 /*-------------------------------------------------------------------------*

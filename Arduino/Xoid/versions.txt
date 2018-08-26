@@ -1,0 +1,87 @@
+Versions:
+
+   0.93  set_baud_rate() nixed
+         normal blink rate
+         syncs with 1.08
+   0.92  shuffle frame assignments
+         add authowah cutoff pot
+   0.91  add Static
+   0.90  use a byteMenu to load presets 
+   0.89  add #error on ! __STNDLONE__
+         comments
+   0.88  Xonk renamed Bass
+         load 'C' preset at welcome()
+         onjectInfo() must check for CONSOLE_OUTPUT
+   0.87  add Morbo
+   0.86  How-to-use
+         add Besot
+   0.85  add autowah frame
+   0.84  add Gain::setGain()
+         add portamento/gain frame
+   0.83  add Zonk
+   0.82  DualXOR renamed XorOsc
+         add XorOsc::prompt()
+         XorOsc moved to lib
+         syncs with lib 1.07t
+   0.81  implement Gain(.) Gain(<)
+         add Gain::gain
+         doctor XFuzz2 vibrato
+   0.80  XFuzz2 preset independent of others
+         re-order presets
+         beautify header
+   0.79  add XFuzz XFuzz2
+         add Gain
+         DualXOR::onFreq() checks for initial 0.00
+   0.78  add Xonk patch
+   0.77  add Cleo, Empty patches
+   0.76  Sine256 renamed Sine and moved to lib
+         syncs with lib 1.07q
+   0.75  nix DualXOR::enableXOR
+         DualOsc::output() pass-thru if muted
+   0.74  DualOscOp renamed MixOsc
+         syncs with lib 1.07p
+   0.73  DualXOR derives from DualOscOp
+         syncs with lib 1.07o
+   0.72  add XVoice class
+         try out LPFilter
+   0.71  DualXOR::onFreq() checks for negative freq
+         add 'Gonk' preset
+   0.70  add DualXOR::freqDiff
+   0.69  FRAME01 pots control attack/decay
+         FRAME11 pots control sustain/release
+         FRAME21 vibrato
+   0.68  rework Xoid::handlePots()
+   0.67  renamed from MetalX 0.66
+   0.66  add Xoid(/)
+         [ 23140 ] __FULLHOST__
+   0.65  add vibrato frame
+   0.64  synth is renamed Xoid
+         add Xoid('r')
+   0.63  add RootPair, Pair0, Pair1
+         [ 22990 ] __FULLHOST__
+   0.62  add DualXOR(s) sets spectrum
+         DualXOR( BUT1_TPRESS ) bumps spectrum
+         add diatonic spectrum (#0)
+         [ 22962 ] __FULLHOST__
+         [ 19022 ] __STNDLONE__
+   0.61  DualXOR::idxRatio() renamed ::getSpecFreq()
+         add DualXOR::spectrum ::numSpectrums
+         DualXOR( BUT0_TPRESS ) toggles ::enableXOR
+   0.60  BUT0/1_TPRESS routed to sendControl for n0 frames
+         intercept BUT0_DTAP
+         [ 18804 ] __STNDLONE__
+   0.59  '!' sets slower blink rate
+   0.58  '?' displays frame
+   0.57  add ::sendControl
+         [ 18820 ] __STNDLONE__
+   0.56  add initial handlePots()
+         [ 18854 ] __STNDLONE__
+   0.55  add LED/frame logic
+         [ 18746 ] __STNDLONE__
+   0.54  add evHandler() with override of one-shot menu
+         add presets with Reset as 1st preset
+   0.53  add DualXOR::idxRatio() 
+         POT1 tweaks ratio (POT0 tweaks mix)
+   0.52  DualXOR::enableXOR can be turned on/off by BUT0/1_TPRESS
+   0.51  remove PhaseLockedPair
+   0.50  Renamed from MixOsc 0.50

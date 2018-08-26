@@ -34,8 +34,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.68 )                 // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
+about_program( Thick, 0.69 )                 // specify sketch name & version
 
 #ifndef INTERN_CONSOLE                       // required for setup macro to work
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)

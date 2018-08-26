@@ -166,7 +166,6 @@
 #include "ArduTouch.h"                       
 
 about_program( Pitch Modifiers, 1.00 )       
-set_baud_rate( 115200 )                      
 
 /******************************************************************************
  *

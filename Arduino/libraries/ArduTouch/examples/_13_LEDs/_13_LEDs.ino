@@ -29,7 +29,6 @@
 #include "ArduTouch.h"                       // use the ArduTouch library
 
 about_program( LEDs, 1.00 )                  // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
 
 //  If the Runtime Model is set to __STNDLONE__ or __BAREBONE__ then the symbolic 
 //  constant USE_SERIAL_PORT will not be defined, so by checking for it we can

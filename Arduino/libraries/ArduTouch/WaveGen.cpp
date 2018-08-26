@@ -74,6 +74,91 @@ void WavGen256::onFreq()
 
 /******************************************************************************
  *
+ *                               TabOsc256 
+ *
+ ******************************************************************************/
+
+/*-------------------------------------------------------------------------*
+ *
+ *  Name:  TabOsc256::output
+ *
+ *  Desc:  Write output to an audio buffer.
+ *
+ *  Args:  buf              - ptr to audio buffer  
+ *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
+ *  Memb: +index            - current index into wave table 
+ *         delta            - amount to increment index per tick
+ *
+ *-------------------------------------------------------------------------*/      
+
+void TabOsc256::output( char* buf ) 
+{
+   Int  aft;               // value of sample at table[(integral) idx]
+   Int  fore;              // value of sample at table[(integral) idx+1]
+   Int  interp;            // interpolated value
+
+   byte icnt = audioBufSz;             // write this many ticks of output
+   while ( icnt-- )
+   {
+      word tabptr = (word )table + index._.msw._.msb;  
+
+      /* ----- interpolate an audio value based on neighboring samples ----- */
+
+      /* fetch aft and fore values from wave table array */
+
+      aft.val  = (char )pgm_read_byte_near( tabptr++ );
+      fore.val = (char )pgm_read_byte_near( tabptr );
+
+      /* use high byte of fractional component of idx as a proxy (x parts in 
+         255) for the interpolation coeff (this is the distance between the 
+         actual index and it's integral component). 
+      */
+
+      aft.val   *= 255 - index._.msw._.lsb;
+      fore.val  *= index._.msw._.lsb;
+      interp.val = aft.val + fore.val;
+
+      *buf++ = interp._.msb;
+      index.val += delta;                      
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  TabOsc256::setTable
+ *
+ *  Desc:  Assign a wave table to the oscillator.
+ *
+ *  Args:  desc             - addr of wavetable descriptor (in ROM)
+ *
+ *  Memb:  table            - ptr to table of samples
+ *
+ *  Note:  The table is assumed to have 256 entries which define a single 
+ *         wavelength.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void TabOsc256::setTable( const desWavTab *d ) 
+{
+   desWavTab desc;
+
+   // copy descriptor from progmem 
+
+   byte* rombyt = (byte *)d;
+   byte* rambyt = (byte *)&desc;
+
+   for ( byte z = 0; z < sizeof( desWavTab ); z++ )
+      *rambyt++ = pgm_read_byte_near( rombyt++ );
+
+   // copy table addr entry from descriptor
+
+   table = desc.table;
+}
+
+/******************************************************************************
+ *
  *                                SawTooth 
  *
  ******************************************************************************/
@@ -98,10 +183,7 @@ void SawTooth::output( char *buf )
    while ( icnt-- )
    {
       index.val += delta;                // update index       
-      byte rounded = index._.msw._.msb;  // move high byte to rounded
-      if ( index._.msw._.lsb > 127 )     // and round 
-         ++rounded;
-      *buf++ = rounded;                   // write rounded to buffer and bump
+      *buf++ = index._.msw._.msb;        // write integral portion to buffer
    }
 }
 

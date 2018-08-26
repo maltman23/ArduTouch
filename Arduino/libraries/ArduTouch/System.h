@@ -25,7 +25,7 @@
 #include "Audio.h"
 #include "Synth.h"
 
-#define LIBRARY_VERSION "1.06"
+#define LIBRARY_VERSION "1.08"
 
 /* ------------------------------------------------------------------------- */
 

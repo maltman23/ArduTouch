@@ -178,7 +178,6 @@
 #include "ArduTouch.h"                       
 
 about_program( Amp Nodifiers, 1.00 )       
-set_baud_rate( 115200 )                      
 
 /******************************************************************************
  *

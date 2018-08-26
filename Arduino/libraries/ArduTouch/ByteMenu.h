@@ -82,10 +82,6 @@ class ByteMenu : public Mode
 
             waiting = false;
             break;
-
-         default:                 
-
-            return super::evHandler( ev );
       }
       return true;                 
    }

@@ -74,8 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.08 )              // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
+about_program( Arpology, 1.09 )              // specify sketch name & version
 
 // Specify whether the voices of Arpology can be panned in stereo by 
 // uncommenting the following defines

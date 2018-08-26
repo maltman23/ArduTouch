@@ -24,6 +24,8 @@
 #include "types.h"
 #include "LFO.h"
 #include "Osc.h"
+#include "WaveTable.h"
+#include "WaveBank.h"
 
 /******************************************************************************
  *
@@ -31,15 +33,10 @@
  *
  ******************************************************************************/
 
-class WavGen256 : public Osc                 // abstract wave-length generator 
+class WavGen256 : public Osc                 // abstract wave length generator 
                                              // with a period of 256
 {
    public:
-
-   WavGen256();                              // initialize state vars
-   void onFreq();                            // compute freq dependent state vars
-
-   protected:
 
    DWord index;                              // current index value, kept as a
                                              // fixed pt, 32-bit number. High byte
@@ -48,11 +45,58 @@ class WavGen256 : public Osc                 // abstract wave-length generator
 
    unsigned long delta;                      // bump index this much per tick
 
-   private:
+   WavGen256();                              // initialize state vars
+
+   void onFreq();                            // compute freq dependent state vars
+
+   protected:
 
    double        coeff;                      // delta = frequency * coeff
 
 } ;
+
+/******************************************************************************
+ *
+ *                               TabOsc256 
+ *
+ ******************************************************************************/
+
+class TabOsc256 : public WavGen256           // wave length specified by a table  
+                                             // of 256 samples in ROM
+{
+   typedef WavGen256 super;                  // superclass is WavGen256
+
+   public:
+
+   void   output( char* );                   // write output to a buffer 
+   void   setTable( const desWavTab* );      // assign a wave table to oscillator
+
+   protected:
+
+   const signed char* table;                 // ptr to table of samples
+
+} ;
+
+
+/******************************************************************************
+ *
+ *                                  Sine 
+ *
+ ******************************************************************************/
+
+class Sine : public TabOsc256             
+{
+   typedef TabOsc256 super;                  // superclass is TabOsc256
+
+   public:
+
+   Sine()
+   {
+      setTable( wavetable( Sine ) );         // the Sine table has 256 samples
+   }
+
+} ;
+
 
 /******************************************************************************
  *
@@ -94,7 +138,7 @@ class PwLFO : public LFO                     // pulse-width modulator
  *
  ******************************************************************************/
 
-class Square : public WavGen256              // a sawtooth oscillator
+class Square : public WavGen256              // a square-wave oscillator
 {
    typedef  WavGen256 super;
 

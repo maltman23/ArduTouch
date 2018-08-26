@@ -1,5 +1,23 @@
 Versions:
 
+   1.08  __BAUDRATE__ defined in Model.h
+         set_baud_rate() macro does nothing 
+         add Console::getBool() ::infoBool()
+   1.07  DualOsc module is broken out from Osc module
+         add MixOsc XorOsc RingMod classes
+         add TabOsc256 Sine classes 
+         add NullOsc class
+         add DualOsc( chrTrigger )
+         drop rounding of values in WaveOsc::evaluate()
+         drop rounding of values in SawTooth::output()
+         ByteMenu::evHandler() eats all except KEY events
+         bugfix: FastWaveOsc::onFreq() must check for aggEnd underflow 
+         add example sketch _40_Dual_Oscillators.ino
+         add example sketch _41_MixOsc.ino
+         add example sketch _42_XorOsc.ino
+         add example sketch _43_Ring_Modulation.ino
+         add example sketch _44_Nested_Oscillators.ino
+         additions to KEYWORDS.TXT
    1.06  add DelayVibrato class
          break Vibrato module out from StdEffects module
          break Tremolo.h out from StdEffects module

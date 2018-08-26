@@ -41,7 +41,6 @@ char buf[ STR_BUFSZ ];                 // buffer for conversions to string
 void console_setup( Mode *iniMode )
 {
    #ifdef USE_SERIAL_PORT
-      extern const unsigned long __BAUDRATE__;        \
       Serial.begin( __BAUDRATE__ );
    #endif
 
@@ -563,6 +562,57 @@ boolean Console::getDouble( const char *prompt, double *val )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Console::getBool
+ *
+ *  Desc:  Display an input prompt, and wait for a string to be input, then 
+ *         interpret this string as a boolean and write it to the address 
+ *         supplied by the calling routine.
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         ptrBool          - address of boolean to be written to 
+ *
+ *  Rets:  status           - if true, input was successfully completed
+ *
+ *  Note:  If this routine returns a false status (i.e., the user hit escape
+ *         before completing input) then no value is written to the address
+ *         supplied in the 2nd argument.
+ *
+ *         Only the 1st character of the string is examined.
+ *         If the 1st character if a 't' or 'T' a true value is written.
+ *         If the 1st character if a 'f' or 'F' a false value is written.
+ *         Any other 1st character results in no value being written. 
+ *
+ *----------------------------------------------------------------------------*/
+       
+boolean Console::getBool( const char* prompt, bool* val )
+{
+   boolean status = getStr( prompt );
+   if ( status )
+   {
+      switch ( strMode.result()[0] )
+      {
+         case 't':
+         case 'T':
+
+            *val = true; 
+            break;
+
+         case 'f':
+         case 'F':
+
+            *val = false; 
+            break;
+
+         default:
+
+            status = false;
+      }
+   }
+   return status;
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Console::getByte
  *
  *  Desc:  Display an input prompt, and wait for a string to be input, then 
@@ -761,6 +811,13 @@ void Console::begInfo( const char* name )
 void Console::endInfo()
 {
    romprint( CONSTR("} ") );
+}
+
+void Console::infoBool( const char* name, bool val )
+{
+   begInfo( name );
+   romprint( val ? CONSTR("true") : CONSTR("false") );
+   endInfo();
 }
 
 void Console::infoByte( const char* name, byte val )

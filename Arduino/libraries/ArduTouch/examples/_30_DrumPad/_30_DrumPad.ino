@@ -46,8 +46,16 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( _30_DrumPad, 1.00 )           // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
+about_program( DrumPad, 1.00 )               // specify sketch name & version
+
+// If the Runtime Model is set for serial host communications and you're not 
+// using Arduino build 1.6.6, the drum samples won't fit in ROM
+
+#ifdef USE_SERIAL_PORT
+   #ifndef BUILD_166
+      #error This sketch requires a Runtime Model of __STNDLONE__ or __BAREBONE__
+   #endif
+#endif
 
 /******************************************************************************
  *

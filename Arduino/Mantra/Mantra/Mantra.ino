@@ -64,8 +64,7 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Mantra, 0.90 )                // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
+about_program( Mantra, 0.92 )                // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 Drones
@@ -276,7 +275,8 @@ class Bass : public Voice
          case '!':                     // perform a reset
 
             super::charEv( code );
-            execute( PSTR( "ed88\\s120\\r8\\`0c70\\p45\\lf.27\\``1c70\\p96\\l" ));
+            execute( PSTR( "ed88\\s120\\r8\\" ));
+            execute( PSTR( "Or1.01\\0c70\\p45\\lf.27\\``1c70\\p96\\l" ));
             break;
 
          case sqncPLAYOFF:

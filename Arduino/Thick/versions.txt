@@ -1,5 +1,8 @@
 Versions:
 
+   0.69  set_baud_rate() nixed
+         normal blink rate
+         syncs with 1.08
    0.68  synth renamed thick
          [22444 / 862] 1.03r IMPLICIT_SEQ
    0.67  SawTooth now in library

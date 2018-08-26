@@ -73,7 +73,6 @@
 #include "ArduTouch.h"                    // use the ArduTouch library
 
 about_program( Runtime Models, 1.00 )     // specify sketch name & version
-set_baud_rate( 115200 )                   // specify serial baud-rate
 
 //  ---------------------------------------------------------------------------
 //
@@ -96,12 +95,13 @@ class RuntimeModelSynth : public Synth       // an "empty" synth
 //
 //                       Some Tips on Runtime Models
 //
-//  If you are a casual user of the ArduTouch library you may never need to
-//  change the Runtime Model from its "factory preset" of __FULLHOST__.
+//  If you are a casual user of the ArduTouch library and don't intend to
+//  use the host interface you may never need to change the Runtime Model
+//  from its "factory preset" of __STNDLONE__.
 //
-//  If you never intend to use the host interface you can safely set the
-//  Runtime Model to __STNDLONE__, and still be assured that "all the
-//  onboard stuff works."
+//  If you are doing development, or want to explore the various components
+//  in your synth from a command line interface then set the Runtime Model to 
+//  __FULLHOST__.
 //
 //  If you are a hardcore hacker who wants to squeeze every available cycle
 //  and byte from the system and are not interested in the nicities of host

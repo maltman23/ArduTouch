@@ -65,6 +65,8 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library
 
+about_program( Console_Part_1, 1.00 )        // specify sketch name & version
+
 //  ---------------------------------------------------------------------------
 //
 //  The ArduTouch Console is a built-in (but optional) feature of the firmware.
@@ -95,9 +97,6 @@
 //
 //  ---------------------------------------------------------------------------
  
-about_program( Console_Part_1, 1.00 )        // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
-
 //  ---------------------------------------------------------------------------
 //
 //                    The Ardutouch Console Display Layout
@@ -195,6 +194,7 @@ class Sine440HzSynth : public Synth          // synth from example _03_,
 
    void setup() 
    { 
+      osc.reset();                           // initialize osc state
       osc.setTable( wavetable( Sine ) );     // load Sine wave from library
       osc.setFreq( 440.0 );                  // play at 440 Hz
    }
@@ -345,13 +345,13 @@ void loop()
 //
 //  _______________________________________________________________________
 //
-//           Console_Part_1 [1.00]
+//           ArduTouch [1.08]
 //    synth> ?
-//           {freq 440.00}
+//           {freq 440.000}
 //    synth> f
 //     freq: 216.35
 //    synth> ?
-//           {freq 216.35}
+//           {freq 216.350}
 //    synth>
 //  _______________________________________________________________________
 //

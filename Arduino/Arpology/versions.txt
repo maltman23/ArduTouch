@@ -1,5 +1,7 @@
 Versions:
 
+   1.09  set_baud_rate() nixed
+         syncs with 1.08
    1.08  synth renamed arpSynth
          sync with lib 1.03 
          [30534 / 976] 

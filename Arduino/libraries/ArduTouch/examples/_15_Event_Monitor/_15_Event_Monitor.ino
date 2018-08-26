@@ -34,7 +34,6 @@
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
 about_program( Event Monitor, 1.00 )         // specify sketch name & version
-set_baud_rate( 115200 )                      // specify serial baud-rate
 
 //  If the Runtime Model is not set to __FULLHOST__ the following statement 
 //  will cause the compiler to abort, and to print an error message in the 

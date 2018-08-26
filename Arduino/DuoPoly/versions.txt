@@ -1,7 +1,8 @@
 Versions:
 
+   2.48  set_baud_rate() nixed
+         syncs with 1.08
    2.47  add tremolo to Keltos preset
-         [30364 / 1219] 
    2.46  Chnl uses SequencerRAM 
          syncs with 1.05
          [30282 / 1217] 

@@ -1,7 +1,7 @@
 /*
     Osc.h  
 
-    Declaration of abstract Oscillator base classes.
+    Declaration of the Osc and NullOsc classes.
 
     ---------------------------------------------------------------------------
  
@@ -63,34 +63,17 @@ class Osc : public TControl
 
 /******************************************************************************
  *
- *                                 DualOsc 
+ *                                 NullOsc 
  *
  ******************************************************************************/
 
-class DualOsc : public Osc
+class NullOsc : public Osc                // place-holder osc which outputs silence
 {
    typedef Osc super;                     // superclass is Osc
 
    public:
 
-   Osc *osc0;                             // ptr to oscillator 0
-   Osc *osc1;                             // ptr to oscillator 1
-
-   DualOsc( Osc *o0, Osc *o1 )
-   {
-      osc0 = o0;
-      osc1 = o1;
-   }
-
-   bool  charEv( char );                  // process a character event
-   void  dynamics();                      // update dynamics
-   void  onFreq();                        // compute frequency dependent state vars
-   void  output( char* );                 // write one buffer of output
-
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();            // return object's prompt string
-   #endif
-
+   void  output( char* buf );             // write one buffer of output
 } ;
 
 #endif   // ifndef OSC_H_INCLUDED

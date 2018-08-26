@@ -41,6 +41,10 @@
    #define __STNDLONE__
 // #define __BAREBONE__
 
+// ---------            specify baud rate to/from host         ------------
+
+   #define __BAUDRATE__ 115200
+
 /* ---------------------------------------------------------------------------
 
     The ArduTouch library and sample synths were developed using Arduino 
@@ -60,7 +64,7 @@
 
    ------------------------------------------------------------------------ */
 
-//#define BUILD_166
+// #define BUILD_166
 
 /* ---------------------------------------------------------------------------
 

@@ -1,5 +1,10 @@
 Versions:
 
+   0.99  set_baud_rate() nixed
+         syncs with 1.08
+   0.98  Bass(!) explicitly sets freq ratio between oscillators
+         syncs with library 1.07
+         [32098 / 736] __STNDLONE__ 
    0.97  Beatitude::welcome() loads beat0
          sqncRECORD msg renamed sqncRECON
          sqncOVER   msg renamed sqncRECOFF

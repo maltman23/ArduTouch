@@ -29,6 +29,7 @@
 #include "Control.h"
 #include "Console_.h"
 #include "Drums.h"
+#include "DualOsc.h"
 #include "Envelope.h"
 #include "Instrument.h"
 #include "KeyBrd.h"

@@ -1,0 +1,3 @@
+bom: BOM/ArduTouch_BOM.csv
+gerbers: Gerbers/output
+color: blue

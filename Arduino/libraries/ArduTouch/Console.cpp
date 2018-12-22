@@ -232,7 +232,7 @@ class DigitMode : public InputMode
          console.popMode();
          return true;
       }
-      else
+      else 
          return InputMode::charEv( code );
    }
 
@@ -245,6 +245,66 @@ class DigitMode : public InputMode
 
 } digitMode;
 
+class BitMode : public InputMode
+{
+   typedef InputMode super;            // superclass is InputMode
+
+   public:
+
+   bool  status;                       // status of input
+   byte  numBits;                      // # of bits in field
+   byte  bitsToGo;                     // # of bits remaining to input
+   byte  bitVal;                       // value for bit currently being input
+   byte  value;                        // accumulated value for all bits input
+
+   BitMode() 
+   { 
+      flags &= ~ECHO; 
+   }
+
+   boolean charEv( char code )
+   {
+      switch ( code )
+      {
+         case '0':                        // input a 0 at current bit position 
+         case '1':                        // input a 1 at current bit position 
+
+            console.print( code );
+            if ( code == '1' )
+               value += bitVal;
+            bitVal >>= 1;
+            if ( --bitsToGo == 0 )
+            {
+               status = true;
+               console.popMode();
+            }
+            break;
+
+         case chrCR:                      // complete input early
+
+            value >>= bitsToGo;           // right justify bits already input
+            status = true;
+            console.popMode();
+            break;
+
+         default:
+
+            return super::charEv( code );
+      }
+      return true;
+   }
+
+   void init( const char *prompt, byte numbits )
+   {
+      _prompt  = prompt;
+      numBits  = numbits;
+      bitsToGo = numbits;     
+      value    = 0;
+      bitVal   = 1 << (numBits-1);
+      status   = false;
+   }
+
+} bitMode;
 
 class StrMode : public InputMode
 {
@@ -361,6 +421,33 @@ void Console::disable()
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Console::dispBits
+ *
+ *  Desc:  Display a byte (or sub-byte) as a string of '0's and '1's.
+ *
+ *  Args:  value            - byte value
+ *         numBits          - # of bits to display (up to 8 bits)
+ *
+ *  Note:  If numBits is less than 8 than the least significant bits up to
+ *         numBits are displayed.
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::dispBits( byte val, byte numBits )
+{
+   if ( numBits > 0 && numBits <= 8 )
+   {
+      byte bitPos = 1 << (numBits-1);
+      while ( bitPos )
+      {
+         print( val & bitPos ? '1' : '0' );
+         bitPos >>= 1;
+      }
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Console::done
  *
  *  Desc:  Flush console output at sketch end.
@@ -462,6 +549,44 @@ void Console::exeIn( const char *m, Mode *exeMode )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Console::getBits
+ *
+ *  Desc:  Display an input prompt, and wait for a bit string to be input, 
+ *         then write it (as a byte) to the address supplied by the calling 
+ *         routine.
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         numBits          - number of bits in string (up to 8)
+ *         ptrByte          - address of byte to be written to 
+ *
+ *  Rets:  status           - if true, input was successfully completed
+ *
+ *----------------------------------------------------------------------------*/
+
+bool Console::getBits( const char *prompt, byte numBits, byte *val )
+{
+   #ifdef INTERN_CONSOLE
+
+      if ( numBits == 0 || numBits > 8 )
+         return false;
+
+      bitMode.init( prompt, numBits );
+      runMode( &bitMode );
+
+      if ( bitMode.status ) 
+         *val = bitMode.value;
+
+      return bitMode.status;
+      
+   #else             // INTERN_CONSOLE not defined
+
+      return false;
+
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Console::getDigit
  *
  *  Desc:  Display an input prompt, and wait for a digit to be input. 
@@ -482,82 +607,6 @@ char Console::getDigit( const char *prompt, byte max )
    #else
       return -1;
    #endif
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Console::getDouble
- *
- *  Desc:  Display an input prompt, and wait for a string to be input, then 
- *         interpret this string as a floating pt number and write it to
- *         the address supplied by the calling routine.
- *
- *  Args:  prompt           - string to display to left of input field
- *         ptrDouble        - address of double to be written to 
- *
- *  Rets:  status           - if true, input was successfully completed
- *
- *  Note:  If this routine returns a false status (i.e., the user hit escape
- *         before completing input) then no value is written to the address
- *         supplied in the 2nd argument.
- *
- *----------------------------------------------------------------------------*/
-       
-boolean Console::getDouble( const char *prompt, double *val )
-{
-  #ifdef INTERN_CONSOLE
-
-   boolean status = getStr( prompt );
-
-   if ( status )
-   {
-      // *val = (double ) atof( strMode.result() );
-
-      char *str = strMode.result();
-
-      // skip leading spaces
-
-      while ( *str == ' ' ) str++;     
-
-      // process leading '-' 
-
-      int sign = 1;
-      while ( *str == '-' )
-      {
-         sign = -sign;
-         str++;
-      }
-
-      // process integral portion
-
-      long integral = 0;
-      char *intstr  = str;
-      while ( *str != '.' && *str != 0 )
-         str++;
-      char terminus = *str;
-      *str = 0;
-      integral = atol( intstr );
-
-      // process fractional portion
-
-      double fraction = 0;
-      long   divisor  = 1;
-      if ( terminus == '.' )
-      {
-         char *fracstr = str+1;
-         while ( *++str >= '0' && *str <= '9' )
-            divisor *= 10;
-         *str = 0;
-         fraction = (double )atol( fracstr )/divisor;
-      }
-
-      *val = (integral + fraction) * sign;
-   }
-
-   return status;
-  #else              // INTERN_CONSOLE not defined
-   return false;
-  #endif
 }
 
 /*----------------------------------------------------------------------------*
@@ -675,6 +724,82 @@ boolean Console::getSByte( const char* prompt, char* val )
          *val = temp; 
    }
    return status;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::getDouble
+ *
+ *  Desc:  Display an input prompt, and wait for a string to be input, then 
+ *         interpret this string as a floating pt number and write it to
+ *         the address supplied by the calling routine.
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         ptrDouble        - address of double to be written to 
+ *
+ *  Rets:  status           - if true, input was successfully completed
+ *
+ *  Note:  If this routine returns a false status (i.e., the user hit escape
+ *         before completing input) then no value is written to the address
+ *         supplied in the 2nd argument.
+ *
+ *----------------------------------------------------------------------------*/
+       
+boolean Console::getDouble( const char *prompt, double *val )
+{
+  #ifdef INTERN_CONSOLE
+
+   boolean status = getStr( prompt );
+
+   if ( status )
+   {
+      // *val = (double ) atof( strMode.result() );
+
+      char *str = strMode.result();
+
+      // skip leading spaces
+
+      while ( *str == ' ' ) str++;     
+
+      // process leading '-' 
+
+      int sign = 1;
+      while ( *str == '-' )
+      {
+         sign = -sign;
+         str++;
+      }
+
+      // process integral portion
+
+      long integral = 0;
+      char *intstr  = str;
+      while ( *str != '.' && *str != 0 )
+         str++;
+      char terminus = *str;
+      *str = 0;
+      integral = atol( intstr );
+
+      // process fractional portion
+
+      double fraction = 0;
+      long   divisor  = 1;
+      if ( terminus == '.' )
+      {
+         char *fracstr = str+1;
+         while ( *++str >= '0' && *str <= '9' )
+            divisor *= 10;
+         *str = 0;
+         fraction = (double )atol( fracstr )/divisor;
+      }
+
+      *val = (integral + fraction) * sign;
+   }
+
+   return status;
+  #else              // INTERN_CONSOLE not defined
+   return false;
+  #endif
 }
 
 /*----------------------------------------------------------------------------*
@@ -801,10 +926,10 @@ boolean Console::getULong( const char *prompt, unsigned long *val )
    #endif
 }
 
-void Console::begInfo( const char* name )
+void Console::begInfo( const char* label )
 {
    print('{');
-   romprint( name );
+   romprint( label );
    space();
 }
 
@@ -813,43 +938,212 @@ void Console::endInfo()
    romprint( CONSTR("} ") );
 }
 
-void Console::infoBool( const char* name, bool val )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoBits
+ *
+ *  Desc:  Display a bitfield value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         numBits          - # of bits in field (up to 8 bits)
+ *         value            - bitfield value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoBits( const char* label, byte numBits, byte val )
 {
-   begInfo( name );
+   begInfo( label );
+   dispBits( val, numBits );
+   endInfo();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoBool
+ *
+ *  Desc:  Display a boolean value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - boolean value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoBool( const char* label, bool val )
+{
+   begInfo( label );
    romprint( val ? CONSTR("true") : CONSTR("false") );
    endInfo();
 }
 
-void Console::infoByte( const char* name, byte val )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoByte
+ *
+ *  Desc:  Display a byte value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - byte value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoByte( const char* label, byte val )
 {
-   infoInt( name, val );
+   infoInt( label, val );
 }
 
-void Console::infoInt( const char* name, int val )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoByteBits
+ *
+ *  Desc:  Display a byte value as a bit string (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - byte value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoCharBits( const char* label, byte val )
 {
-   begInfo( name );
+   begInfo( label );
+   dispBits( val, 8 );
+   endInfo();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoInt
+ *
+ *  Desc:  Display an integer value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - byte value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoInt( const char* label, int val )
+{
+   begInfo( label );
    print( val );
    endInfo();
 }
 
-void Console::infoDouble( const char* name, double val )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoIntBits
+ *
+ *  Desc:  Display an int value as a bit string (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - byte value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoIntBits( const char* label, int val )
 {
-   begInfo( name );
+   begInfo( label );
+   Int intBits;
+   intBits.val = val;
+   dispBits( intBits._.msb, 8 );
+   space();
+   dispBits( intBits._.lsb, 8 );
+   endInfo();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoDouble
+ *
+ *  Desc:  Display an double value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - double value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+
+void Console::infoDouble( const char* label, double val )
+{
+   begInfo( label );
    print( toStr(val) );
    endInfo();
 }
 
-void Console::infoStr( const char* name, const char* val )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoStr
+ *
+ *  Desc:  Display a string value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - strinf value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+
+void Console::infoStr( const char* label, const char* val )
 {
-   begInfo( name );
+   begInfo( label );
    romprint( val );
    endInfo();
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoULong
+ *
+ *  Desc:  Display an unsigned long value (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - unsigned long value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
 
-void Console::infoULong( const char* name, unsigned long val )
+void Console::infoULong( const char* label, unsigned long val )
 {
-   begInfo( name );
+   begInfo( label );
    #ifdef CONSOLE_OUTPUT
       Serial.print( val );
    #endif

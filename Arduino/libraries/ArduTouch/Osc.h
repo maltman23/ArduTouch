@@ -48,6 +48,7 @@ class Osc : public TControl
 
    virtual void onFreq() {};        // compute frequency dependent state vars
    virtual void output( char* ) {}; // write one buffer of output
+   virtual double realFreq();       // return the real frequency
 
    boolean charEv( char );          // process a character event
    double  getFreq();               // return the ideal frequency

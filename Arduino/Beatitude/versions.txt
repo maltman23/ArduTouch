@@ -1,7 +1,12 @@
 Versions:
 
+   1.00  optimize DrumKit::noteOn() for size
+         [32194 / 768] __STNDLONE__ 1.09v
+         <FreeRAM 317>
    0.99  set_baud_rate() nixed
          syncs with 1.08
+         [32082 / 803] __STNDLONE__ 1.08
+         [32222 / 768] __STNDLONE__ 1.09v
    0.98  Bass(!) explicitly sets freq ratio between oscillators
          syncs with library 1.07
          [32098 / 736] __STNDLONE__ 

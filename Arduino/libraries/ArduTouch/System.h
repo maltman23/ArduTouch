@@ -24,8 +24,9 @@
 #include "types.h"
 #include "Audio.h"
 #include "Synth.h"
+#include "Model.h"
 
-#define LIBRARY_VERSION "1.08"
+#define LIBRARY_VERSION "1.09"
 
 /* ------------------------------------------------------------------------- */
 
@@ -37,14 +38,18 @@
 
 /* ------------------------------------------------------------------------- */
 
-//#define MONITOR_CPU                    // monitor % CPU used rendering audio
-//#define MONITOR_RAM                    // monitor free RAM 
-
 #define RED_LED   0                    // red LED  #
 #define BLUE_LED  1                    // blue LED #
 
 #define LEFT_LED  0                    // left LED #
 #define RIGHT_LED 1                    // right LED #
+
+#define NULL_LED  255                  // null LED # 
+
+#define NumButs   2                    // number of onboard buttons 
+#define NumPots   2                    // number of onboard pots 
+#define NumLEDs   2                    // number of onboard LEDs 
+#define NumKeys  12                    // # of onboard keys
 
 /* ------------------------      public vars      -------------------------- */
 
@@ -70,13 +75,16 @@ extern void setBlinkRate( byte );      // set LED blink rate
 extern void bufStats();                // prints audio buffer stats
 extern int  freeRam();                 // returns space between heap & stack
 
+extern void readMetrics( word addrNVS = AUTO_METRICS_ADDR );  // read metrics from NVS
+extern void writeMetrics( word addrNVS = AUTO_METRICS_ADDR ); // write metrics to NVS
+
                   // Non-Volatile Storage (EEPROM) routines
 
 extern byte readNVS( word addrNVS );                           // read one byte 
-extern void readNVS( word addrNVS, byte *addrRAM, word size ); // read multiple bytes
+extern void readNVS( word addrNVS, void *addrRAM, word size ); // read multiple bytes
 
 extern void writeNVS( word addrNVS, byte value );              // write one byte
-extern void writeNVS( word addrNVS, byte *addrRAM, word size );// write multiple bytes
+extern void writeNVS( word addrNVS, void *addrRAM, word size );// write multiple bytes
 
 /******************************************************************************
  *

@@ -482,9 +482,9 @@ void VoxSynth::setSustain( byte sustain )
  *         This method:
  *
  *             1) establishes the number of voices used in the synth
- *             2) calls the virtual method newVox() for each voice 
+ *             2) calls newVox() for each voice 
  *             3) stores the object ptr from (2) in the vox[] array
- *             4) calls the virtual method newOsc() for each voice
+ *             4) calls newOsc() for any voice that hasn't set up an oscillator
  *             5) assigns the object ptr from (4) to its voice
  *
  *         Once this method has been called, voices can be subsequently
@@ -502,7 +502,8 @@ void VoxSynth::setupVoices( byte numVox )
    for ( byte i = 0; i < numVox; i++ )
    {
       vox[i] = newVox(i);
-      vox[i]->useOsc( newOsc(i) );
+      if ( ! vox[i]->osc )             // if voice constructor didn't set osciilator 
+         vox[i]->useOsc( newOsc(i) );  // create one via newOsc()  
       vox[i]->num = i;
    }
 }
@@ -808,12 +809,12 @@ void TwoVoxPanSynth::output( char *bufL, char *bufR )
 
    // mix voice 0 & 1 between the two channels based on panPos
 
-   byte coPanning = 255 - panPos;         // complement of panPos
+   word coPanning = 256 - panPos;         // complement of panPos
 
    // pan the voices such that:
    //
-   //    bufL = (255-panPos)*vox[0] + panPos*vox[1]
-   //    bufR = (255-panPos)*vox[1] + panPos*vox[0]
+   //    bufL = (256-panPos)*vox[0] + panPos*vox[1]
+   //    bufR = (256-panPos)*vox[1] + panPos*vox[0]
    //
 
    Int  sum;                              // sum of voice 0 & 1 output

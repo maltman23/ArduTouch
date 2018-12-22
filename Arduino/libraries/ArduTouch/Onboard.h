@@ -118,6 +118,14 @@ struct key
       return val >> 4;
    }
 
+   byte physkey()                   // return physical key #
+   {
+      // on the ArduTouch, physKey() == position()
+      // if this code is ported to a board with more than 1 pjysical octave
+      // the key struct will have to be expanded to include physical key field
+      return val & 0b00001111;      
+   }
+
    byte position()
    {
       return val & 0b00001111;

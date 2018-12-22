@@ -377,8 +377,8 @@ void QuadPanSynth::output( char *bufL, char *bufR )
 
    // pan the four voices so that:
    //
-   //    bufL = ( pan[0] + (255-panPos)*pan[1] + panPos*pan[2] ) / 2
-   //    bufR = ( pan[3] + (255-panPos)*pan[2] + panPos*pan[1] ) / 2
+   //    bufL = ( pan[0] + (256-panPos)*pan[1] + panPos*pan[2] ) / 2
+   //    bufR = ( pan[3] + (256-panPos)*pan[2] + panPos*pan[1] ) / 2
    //
 
    char  buf0[ audioBufSz ];    // temp buffer for for holding pan[0] output
@@ -389,9 +389,9 @@ void QuadPanSynth::output( char *bufL, char *bufR )
    int  sum1L_2L;                         // left component of pan[1+2]
    Int  pan1L;                            // left component of pan[1]
    Int  pan2L;                            // left component of pan[2]
-   byte coPanning;                        // complement of panPos
+   word coPanning;                        // complement of panPos
 
-   coPanning = 255 - panPos;
+   coPanning = 256 - panPos;
 
    pan[0]->output( &buf0[0] ); 
    pan[1]->output( bufL ); 
@@ -668,11 +668,11 @@ void QuadDualPanSynth::output( char *bufL, char *bufR )
 
    // pan the four voices so that:
    //
-   //    bufL = ( (255-panPos) *pan[1] +  panPos*pan[2] 
-   //             (255-xpanPos)*pan[0] + xpanPos*pan[3] ) / 2
+   //    bufL = ( (256-panPos) *pan[1] +  panPos*pan[2] 
+   //             (256-xpanPos)*pan[0] + xpanPos*pan[3] ) / 2
    //
-   //    bufR = ( (255-panPos) *pan[2] +  panPos*pan[1] 
-   //             (255-xpanPos)*pan[3] + xpanPos*pan[0] ) / 2
+   //    bufR = ( (256-panPos) *pan[2] +  panPos*pan[1] 
+   //             (256-xpanPos)*pan[3] + xpanPos*pan[0] ) / 2
 
    char  buf0[ audioBufSz ];    // temp buffer for for holding pan[0] output
    char  buf3[ audioBufSz ];    // temp buffer for for holding pan[3] output
@@ -682,16 +682,16 @@ void QuadDualPanSynth::output( char *bufL, char *bufR )
    int  sum1L_2L;                         // left component of pan[1+2]
    Int  pan1L;                            // left component of pan[1]
    Int  pan2L;                            // left component of pan[2]
-   byte coPanning;                        // complement of panPos
+   word coPanning;                        // complement of panPos
 
    int  sum0_3;                           // sum of voice 0 & 3 output
    int  sum0L_3L;                         // left component of pan[0+3]
    Int  pan0L;                            // left component of pan[0]
    Int  pan3L;                            // left component of pan[3]
-   byte coXPanning;                       // complement of xpanPos
+   word coXPanning;                       // complement of xpanPos
 
-   coPanning  = 255 - panPos;
-   coXPanning = 255 - xpanPos;
+   coPanning  = 256 - panPos;
+   coXPanning = 256 - xpanPos;
 
    pan[0]->output( &buf0[0] ); 
    pan[1]->output( bufL ); 

@@ -184,11 +184,16 @@ const char* Bank::name( byte ith )
       return CONSTR("");
 }
 
-byte Bank::select( byte ith )
+bool Bank::select( byte ith )
 {
-   idx = ith < num ? ith : 0;
-   onChoice();
-   return idx;
+   if ( ith < num ) 
+   {
+      idx = ith;
+      onChoice();
+      return true;
+   }
+   else
+      return false;
 }
 
 /* ----------------------     MacroBank class      -------------------------- */

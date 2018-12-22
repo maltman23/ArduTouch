@@ -102,7 +102,7 @@ boolean Osc::charEv( char code )
 
       case chrInLnfo:               // display object info inline to console
 
-         console.infoDouble( CONSTR("freq"), effFreq );
+         console.infoDouble( CONSTR("freq"), realFreq() );
          console.infoInt( CONSTR("detune"), detune );
          break;
 
@@ -167,6 +167,24 @@ const char *Osc::prompt()
    return CONSTR("osc");
 }
 #endif
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Osc::realFreq
+ *
+ *  Desc:  Return the real (instantaneous) frequency. 
+ *
+ *  Rets:  freq             - real frequency
+ *
+ *  Memb:  effFreq          - effective frequency (includes internal detuning)
+ *         extFactor        - external detuning factor
+ *
+ *----------------------------------------------------------------------------*/      
+
+double Osc::realFreq()
+{
+   return effFreq * extFactor;
+}
 
 /*----------------------------------------------------------------------------*
  *

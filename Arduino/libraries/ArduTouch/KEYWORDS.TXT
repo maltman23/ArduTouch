@@ -232,7 +232,7 @@ _pause_			KEYWORD2
 RealTimeSequencer	KEYWORD1
 recording		KEYWORD2
 setBeats		KEYWORD2
-setMeasures		KEUWORD2
+setMeasures		KEYWORD2
 sqncCUE			KEYWORD3
 sqncRECORD		KEYWORD3
 sqncDNBEAT		KEYWORD3
@@ -262,4 +262,39 @@ OneVoxSynth		KEYWORD1
 TwoVoxSynth		KEYWORD1
 vox			KRYWORD2
 
+QuantumOsc		KEYWORD1
+periodHz		KEYWORD2
+track			KEYWORD2
 
+PureSquare		KEYWORD1
+realFreq		KEYWORD2
+setEdgLen		KEYWORD2
+setPeak			KEYWORD2
+
+SweepOsc		KEYWORD1
+autoTrigEnabled		KEYWORD2
+loadEdge		KEYWORD2
+setBegin		KEYWORD2
+setEnd			KEYWORD2
+setRepeats		KEYWORD2
+setStretch		KEYWORD2
+startSweep		KEYWORD2
+
+ptr1ByteMethod		KEYWORD2
+PROMPT_STR		KEYWORD2
+
+VirtualPot		KEYWORD1
+evaluate		KEYWORD2
+setMinMax		KEYWORD2
+setRange		KEYWORD2
+getPos			KEYWORD2
+getVal			KEYWORD2
+setPos			KEYWORD2
+
+VirtualPotDemux		KEYWORD1
+connect			KEYWORD2
+lineOn			KEYWORD2
+lineOff			KEYWORD2
+
+ParamSend		KEYWORD1
+PotSend			KEYWORD1

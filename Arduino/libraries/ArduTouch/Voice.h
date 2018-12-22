@@ -95,6 +95,7 @@ class Voice : public Instrument, public Scroller
    Voice()
    {
       setScrollable(3);             // scrollable pots: vol, detune, glide
+      osc = NULL;
       num = 0;
       addAmpMod( &this->envAmp );
    }

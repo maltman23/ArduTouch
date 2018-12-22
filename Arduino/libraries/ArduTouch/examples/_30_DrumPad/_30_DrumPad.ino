@@ -75,10 +75,10 @@ class DrumVoice : public Voice
    //  We ovverride the Voice's standard noteOn() method with one which loads a
    //  drum sound wave table from the library, depending on which note is played.
    //
-   //  To load wave tables we call the SampleOsc::setTable() method.
+   //  To load wave tables we call the SampleOsc::setSample() method.
    //
    //  Notice that we must type-cast the Voice's osc member to a SampleOsc*,
-   //  because the generic Osc class has no setTable() method.
+   //  because the generic Osc class has no setSample() method.
 
    void  noteOn( key note )         
    {
@@ -91,32 +91,32 @@ class DrumVoice : public Voice
          case 1:
          case 2:
 
-            o->setTable( wavetable( Kick02 ) );
+            o->setSample( wavetable( Kick02 ) );
             break;
 
          case 3:
          case 4:
 
-            o->setTable( wavetable( Tom02 ) );
+            o->setSample( wavetable( Tom02 ) );
             break;
 
          case 5:
          case 6:
          case 7:
 
-            o->setTable( wavetable( Snare01 ) );
+            o->setSample( wavetable( Snare01 ) );
             break;
 
          case 8:
          case 9:
 
-            o->setTable( wavetable( Rim01 ) );
+            o->setSample( wavetable( Rim01 ) );
             break;
 
          case 10:
          case 11:
 
-            o->setTable( wavetable( Hat03 ) );
+            o->setSample( wavetable( Hat03 ) );
             break;
       }
       trigger();

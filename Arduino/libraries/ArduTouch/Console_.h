@@ -88,6 +88,8 @@
    #define CONSTR(x) PSTR(x)
    #define ALLOC_CONSTR(p, x) const char p [] PROGMEM = x
 
+   #define PROMPT_STR( s ) const char *prompt() { return CONSTR( #s ); } 
+
    #define about_program(x, y)                        \
                                                       \
       extern const char __PROGNAME__[];               \
@@ -99,6 +101,8 @@
 
    #define CONSTR(x) PSTR("")
    #define ALLOC_CONSTR(p, x) const char p [] PROGMEM = ""
+
+   #define PROMPT_STR( s )
 
    #define about_program(x, y)
 
@@ -151,56 +155,61 @@ class Console
    void  (*idle)() = NULL;             // ptr to routine to run while waiting 
                                        // for line input to complete
 
-   void    disable();                  // disable console I/O
-   void    done();
-   void    enable();                   // enable console I/O
-   void    exe( const char* );         // execute a macro str 
-   void    exeIn( const char*, Mode* );// execute a macro str within a specified mode
-   boolean getBool( const char*, bool* );       // prompt for and get a boolean
-   boolean getByte( const char*, byte* );       // prompt for and get a byte (0:255)
-   char    getDigit( const char*, byte );       // get '0' thru '9', (0 = aborted)
-   boolean getDouble( const char*, double* );   // prompt for and get a double
-   boolean getInt( const char*, int* );         // prompt for and get an int
-   boolean getSByte( const char*, char* );      // prompt for and get byte (-128:127)
-   boolean getStr( const char*, char** );       // prompt for and get a String 
-   boolean getULong( const char*, unsigned long* ); // info on unsigned long
-   void    infoBool( const char*, bool );       // print info on a named boolean
-   void    infoByte( const char*, byte );       // print info on a named byte
-   void    infoInt( const char*, int );         // print info on a named int
-   void    infoDouble( const char*, double );   // print info on a named double 
-   void    infoStr( const char*, const char* ); // print info on a named str
-   void    infoULong( const char*, unsigned long ); // print info on named unsigned long
-   void    init( Mode *mode, void (*)() );
-   boolean inMode( Mode* );            // returns true if arg is current mode
-   void    input();
-   void    newline();                  // go to beginning of next line
-   void    newlntab();                 // go to beginning of next line and rtab
-   void    newprompt();                // display a new prompt for current mode
-   void    oneShotMenu();              // interpret next key as a menu selection
-   void    ongoing();                  // continue ongoing tasks for one cycle
-   void    popMode();                  // pop the top mode on the mode stack
-   void    postBut( byte, butAction ); // post a button event  
-   void    postKeyDn( byte, byte );    // post a key-down event  
-   void    postKeyUp( byte, byte );    // post a key-up event  
-   void    postPot( byte, byte );      // post a pot event  
-   void    print( char );              // print a character
-   void    print( char * );            // print a string
-   void    print( int );               // print an int
-   void    pushMode( Mode * );         // push a mode onto the mode stack
-   void    romprint( const char * );   // print a string located in ROM
-   byte    romstrlen( const char * );  // returns length of str in ROM
-   void    rtab();                     // move to right of seam
-   void    runMode( Mode * );          // run a mode until it pops itself
-   void    runModeWhile( Mode*, boolean* ); // run a mode until a condition is met
-   void    setIdle( void (*)() );      // specify routine to run when idling
-   void    setMode( Mode * );          // set the current (top) mode
-   void    space();                    // print a space
-   void    space( byte );              // print multiple spaces
+   void  disable();                    // disable console I/O
+   void  dispBits( byte, byte );       // print right-justified bitfld within a byte 
+   void  done();
+   void  enable();                     // enable console I/O
+   void  exe( const char* );           // execute a macro str 
+   void  exeIn( const char*, Mode* );  // execute a macro str within a specified mode
+   bool  getBits( const char *, byte, byte* );// prompt for and get a bitfield
+   bool  getBool( const char*, bool* );       // prompt for and get a boolean
+   bool  getByte( const char*, byte* );       // prompt for and get a byte (0:255)
+   char  getDigit( const char*, byte );       // get '0' thru '9', (0 = aborted)
+   bool  getDouble( const char*, double* );   // prompt for and get a double
+   bool  getInt( const char*, int* );         // prompt for and get an int
+   bool  getSByte( const char*, char* );      // prompt for and get byte (-128:127)
+   bool  getStr( const char*, char** );       // prompt for and get a String 
+   bool  getULong( const char*, unsigned long* ); // prompt for on unsigned long
+   void  infoBits( const char *, byte, byte );// print a bitfield value (with label)
+   void  infoBool( const char*, bool );       // print a boolean value (with label)
+   void  infoByte( const char*, byte );       // print a byte value (with label)
+   void  infoCharBits( const char*, byte );   // print a char as a bit string (with label)
+   void  infoDouble( const char*, double );   // print a double value (with label)
+   void  infoInt( const char*, int );         // print an int value (with label)
+   void  infoIntBits( const char*, int );     // print an int as a bit string (with label)
+   void  infoStr( const char*, const char* ); // print a str value (with label)
+   void  infoULong( const char*, unsigned long ); // print an unsigned long (with label)
+   void  init( Mode *mode, void (*)() );
+   bool  inMode( Mode* );              // returns true if arg is current mode
+   void  input();
+   void  newline();                    // go to beginning of next line
+   void  newlntab();                   // go to beginning of next line and rtab
+   void  newprompt();                  // display a new prompt for current mode
+   void  oneShotMenu();                // interpret next key as a menu selection
+   void  ongoing();                    // continue ongoing tasks for one cycle
+   void  popMode();                    // pop the top mode on the mode stack
+   void  postBut( byte, butAction );   // post a button event  
+   void  postKeyDn( byte, byte );      // post a key-down event  
+   void  postKeyUp( byte, byte );      // post a key-up event  
+   void  postPot( byte, byte );        // post a pot event  
+   void  print( char );                // print a character
+   void  print( char * );              // print a string
+   void  print( int );                 // print an int
+   void  pushMode( Mode * );           // push a mode onto the mode stack
+   void  romprint( const char * );     // print a string located in ROM
+   byte  romstrlen( const char * );    // returns length of str in ROM
+   void  rtab();                       // move to right of seam
+   void  runMode( Mode * );            // run a mode until it pops itself
+   void  runModeWhile( Mode*, boolean* ); // run a mode until a condition is met
+   void  setIdle( void (*)() );        // specify routine to run when idling
+   void  setMode( Mode * );            // set the current (top) mode
+   void  space();                      // print a space
+   void  space( byte );                // print multiple spaces
 
    private:
 
-   void    begInfo( const char* );     // print beginning of info cell 
-   void    endInfo();                  // print end of info cell 
+   void  begInfo( const char* );       // print beginning of info cell 
+   void  endInfo();                    // print end of info cell 
 
 } ;
 

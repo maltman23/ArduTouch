@@ -56,16 +56,13 @@
 #ifdef PCB_REV_C
    #define CLOCKWISE_POTS              // pot values increase going clockwise 
    #define LED_ACTIVE_LOW              // LEDs are active on LOW edge
-   const byte numKeys = 12;            // # of accessible onboard keys
 #endif
 
 #ifdef PCB_REV_B
    #define LED_ACTIVE_LOW              // LEDs are active on LOW edge
-   const byte numKeys = 12;            // # of accessible onboard keys
 #endif
 
 #ifdef PCB_REV_A
-   const byte numKeys = 12;            // # of accessible onboard keys
 #endif
 
 #ifdef LED_ACTIVE_LOW            
@@ -111,10 +108,6 @@ boolean usingCpu;                      // currently using CPU to render audio
 const   double scanRate = 20.0;        // rate at which to scan hardware
 byte    bufsPerScan;                   // # buffers to render per I/O scan
 byte    scanDC;                        // downcounter to next I/O scan
-
-#define NumButs        2               // number of onboard buttons 
-#define NumPots        2               // number of onboard pots 
-#define NumLEDs        2               // number of onboard LEDs 
 
 byte        butPin[] = { 17, 16 };     // associated digital pin # per button
 signed char butCount[ NumButs ];       // # scans in present state per button
@@ -200,6 +193,12 @@ void ardutouch_setup( Synth *x )
    x->reset();                         // reset the synth
    audio::enable();                    // enable audio output
    x->welcome();                       // execute any post-reset code
+
+   #ifdef AUTO_METRICS                 // for develiopers only!
+      audio::wait(100);                // run the synth for a bit
+      writeMetrics();                  // write processor metrics to NVS
+   #endif
+
 }
 
 /*----------------------------------------------------------------------------*
@@ -419,13 +418,12 @@ void readPot( byte num )
  *  Args:  -- none --
  *
  *  Glob:  +curKey          - currently pressed key (-1 means none)
- *          numKeys         - # of onboard keys
  *
  *----------------------------------------------------------------------------*/      
 
 void scanKeys() 
 {
-   for ( byte i = 0; i < numKeys; i++ )
+   for ( byte i = 0; i < NumKeys; i++ )
       if ( readKey(i) )
       {
          curKey = i;
@@ -549,6 +547,58 @@ int freeRam ()
    extern int __heap_start, *__brkval; 
    int v; 
    return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  readMetrics
+ *
+ *  Desc:  Read freeRAM and CPU usage stats from NVS and display them to
+ *         the console.
+ *
+ *  Args:  addrNVS          - (optional) NVS addr to read stats from 
+ *
+ *  Note:  if addrNVS is not supplied, then an addr of 0 is used.
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void readMetrics( word addrNVS ) 
+{
+   int  _RAM;                    // # bytes free RAM
+   byte _CPU;                    // % CPU usage (parts per 256)
+   
+   readNVS( addrNVS, &_RAM, 2 );
+   _CPU = readNVS( addrNVS+2 );
+
+   console.infoInt( CONSTR("freeRAM"), _RAM );
+   console.infoByte( CONSTR("cpu"), _CPU );
+   console.newprompt();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  writeMetrics
+ *
+ *  Desc:  Write freeRAM and CPU usage stats to NVS.
+ *
+ *  Args:  addrNVS          - (optional) NVS addr to write stats
+ *  
+ *  Note:  1) if addrNVS is not supplied, then an addr of 0 is used.
+ *         2) MONITOR_CPU must be defined for %cpu to be valid
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void writeMetrics( word addrNVS ) 
+{
+   int  _RAM = freeRam();        // # bytes free RAM
+   byte _CPU = 0;                // % CPU usage (parts per 256)
+   
+   #ifdef MONITOR_CPU
+      _CPU = cpu;
+   #endif
+
+   writeNVS( addrNVS, &_RAM, 2 );
+   writeNVS( addrNVS+2, _CPU );
 }
 
 /******************************************************************************
@@ -1001,10 +1051,11 @@ byte readNVS( word addrNVS )
  *
  *----------------------------------------------------------------------------*/
 
-void readNVS( word addrNVS, byte *addrRAM, word size )
+void readNVS( word addrNVS, void *addrRAM, word size )
 {
+   byte *dest = (byte *)addrRAM;
    for ( word i = 0; i < size; i++ )
-      *addrRAM++ = EEPROM.read( addrNVS + i );
+      *dest++ = EEPROM.read( addrNVS + i );
 }
 
 /*----------------------------------------------------------------------------*
@@ -1035,15 +1086,16 @@ void writeNVS( word addrNVS, byte value )
  *
  *----------------------------------------------------------------------------*/
 
-void writeNVS( word addrNVS, byte *addrRAM, word size )
+void writeNVS( word addrNVS, void *addrRAM, word size )
 {
+   byte *source = (byte *)addrRAM;
    bool toggleAudio = audio::enabled();
 
    if ( toggleAudio )         // disable audio interrupt during EEPROM write
       audio::disable();
 
    for ( word i = 0; i < size; i++ )
-      EEPROM.write( addrNVS + i, *addrRAM++ );
+      EEPROM.write( addrNVS + i, *source++ );
 
    if ( toggleAudio ) 
       audio::enable();

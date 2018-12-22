@@ -41,30 +41,52 @@
    #define __STNDLONE__
 // #define __BAREBONE__
 
-// ---------            specify baud rate to/from host         ------------
+// ---------        specify the serial baud rate with host     ---------------
 
    #define __BAUDRATE__ 115200
 
 /* ---------------------------------------------------------------------------
 
-    The ArduTouch library and sample synths were developed using Arduino 
-    build 1.6.6. For sketches involving large-scale synths, build 1.6.6 
-    generates significantly smaller executables than the current hourly 
-    builds (1.8.6 at the time of this release). 
-
-    If you are using build 1.6.6 you may want to uncomment the BUILD_166 
-    define statement below.
-
-    Sketches for the ArduTouch supplied by Cornfield Electronics may contain 
-    conditional compilation sections that make use of the extra program 
-    storage space afforded by the compiler in build 1.6.6.
-
-    (Note: the current hourly builds actually generate *smaller* executables
-    than 1.6.6 for simple sketches -- go figure).
+    The ArduTouch library and sample synths were developed using Arduino build
+    1.6.6. For large-scale sketches, build 1.6.6 generates smaller executables 
+    than the current hourly build (1.8.6). If you are using build 1.6.6 you  
+    should uncomment the following define.
 
    ------------------------------------------------------------------------ */
 
 // #define BUILD_166
+
+/* ---------------------------------------------------------------------------
+
+    The following defines enable the dynamic monitoring of CPU usage and free 
+    RAM. When enabled, the current values of these metrics are displayed to 
+    the console (along with normal information) whenever '?' is typed at 
+    the '>' prompt. Because monitoring consumes CPU and memory it should be 
+    disabled when not needed for development. (Monitoring is automatically 
+    disabled in all runtime models except __FULLHOST__.)
+
+   ------------------------------------------------------------------------ */
+
+// #define MONITOR_CPU                  // monitor % CPU used rendering audio
+// #define MONITOR_RAM                  // monitor free RAM 
+
+/* ---------------------------------------------------------------------------
+
+    The following AUTO_METRICS define should only be used by developers who 
+    need to determine the CPU usage and free RAM of a sketch not running in 
+    FULLHOST model (and therefore unable to display them to the console).
+    The metrics are automatically computed and stored in NVS at the address
+    given by AUTO_METRICS_ADDR. These metrics can then be subsequently read 
+    back and displayed to the console via the library routine readMetrics() 
+    by any sketch running in FULLHOST model. When AUTO_METRICS is defined
+    it will override the FULLHOST model, if defined, and force the model to 
+    STNDLONE.
+
+   ------------------------------------------------------------------------ */
+
+//#define AUTO_METRICS               // for developers only!
+
+#define AUTO_METRICS_ADDR 0          // address in NVS to store/read metrics  
 
 /* ---------------------------------------------------------------------------
 
@@ -116,6 +138,27 @@
 #ifdef __STNDLONE__
    #ifdef __BAREBONE__
       #error Multiple Runtime Models have been declared 
+   #endif
+#endif
+
+/* ---------------------------------------------------------------------------
+       Disable resource monitoring in all models except __FULLHOST__.
+   ------------------------------------------------------------------------ */
+
+#ifndef __FULLHOST__
+   #undef MONITOR_CPU               
+   #undef MONITOR_RAM               
+#endif
+
+/* ---------------------------------------------------------------------------
+       Insure proper model configuration if AUTO_METRICS is defined
+   ------------------------------------------------------------------------ */
+
+#ifdef AUTO_METRICS
+   #define MONITOR_CPU
+   #ifdef __FULLHOST__               // override FULLHOST model
+      #undef   __FULLHOST__
+      #define  __STNDLONE__
    #endif
 #endif
 

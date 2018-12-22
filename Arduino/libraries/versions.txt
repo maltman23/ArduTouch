@@ -1,5 +1,30 @@
 Versions:
 
+   1.09  add QuantumOsc module
+         add VirtualPot module
+         add the virtual method Osc::realFreq()
+         Osc::charEv( chrInfo ) displays real, not effective, frequency
+         Voice::Voice() sets osc to NULL
+         VoxSynth::setupVoices() only calls newOsc() for voices with osc == NULL
+         in readNVS() and writeNVS(), addrRAM arg typed as void* instead of byte*
+         add AUTO_METRICS, AUTO_METRICS_ADDR
+         add writeMetrics(), readMetrics() 
+         System::numKeys renamed ::NumKeys, changed from const byte to a define
+         NumKeys moved from System.cpp to System.h
+         add key::physkey()
+         add Console::getBits() and BitMode class
+         break Console::dispBits() out from Console::infoBits()
+         add Console::infoBits()
+         add Console::infoCharBits
+         add Console::infoIntBits
+         Bank::select() returns status boolean as opposed to idx chosen
+         add NULL_LED 
+         add PROMPT_STR() macro
+         drum sounds reauthored (gg 2.56f) to remove leading, trailing 0's
+         add "What's New" section in README.TXT
+         additions to KEYWORDS.TXT
+         bugfix: in TwoVoxPanSynth QuadPanSynth QuadDualPanSynth -- 
+                 panPos now interpreted as parts per 256, not parts per 255 
    1.08  __BAUDRATE__ defined in Model.h
          set_baud_rate() macro does nothing 
          add Console::getBool() ::infoBool()

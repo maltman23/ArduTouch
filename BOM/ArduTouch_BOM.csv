@@ -1,30 +1,30 @@
-﻿Qty,Designator,Part,Mouser/other vendor,mfg,mfg part #
-1,B1    ,"3xAA battery holder w/ leads, w/ switch",Jameco: 216144,Jameco,SBH-331-AS-R
-4,"C1, C2, C4, C5","0.1uF, 50V, ceramic, 0.1"" spacing leads                   ",594-K104K15X7RF53L2 ,Vishay / BC Components,K104K15X7RF53L2
-2,"C3, C8","100uF, 16V or higher, electrolytic, radial, 0.1"" spacing leads",598-107CKS016M ,Cornell Dubilier - CDE,107CKS016M
-2,"C6, C7","1uF, 16V or higher, electrolytic, radial, 0.1"" spacing leads",598-105CKR050M,Illinois Capacitor / CDE,105CKR050M
-1,J1    ,"1x6, right-angle (FTDI)",649-68016-106HLF,FCI,68016-106HLF
-0,J2,not used,,,
-1,J3,"headphone, stereo, 3.5mm, switched",806-STX-31205B284C,Kycon,STX-3120-5B-284C
-1,LED1  ,"Blue LED, 5mm",941-C5SMFBJFCR0U0351,Cree,C5SMF-BJF-CR0U0351
-1,LED2  ,"Red LED, 5mm",941-C5SMFRJFCT0W0BB1,Cree,C5SMF-RJF-CT0W0BB1
-1,LED3  ,"Green LED, 5mm",941-C5SMFGJFCV0Y0791,Cree,C5SMF-GJF-CV0Y0791
-1,R1,"10K, 1/4W, 5%              ",Jameco: 691104,Jameco,CF1/4W103JRC
-4,"R2, R3, R4, R5","22M, 1/4W, 5%",660-CF1/4C226J,KOA Speer,CF1/4C226J
-2,"R6, R7","270, 1/4W, 5%",Jameco: 690726,Jameco,CF1/4W271JRC
-2,"R8, R9    ","4.7K, 1/4W, 5%",Jameco: 691024,Jameco,CF1/4W472JRC
-1,R10,10K trim pot (screwdriver adjust - Volume),652-3319P-1-103,Bourns,3319P-1-103
-2,"R11, R12",10K trim pot (knob adjust),858-72PTR10KLF ,BI Technologies / TT Electronics ,72PTR10KLF
-3,"R13, R14, R15","1K, 1/4W, 5%",Jameco: 690865,Jameco,CF1/4W102JRC
-1,S1,"SPST tact switch, 4-pin, Black button (Reset)",688-SKHHAK,ALPS,SKHHAKA010
-2,"S2, S3","SPST tact switch, 4-pin, Red button",688-SKHHAQ,ALPS,SKHHAQA010
-1,SPKR1 ,"40mm diameter speaker, 3W, 4 Ohm",665-AS04004PR-R,PUI Audio,AS04004PR-R
-1,U1    ,ATmega328P-PU,556-ATMEGA328P-PU,Atmel,ATMEGA328P-PU
-1,U2    ,NJM386BD,513-NJM386BD,NJR,NJM386BD
-1,X1    ,16.0MHz ceramic resonator,81-CSTLS16M0X55Z-A0,Murata Electronics,CSTLS16M0X55Z-A0
-1,PCB,PCB,,,
-1,U1 socket,28-pin DIP socket,Jameco: 112299,Jameco,6000-28NDW
-0,U2 socket,not used (U2 is soldered directly to PCB),,,
-1,small bag,7x10cm reclosable plastic bag,Aliexpress,,
-1,large bag,15x22cm reclosable plastic bag,Aliexpress,,
-1,label,,,,
+Qty,Designator,Description,Jameco,Mouser,mfg,mfg part #,mfg,mfg part #
+1,B1    ,"3xAA battery holder w/ leads, w/ switch",216144,854-PW3AA,Jameco,SBH-331-AS-R,BusBoard,PW-3AA
+4,"C1, C2, C4, C5","0.1uF, 50V, ceramic, 0.1"" spacing leads                   ",,594-K104K15X7RF53L2 ,Vishay / BC Components,K104K15X7RF53L2,,
+2,"C3, C8","100uF, 16V or higher, electrolytic, radial, 0.1"" spacing leads",,598-107CKS016M ,Cornell Dubilier - CDE,107CKS016M,,
+2,"C6, C7","1uF, 16V or higher, electrolytic, radial, 0.1"" spacing leads",,598-105CKR050M,Illinois Capacitor / CDE,105CKR050M,,
+1,J1    ,"1x6, right-angle (FTDI)",,649-68016-106HLF,FCI,68016-106HLF,,
+0,J2,not used,,,,,,
+1,J3,"headphone, stereo, 3.5mm, switched",,806-STX-31205B284C,Kycon,STX-3120-5B-284C,,
+1,LED1  ,"Blue LED, 5mm",,941-C5SMFBJFCR0U0351,Cree,C5SMF-BJF-CR0U0351,,
+1,LED2  ,"Red LED, 5mm",,941-C5SMFRJFCT0W0BB1,Cree,C5SMF-RJF-CT0W0BB1,,
+1,LED3  ,"Green LED, 5mm",,941-C5SMFGJFCV0Y0791,Cree,C5SMF-GJF-CV0Y0791,,
+1,R1,"10K, 1/4W, 5%              ",691104,71CCF0710K0JKE36,Jameco,CF1/4W103JRC,Vishay,CCF0710K0JKE36
+4,"R2, R3, R4, R5","22M, 1/4W, 5%",,660-CF1/4C226J,KOA Speer,CF1/4C226J,,
+2,"R6, R7","270, 1/4W, 5%",690726,588-OD271JE,Jameco,CF1/4W271JRC,Ohmite,OD271JE
+2,"R8, R9    ","4.7K, 1/4W, 5%",691024,71-CCF07J4.7KE3,Jameco,CF1/4W472JRC,Vishay,CCF074K70JKE36
+1,R10,10K trim pot (screwdriver adjust - Volume),,652-3319P-1-103,Bourns,3319P-1-103,,
+2,"R11, R12",10K trim pot (knob adjust),,858-72PTR10KLF ,BI Technologies / TT Electronics ,72PTR10KLF,,
+3,"R13, R14, R15","1K, 1/4W, 5%",690865,71-CCF071K00JKE36,Jameco,CF1/4W102JRC,Vishay,CCF071K00JKE36
+1,S1,"SPST tact switch, 4-pin, Black button (Reset)",,688-SKHHAK,ALPS,SKHHAKA010,,
+2,"S2, S3","SPST tact switch, 4-pin, Red button",,688-SKHHAQ,ALPS,SKHHAQA010,,
+1,SPKR1 ,"40mm diameter speaker, 3W, 4 Ohm",,665-AS04004PR-R,PUI Audio,AS04004PR-R,,
+1,U1    ,ATmega328P-PU,,556-ATMEGA328P-PU,Atmel,ATMEGA328P-PU,,
+1,U2    ,NJM386BD,,513-NJM386BD,NJR,NJM386BD,,
+1,X1    ,16.0MHz ceramic resonator,,81-CSTLS16M0X55Z-A0,Murata Electronics,CSTLS16M0X55Z-A0,,
+1,PCB,PCB,,,,,,
+1,U1 socket,28-pin DIP socket,112299,81CSTLS16M0X55ZA0,Jameco,6000-28NDW,TE Connectivity,1-2199298-9
+0,U2 socket,not used (U2 is soldered directly to PCB),,,,,,
+1,small bag,7x10cm reclosable plastic bag,,,Aliexpress,,,
+1,large bag,15x22cm reclosable plastic bag,,,Aliexpress,,,
+1,label,,,,,,,

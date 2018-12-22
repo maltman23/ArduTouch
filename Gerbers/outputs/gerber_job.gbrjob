@@ -1,0 +1,13 @@
+G04 Gerber job file.*
+%TF.FileFunction,JobInfo*%
+%TF.GenerationSoftware,Autodesk,EAGLE,9.1.0*%
+%TF.CreationDate,2018-09-26T17:21:40Z*%
+%TF.Part,Single*%
+%MOMM*%
+%TJ.B_Owner,eegman fly <eagman.fly@mailinator.com>*%
+%TJ.B_ID,ArduTouch_stereo_v1.2c*%
+%TJ.B_LayerNum,2*%
+%TJ.B_Thickness,1.570000*%
+%TJ.B_Size_X,99.060000*%
+%TJ.B_Size_Y,80.010000*%
+M02*

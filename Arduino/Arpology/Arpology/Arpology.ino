@@ -74,7 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.09 )              // specify sketch name & version
+about_program( Arpology, 1.11 )              // specify sketch name & version
 
 // Specify whether the voices of Arpology can be panned in stereo by 
 // uncommenting the following defines
@@ -738,9 +738,9 @@ class ArpSynth : public ARP_BASE_CLASS
 
    public:
 
-   void setup() 
+   void config() 
    { 
-      super::setup();
+      super::config();
 
       flags |= RSTMUTE;
 
@@ -862,9 +862,11 @@ class ArpSynth : public ARP_BASE_CLASS
          {
             super::charEv( chrInfo );
 
+            ADSRVoice *v = (ADSRVoice *)vox[0];
+
             console.newlntab();
-            console.infoByte( CONSTR("attack"), vox[0]->envAmp.getAttack() ); 
-            console.infoByte( CONSTR("decay"),  vox[0]->envAmp.getDecay() ); 
+            console.infoByte( CONSTR("attack"), v->envAmp.getAttack() ); 
+            console.infoByte( CONSTR("decay"),  v->envAmp.getDecay() ); 
 
             console.newlntab();
             console.infoByte( CONSTR("patterN"), curPatNum ); 
@@ -1119,10 +1121,25 @@ class ArpSynth : public ARP_BASE_CLASS
       refreshLEDs();
    }
 
+   void setAttack( byte attack )
+   {
+      for ( byte i = 0; i < numVox; i++ )
+         ((ADSRVoice *)vox[i])->envAmp.setAttack( attack );
+   }
+
    void setPostAttack( byte postAttack )
    {
-      setDecay( postAttack );
-      setSustain( postAttack );
+      for ( byte i = 0; i < numVox; i++ )
+      {
+         ((ADSRVoice *)vox[i])->envAmp.setDecay( postAttack );
+         ((ADSRVoice *)vox[i])->envAmp.setSustain( postAttack );
+      }
+   }
+
+   void setRelease( byte release )
+   {
+      for ( byte i = 0; i < numVox; i++ )
+         ((ADSRVoice *)vox[i])->envAmp.setRelease( release );
    }
 
    void setRate( byte rate )                 // set arpeggiation rate

@@ -64,7 +64,7 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Mantra, 0.92 )                // specify sketch name & version
+about_program( Mantra, 0.94 )                // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 Drones
@@ -257,9 +257,9 @@ void DrumKit::noteOn( key note )
  *
  ******************************************************************************/
 
-class Bass : public Voice
+class Bass : public ADSRVoice
 {
-   typedef Voice super;                // superclass is Voice
+   typedef ADSRVoice super;            // superclass is Voice
    
    public:
 
@@ -304,9 +304,9 @@ class Bass : public Voice
  *
  ******************************************************************************/
 
-class Obligato : public Voice
+class Obligato : public ADSRVoice
 {
-   typedef Voice super;                // superclass is Voice
+   typedef ADSRVoice super;            // superclass is ADSRVoice
    
    public:
 
@@ -406,9 +406,9 @@ class Bend : public TermLFO            // bend frequency effect
  *
  ******************************************************************************/
 
-class Lead : public Voice
+class Lead : public ADSRVoice
 {
-   typedef Voice super;                // superclass is Voice
+   typedef ADSRVoice super;            // superclass is ADSRVoice
 
    public:
 
@@ -510,13 +510,13 @@ class Mantra : public VoxSynth
 
    Mantra()
    {
-      setupVoices(4);
+      configVoices(4);
       masterTuning = new MantraTuning();
    }
 
-   void setup()
+   void config()
    {
-      super::setup();
+      super::config();
       keybrd.setDefOct( 4 );         // start keyboard in octave 4
    }
 
@@ -739,7 +739,7 @@ char Mantra::menu( key k )
  *
  *  Rets:  ptrOsc           - pointer to oscillator object.
  *
- *  Note:  This method is automatically called once per voice by setupVoices(). 
+ *  Note:  This method is automatically called once per voice by configVoices(). 
  *         It is not meant to be called from anywhere else!
  *
  *         By overriding this method you can customize which kind of
@@ -789,7 +789,7 @@ Osc *Mantra::newOsc( byte nth )
  *        +lead             - ptr to lead voice
  *        +oblig            - ptr to obligato voice
  *
- *  Note:  This method is automatically called once per voice by setupVoices(). 
+ *  Note:  This method is automatically called once per voice by configVoices(). 
  *         It is not meant to be called from anywhere else!
  *
  *         By overriding this method you can customize which kind of

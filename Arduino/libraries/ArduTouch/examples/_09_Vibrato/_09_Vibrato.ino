@@ -5,13 +5,7 @@
 //     to learn basics of programming your own ArduTouch synthesizers
 //  To get the most of these exmples, please go through them in sequence. 
 //
-// 
-//  In the previous examples (06 through 08), OneVoxSynth used the default Voice.  
-//  That Voice doesn't include vibrato.  To make use of Vibrato we can use 
-//  StockVoice.
-//
-//  This sketch shows how to use a StockVoice (instead of the default) Voice in 
-//  a OneVoxSynth, which adds a built-in vibrato control.
+//  This sketch shows how to use the built-in vibrato control in StockVoice.
 //
 //  This example synthesizer also introduces button press events.
 //
@@ -61,19 +55,21 @@ class VibratoSynth : public OneVoxSynth   // output a wavetable from the library
 {                                         // manipulate its vibrato
    public:
 
-   // The StockVoice class derives from the standard Voice used in a OneVoxSynth.
-   // It adds a built-in Vibrato object named "vibrato".
-   // Please note:  "voice" must be registered via the newVox() method (see below),
-   //               but we're declaring it here for clarity.
+   // The StockVoice class, which is used by default by OneVoxSynth, also includes 
+   // a built-in Vibrato control named "vibrato". As in the previous example we must
+   // typecast the generic vox[0] pointer in order to access the vibrato control
+   // (which is not a member of the generic Voice object).
 
-   StockVoice  voice;                     // use a stock voice (which adds a vibrato)
+   StockVoice *voice;                     // we will use this to typecast vox[0]
 
    void welcome()
    {
-      voice.envAmp.setAttack( 60 );      // initialize envelope ADSR ...
-      voice.envAmp.setDecay( 40 );                                                 
-      voice.envAmp.setSustain( 192 );
-      voice.envAmp.setRelease( 8 );
+      voice = (StockVoice *)vox[0];       // we typecast vox[0] to access envAmp & vibrato
+
+      voice->envAmp.setAttack( 60 );      // initialize envelope ADSR ...
+      voice->envAmp.setDecay( 40 );                                                 
+      voice->envAmp.setSustain( 192 );
+      voice->envAmp.setRelease( 8 );
    }
 
    // our event handler uses:
@@ -92,17 +88,17 @@ class VibratoSynth : public OneVoxSynth   // output a wavetable from the library
          case POT0:                       // top pot was moved
          case POT1:                       // bottomn pot was moved
 
-            voice.vibrato.evHandler( e ); // pass pot events to vibrato   
+            voice->vibrato.evHandler( e ); // pass pot events to vibrato   
             break;
 
          case BUT0_PRESS:                 // left button was pressed
 
-            voice.vibrato.setMute( false );  // turn vibrato on ("unmute" it)
+            voice->vibrato.setMute( false );  // turn vibrato on ("unmute" it)
             break;
 
          case BUT1_PRESS:                 // left button was pressed
 
-            voice.vibrato.setMute( true );   // turn vibrato off ("mute" it)
+            voice->vibrato.setMute( true );   // turn vibrato off ("mute" it)
             break;
 
          default:                         // pass all other events to normal handler
@@ -116,15 +112,6 @@ class VibratoSynth : public OneVoxSynth   // output a wavetable from the library
       WaveOsc *o = new WaveOsc();         // use a wavetable oscillator
       o->setTable( wavetable( Rood ) );   // with "Rood" wavetable from library
       return o;              
-   }
-
-   // newVox() is called by the system during setup.
-   // This is where you specify what voice to use.
-   // Note:  if you don't have a newVox() function, it will use a Voice by default.
-
-   Voice* newVox( byte nth )
-   {
-      return &voice;                      // use voice (which is of type StockVoice)
    }
 
 } mySynth;                                // instantiate synthesizer 

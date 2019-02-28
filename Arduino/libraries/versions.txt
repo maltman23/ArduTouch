@@ -1,5 +1,15 @@
 Versions:
 
+   1.10  Synth::setup() renamed ::config() to circumvent Arduino bug
+         VoxSynth::setupVoices() renamed ::configVoices()
+         ADSRVoice class is broken out from Voice class
+         nix VoxSynth::setAttack/Decay/Sustain/Release()
+         nix WaveOsc::period
+         add WaveOsc::getPeriod()
+         Envelope class renamed ADSR
+         add ModSampleOsc class
+         add TunedSampleOsc class
+         add Wood01, lofi_Wood01 samples
    1.09  add QuantumOsc module
          add VirtualPot module
          add the virtual method Osc::realFreq()

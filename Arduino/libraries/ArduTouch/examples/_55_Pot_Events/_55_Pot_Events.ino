@@ -38,7 +38,7 @@ class ArithmeticSynth : public Synth         // synth from example _04_
    double  tuneHz;                           // freq interval between keys
    boolean keyDown;                          // if true, a key is pressed
 
-   void  setup();                            // ... see bottom of file
+   void  config();                           // ... see bottom of file
    boolean evHandler( obEvent e );           //     for implementation
    void output( char *buf );                 //     of these methods
 } ;
@@ -91,7 +91,7 @@ void loop()
 
 /*----------------------------------------------------------------------------*/      
 
-void ArithmeticSynth::setup() 
+void ArithmeticSynth::config() 
 {                                         
    baseHz  = 200.0;                          // low C = 200.0 Hz
    tuneHz  = 25.0;                           // 25.0 Hz arithmetic tuning

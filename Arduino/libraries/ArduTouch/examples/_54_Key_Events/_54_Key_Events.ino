@@ -44,10 +44,10 @@ class ArithmeticSynth : public Synth
    boolean keyDown;                          // this is true when a key is pressed
 
 
-   // this setup() method initializes our oscillator to use a sine wave wavetable,
+   // this config() method initializes our oscillator to use a sine wave wavetable,
    // and sets up our state variables.
 
-   void setup() 
+   void config() 
    {  
       osc.reset();                           // initialize oscillator state            
       osc.setTable( wavetable(Sine) );       // use Sine table from library

@@ -35,7 +35,7 @@ class VibratoSynth : public Synth            // combined synths from example _07
    WaveOsc osc;                              // use a wave oscillator 
    Vibrato vibrato;                          // use a vibrato control
 
-   void    setup();                          // ... see bottom of file
+   void    config();                         // ... see bottom of file
    void    dynamics();                       //     for implementation
    boolean evHandler( obEvent e );           //     of these methods
    void    output( char *buf );              // ...    
@@ -130,7 +130,7 @@ void loop()
 
 /*----------------------------------------------------------------------------*/      
 
-void VibratoSynth::setup() 
+void VibratoSynth::config() 
 {
    osc.reset();
    osc.setTable( wavetable(Sine) );          // use Sine wavetable from library

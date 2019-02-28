@@ -132,6 +132,7 @@ class DrumVoice : public Voice
    //             Snare01, Snare02, Snare03
    //             Rim01, Rim02, Rim03
    //             Hat01, Hat02, Hat03, Hat04, Hat05, Hat06
+   //             Wood01 (a wood block)
    //
    // The ArduTouch library provides "lofi" versions of all the above samples. 
    // These versions take up half as much space as the normal samples. For
@@ -147,6 +148,7 @@ class DrumVoice : public Voice
    //             lofi_Rim01, lofi_Rim02, lofi_Rim03
    //             lofi_Hat01, lofi_Hat02, lofi_Hat03 
    //             lofi_Hat04, lofi_Hat05, lofi_Hat06
+   //             lofi_Wood01
    //
    // If you are running out of program storage space you may want to mix
    // "lofi" versions of the kick drum with normal versions of the other

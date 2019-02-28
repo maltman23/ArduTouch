@@ -1,5 +1,13 @@
 Versions:
 
+   0.94  Synth::setup() renamed ::config() to circumvent Arduino bug
+         ::setupVoices() renamed ::configVoices()
+         syncs with library 1.10
+         [29920 / 855]
+   0.93  Lead, Bass, Obligato classes use ADSRVoice as superclass
+         DrumKit class uses Voice as superclass
+         syncs with library 1.10u
+         [29866 / 736] __STNDLONE__ 
    0.92  set_baud_rate() nixed
          syncs with 1.08
    0.91  Bass(!) explicitly sets freq ratio between oscillators

@@ -28,9 +28,9 @@
 #include "Voice.h"
 #include "NoiseOsc.h"
 
-class ClickTrack : public Voice
+class ClickTrack : public ADSRVoice
 {
-   typedef Voice super;                // superclass is Voice
+   typedef ADSRVoice super;            // superclass is Voice
    
    public:
 

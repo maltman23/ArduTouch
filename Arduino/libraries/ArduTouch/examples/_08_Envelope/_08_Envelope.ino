@@ -48,16 +48,23 @@ class EnvSynth : public OneVoxSynth       // output a wavetable from the library
 
    // We use welcome() to initialize the ADSR values of the amplitude envelope
 
-   // The state variable vox[0] (inherited from OneVoxSynth) points to a Voice
-   // object which contains our oscillator. A Voice object also contains an Envelope 
-   // object named "envAmp" which controls the amplitude of the oscillator. 
+   // The state variable vox[0] (inherited from OneVoxSynth) is typed as a pointer
+   // to a (generic) Voice object. The Voice object contains our oscillator. 
+   // However, by default OneVoxSynth does not use a generic Voice object, but 
+   // a StockVoice object (which inherits from Voice). StockVoice adds some
+   // built-in standard controls to the Voice object, including an ADSR envelope 
+   // named "envAmp" which controls the amplitude of the oscillator.  
+
+   StockVoice *voice;                     // we will use this to typecast vox[0]
 
    void welcome()
    {
-      vox[0]->envAmp.setAttack( 60 );     // initialize envelope ADSR ...
-      vox[0]->envAmp.setDecay( 40 );                                                 
-      vox[0]->envAmp.setSustain( 128 );
-      vox[0]->envAmp.setRelease( 8 );
+      voice = (StockVoice *)vox[0];       // we must typecast vox[0] to access envAmp
+
+      voice->envAmp.setAttack( 60 );      // initialize envelope ADSR ...
+      voice->envAmp.setDecay( 40 );                                                 
+      voice->envAmp.setSustain( 128 );
+      voice->envAmp.setRelease( 8 );
    }
 
    // our event handler uses the top pot to change the Attack of the envelope,
@@ -69,12 +76,12 @@ class EnvSynth : public OneVoxSynth       // output a wavetable from the library
       {
          case POT0:                       // top pot was moved
 
-            vox[0]->envAmp.setAttack( e.getPotVal() );   // set envelope attack
+            voice->envAmp.setAttack( e.getPotVal() );   // set envelope attack
             break;
 
          case POT1:                       // bottomn pot was moved
 
-            vox[0]->envAmp.setDecay( e.getPotVal() );   // set envelope decay
+            voice->envAmp.setDecay( e.getPotVal() );   // set envelope decay
             break;
 
          default:                         // pass all other events to normal handler

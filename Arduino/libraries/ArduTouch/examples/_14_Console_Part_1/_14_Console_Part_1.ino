@@ -192,7 +192,7 @@ class Sine440HzSynth : public Synth          // synth from example _03_,
 
    WaveOsc  osc;                             // use wave-table oscillator
 
-   void setup() 
+   void config() 
    { 
       osc.reset();                           // initialize osc state
       osc.setTable( wavetable( Sine ) );     // load Sine wave from library

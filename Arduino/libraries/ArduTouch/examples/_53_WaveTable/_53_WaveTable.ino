@@ -72,7 +72,7 @@ define_wavetable( Triangle, 2, 2.0 )        // name, # samples, wavelength
 //  We give TriangleSynth a single member: a wave-table oscillator (which is
 //  part of the ArduTouch library).
 //
-//  In the setup() method we set the oscillator's wave-table to Triangle 
+//  In the config() method we set the oscillator's wave-table to Triangle 
 //  (using the macro wavetable() in the argument), and then set the oscillator's 
 //  frequency to 440 Hz.
 //
@@ -92,9 +92,9 @@ class TriangleSynth : public Synth
 
    public:
 
-   // this setup() method sets up our triangle wave at 440.0Hz
+   // this config() method sets up our triangle wave at 440.0Hz
 
-   void setup() 
+   void config() 
    { 
       osc.reset();
       osc.setTable( wavetable( Triangle ) ); 

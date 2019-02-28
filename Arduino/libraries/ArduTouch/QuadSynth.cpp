@@ -29,9 +29,9 @@
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  QuadSynth::setup
+ *  Name:  QuadSynth::config
  *
- *  Desc:  Initialize synth. 
+ *  Desc:  Configure synth. 
  *
  *  Memb:  vox[]            - component voices
  *
@@ -41,9 +41,9 @@
  *
  *----------------------------------------------------------------------------*/      
 
-void QuadSynth::setup() 
+void QuadSynth::config() 
 { 
-   setupVoices(4);
+   configVoices(4);
 }
 
 /*----------------------------------------------------------------------------*
@@ -82,7 +82,7 @@ void QuadSynth::dynamics()
  *
  *  Rets:  ptrVox           - pointer to voice object.
  *
- *  Note:  This method is automatically called once per voice by setupVoices(). 
+ *  Note:  This method is automatically called once per voice by configVoices(). 
  *         It is not meant to be called from anywhere else!
  *
  *         By overriding this method you can customize which kind of
@@ -204,9 +204,9 @@ void QuadSynth::reTrigger()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  QuadPanSynth::setup
+ *  Name:  QuadPanSynth::config
  *
- *  Desc:  Initialize synth. 
+ *  Desc:  Configure synth. 
  *
  *  Memb: +panControl       - dynamic controller of panPos
  *
@@ -216,9 +216,9 @@ void QuadSynth::reTrigger()
  *
  *----------------------------------------------------------------------------*/      
 
-void QuadPanSynth::setup() 
+void QuadPanSynth::config() 
 { 
-   super::setup();
+   super::config();
    panControl = new PanControl( &this->panPos );
 }
 
@@ -511,9 +511,9 @@ void QuadPanSynth::setPanPos( byte panPos )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  QuadDualPanSynth::setup
+ *  Name:  QuadDualPanSynth::config
  *
- *  Desc:  Initialize synth. 
+ *  Desc:  Configure synth. 
  *
  *  Memb: +xpanControl      - dynamic controller of xpanPos
  *
@@ -523,9 +523,9 @@ void QuadPanSynth::setPanPos( byte panPos )
  *
  *----------------------------------------------------------------------------*/      
 
-void QuadDualPanSynth::setup() 
+void QuadDualPanSynth::config() 
 { 
-   super::setup();
+   super::config();
    xpanControl = new XPanControl( &this->xpanPos );
 }
 

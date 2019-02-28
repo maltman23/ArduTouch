@@ -90,14 +90,11 @@ class Voice : public Instrument, public Scroller
    PitchMods   pitchMods;           // pitch modifiers
    Effects     effects;             // effects chain 
 
-   Envelope    envAmp;              // built-in amplitude envelope
-
    Voice()
    {
       setScrollable(3);             // scrollable pots: vol, detune, glide
       osc = NULL;
       num = 0;
-      addAmpMod( &this->envAmp );
    }
 
    void    addAmpMod( Factor* );    // add an amplitude modifier  
@@ -151,13 +148,36 @@ class Voice : public Instrument, public Scroller
 
 /******************************************************************************
  *
+ *                               ADSRVoice 
+ *                                                                            
+ ******************************************************************************/
+
+class ADSRVoice : public Voice      // a Voice with built-in ADSR envelope
+{
+   typedef Voice super;             // superclass is Voice
+
+   public:
+
+   ADSR    envAmp;                  // built-in ADSR amplitude envelope
+
+   ADSRVoice()
+   {
+      addAmpMod( &this->envAmp );
+   }
+
+   boolean charEv( char );          // process a character event
+
+} ;
+
+/******************************************************************************
+ *
  *                               StockVoice 
  *                                                                            
  ******************************************************************************/
 
-class StockVoice : public Voice     // a Voice with standard built-in controls
+class StockVoice : public ADSRVoice // a Voice with built-in ADSR and vibrato
 {
-   typedef Voice super;             // superclass is Voice
+   typedef ADSRVoice super;         // superclass is ADSRVoice
 
    public:
 

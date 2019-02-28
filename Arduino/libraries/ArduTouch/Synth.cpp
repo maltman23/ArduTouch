@@ -340,7 +340,7 @@ void VoxSynth::noteOff( key note )
  *
  *  Rets:  ptrOsc           - pointer to oscillator object.
  *
- *  Note:  This method is automatically called once per voice by setupVoices(). 
+ *  Note:  This method is automatically called once per voice by configVoices(). 
  *         It is not meant to be called from anywhere else!
  *
  *         By overriding this method you can customize which kind of
@@ -371,7 +371,7 @@ Osc *VoxSynth::newOsc( byte nth )
  *
  *  Rets:  ptrVox           - pointer to voice object.
  *
- *  Note:  This method is automatically called once per voice by setupVoices(). 
+ *  Note:  This method is automatically called once per voice by configVoices(). 
  *         It is not meant to be called from anywhere else!
  *
  *         By overriding this method you can customize which kind of
@@ -393,79 +393,7 @@ Voice *VoxSynth::newVox( byte nth )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  VoxSynth::setAttack
- *
- *  Desc:  Set the attack time of the amplitude envelope for all voices.
- *
- *  Args:  attack           - attack time
- *
- *  Memb:  vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void VoxSynth::setAttack( byte attack )
-{
-   for ( byte i = 0; i < numVox; i++ )
-      vox[i]->envAmp.setAttack( attack );
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  VoxSynth::setDecay
- *
- *  Desc:  Set the decay time of the amplitude envelope for all voices.
- *
- *  Args:  decay            - decay time
- *
- *  Memb:  vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void VoxSynth::setDecay( byte decay )
-{
-   for ( byte i = 0; i < numVox; i++ )
-      vox[i]->envAmp.setDecay( decay );
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  VoxSynth::setRelease
- *
- *  Desc:  Set the release time of the amplitude envelope for all voices.
- *
- *  Args:  release          - release time
- *
- *  Memb:  vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void VoxSynth::setRelease( byte release )
-{
-   for ( byte i = 0; i < numVox; i++ )
-      vox[i]->envAmp.setRelease( release );
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  VoxSynth::setSustain
- *
- *  Desc:  Set the sustain level of the amplitude envelope for all voices.
- *
- *  Args:  sustain          - sustain level
- *
- *  Memb:  vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void VoxSynth::setSustain( byte sustain )
-{
-   for ( byte i = 0; i < numVox; i++ )
-      vox[i]->envAmp.setSustain( sustain );
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  VoxSynth::setupVoices
+ *  Name:  VoxSynth::configVoices
  *
  *  Desc:  Initialize the voice array by assigning a voice object to each 
  *         element in the array (up to the number used in the synth), and
@@ -476,8 +404,8 @@ void VoxSynth::setSustain( byte sustain )
  *  Memb: +numVox           - # of voices
  *        +vox[]            - ptrs to member voices
  *
- *  Note:  Derived classes which override setup() must call this method from
- *         within their setup() routine. 
+ *  Note:  Derived classes which override config() must call this method from
+ *         within their config() routine. 
  *
  *         This method:
  *
@@ -492,7 +420,7 @@ void VoxSynth::setSustain( byte sustain )
  *
  *----------------------------------------------------------------------------*/      
 
-void VoxSynth::setupVoices( byte numVox )
+void VoxSynth::configVoices( byte numVox )
 {
    if ( numVox > MaxVox )
       numVox = MaxVox;
@@ -568,7 +496,7 @@ void VoxSynth::setVol( byte vol )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  OneVoxSynth::setup
+ *  Name:  OneVoxSynth::config
  *
  *  Desc:  Initialize synth. 
  *
@@ -578,9 +506,9 @@ void VoxSynth::setVol( byte vol )
  *
  *----------------------------------------------------------------------------*/      
 
-void OneVoxSynth::setup() 
+void OneVoxSynth::config() 
 { 
-   setupVoices(1);
+   configVoices(1);
 }
 
 #ifdef KEYBRD_MENUS
@@ -658,7 +586,7 @@ void OneVoxSynth::output( char *buf )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  TwoVoxSynth::setup
+ *  Name:  TwoVoxSynth::config
  *
  *  Desc:  Initialize synth. 
  *
@@ -668,9 +596,9 @@ void OneVoxSynth::output( char *buf )
  *
  *----------------------------------------------------------------------------*/      
 
-void TwoVoxSynth::setup() 
+void TwoVoxSynth::config() 
 { 
-   setupVoices(2);
+   configVoices(2);
 }
 
 /*----------------------------------------------------------------------------*
@@ -701,7 +629,7 @@ void TwoVoxSynth::output( char *bufL, char *bufR )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  TwoVoxPanSynth::setup
+ *  Name:  TwoVoxPanSynth::config
  *
  *  Desc:  Initialize synth. 
  *
@@ -714,9 +642,9 @@ void TwoVoxSynth::output( char *bufL, char *bufR )
  *
  *----------------------------------------------------------------------------*/      
 
-void TwoVoxPanSynth::setup() 
+void TwoVoxPanSynth::config() 
 { 
-   setupVoices(2);
+   configVoices(2);
    panControl = new PanControl( &this->panPos );
 }
 

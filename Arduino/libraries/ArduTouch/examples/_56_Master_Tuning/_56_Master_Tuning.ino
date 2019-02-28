@@ -32,7 +32,7 @@ class EqualTempSynth : public Synth
 
    WaveOsc osc;                              // use 1 wave oscillator 
 
-   void setup() 
+   void config() 
    {
       osc.reset();
       osc.setTable( wavetable(Rood) );       // choose the Rood wavetable from library

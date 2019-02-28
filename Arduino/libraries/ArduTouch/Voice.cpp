@@ -164,8 +164,7 @@ void Voice::calcMultGlide()
  *
  *  Args:  code             - character to process
  *
- *  Memb:  envAmp           - built-in amplitude envelope
- *         ampMods          - amplitude modifiers
+ *  Memb:  ampMods          - amplitude modifiers
  *         effects          - effects chain
  *        +glide            - portamento speed 1:255 (0 = off)
  *         pitchMods        - pitch modifiers
@@ -205,11 +204,6 @@ boolean Voice::charEv( char code )
       case 'P':                     // push pitch modifiers
 
          console.pushMode( &this->pitchMods );
-         break;
-
-      case 'e':                     // push amplitude envelope control
-
-         console.pushMode( &this->envAmp );
          break;
 
       #endif
@@ -740,6 +734,46 @@ void Voice::trigger()
 void Voice::useOsc( Osc *o )
 {
    osc = o;
+}
+
+/******************************************************************************
+ *
+ *                                ADSRVoice 
+ *                                                                            
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  ADSRVoice::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  envAmp           - built-in ADSR amplitude envelope
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+boolean ADSRVoice::charEv( char code )    
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE         // compile cases needed by macros
+
+      case 'e':                     // push amplitude envelope control
+
+         console.pushMode( &this->envAmp );
+         break;
+
+      #endif
+
+      default:
+
+         super::charEv( code );
+   }
+   return true;
 }
 
 /******************************************************************************

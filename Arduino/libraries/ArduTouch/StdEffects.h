@@ -121,7 +121,7 @@ class LPFilter : public Effect      // low-pass filter (via exponential movavg)
 
 class FiltEnv : public LPFilter     // filter envelope
 {
-   Envelope  env;
+   ADSR  env;
 
    public:
 

@@ -262,8 +262,7 @@ bool MixOsc::charEv( char code )
  *
  *  Args:  ev               - onboard event
  *
- *  Memb: +enableXOR        - if true, XOR output of osc 0 and 1 
- *        +freqRatio        - frequency ratio between osc1 and osc0
+ *  Memb: +freqRatio        - frequency ratio between osc1 and osc0
  *
  *  Rets:  status           - true if the event was handled
  *

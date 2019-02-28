@@ -66,7 +66,7 @@ class MultiOctaveSynth : public Synth
    // is not explicitly processed in your synthesizer code (but may be handled by 
    // classes in the ArduTouch library that your object inberited from).
    
-   void setup() 
+   void config() 
    {
       osc.reset();                           // initialize osc 
       osc.setTable( wavetable(dVox) );       // use dVox wavetable from library

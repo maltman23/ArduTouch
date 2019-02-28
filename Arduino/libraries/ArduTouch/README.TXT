@@ -1,5 +1,5 @@
-                        ArduTouch Library 
-                           README.TXT
+                         ArduTouch Library 
+                            README.TXT
 
 1) Make sure that the PCB REV of your board (printed near the bottom of the
    ArduTouch card) corresponds to the revision declared in System.h 
@@ -11,46 +11,80 @@
    you are running synths supplied by Cornfield Electronics.)
    
 
-                    What's New in Version 1.09
-                    --------------------------
+                     What's New in Version 1.10
+                     --------------------------
 
-1) Two new modules have been added: 
+1) The ArduTouch library now works with the latest release of the Arduino IDE
+   (1.8.8).
 
-   QuantumOsc 
-   VirtualPot
+   There is a known bug -- recently introduced -- in the Arduino linker, that 
+   causes an error if a class method is given the same name as a global function.
+   In order to circumvent this bug, the method Synth::setup() has been renamed 
+   Synth::config(). (Thanks to Charles for suggesting this fix.)
+   
+   Also, VoxSynth::setupVoices() has been renamed VoxSynth::configVoices()
+   to keep the naming conventions consistent.
 
-2) The QuantumOsc module contains the following new classes:
+2) Two new oscillator classes have been added for playing back samples:
 
-   QuantumOsc      - an abstract base class for oscillators that run only at 
-                     specific quantized frequencies
+         class ModSampleOsc
+         class TunedSampleOsc
 
-   PureSquare      - a quantum square wave oscillator with even periods
+   ModSampleOsc inherits from SampleOsc and adds 2 new features: the sample 
+   can be played forwards or backwards, and the duration of the playback can
+   be stretched.
 
-   SweepOsc        - a PureSquare oscillator that performs quantized frequency sweeps 
-                     between any two integral periods
+   For a demo and more info see the new example sketch: 
+   
+         _31_Modified_DrumPad.ino
 
-3) The VirtualPot module contains the following new classes:
+   TunedSampleOsc inherits from WaveOsc. The wave table for a TunedSampleOsc
+   is played only once when triggered (instead of looping continuously). 
+   Unlike a SampleOsc, the wavetable for a TunedSampleOsc is considered to
+   be tonal, to have a definite wavelength, and so can be played back at 
+   specific musical pitches like a normal oscillator.
 
-   VirtualPot      - an abstract base class for constructing "soft" pots which
-                     translate pot positions into a custom output range of values 
-                     (either increasing or decreasing)
+   For a demo and more info see the new example sketch: 
+   
+         _32_TunedSampleOsc.ino
 
-   ParamSend       - a VirtualPot whose output values are sent as arguments to any
-                     method of type void myMethodName( byte ) in any class object
-                     
-   PotSend         - a VirtualPot whose output values are converted to POT events
-                     and sent to the evHandler() method of any class object
+3) A new sample, Wood01, has been added to the Drums library.
+   As with all library samples there is a "lo-fi" version (lofi_Wood01).
+   Wood01 is the sound of a wood block being struck.
 
-   VirtualPotDemux - a VirtualPot whose output can to sent to up to 8 other 
-                     VirtualPots or VirtualPotDemuxes 
+4) A new subclass, ADSRVoice, has been broken out from the Voice class.
+   
+   Voice's built-in .envAmp (an ADSR envelope) has been moved to ADSRVoice.
 
-4) The following example sketches have been added: 
+   The StockVoice class now inherits from ADSRVoice (which inherits from Voice).
 
-      _70_Quantum_Oscillators
-      _71_PureSquare
-      _80_VirtualPot 
-      _81_ParamSend 
-      _82_PotSend
-      _83_VirtualPotDemux 
+   This change impacts all code which referenced the ADSR envelope via the vox[]
+   pointers used by synths which have VoxSynth as a super class. These pointers
+   must now be typecast (to ADSRVoice*) in order to reference .envAmp
+   
+   See the example sketch _61_Voice_Part_1.ino for more details.
 
-5) a new synth, ZapShot, shows these new classes in action
+5) The Envelope class has been renamed ADSR.
+
+6) To sync with the changes in the library as described in (1) (4) and (5) 
+   there are new versions of the following synths:
+
+         Arpology
+         Beatitude
+         DuoPoly
+         Mantra
+         Thick
+         Xoid
+         ZapShot
+
+7) The following example sketches have been rewritten because they wrongly
+   portrayed the relationship between the Voice, StockVoice, and OneVoxSynth
+   classes:
+
+         _08_Envelope.ino
+         _09_Vibrato.ino
+
+   If you worked through these example sketches in a prior release you might want
+   to revisit them.
+
+

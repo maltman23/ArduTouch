@@ -66,7 +66,7 @@ class Synth : public StereoInstrument  // basic synthesizer class
 
    public:
 
-   virtual void setup() {};            // executed at system startup
+   virtual void config() {};           // executed at system startup
    virtual void welcome() {};          // perform post-reset startup tasks
 
    boolean charEv( char );             // process a character event
@@ -106,18 +106,15 @@ class VoxSynth : public Synth          // synthesizer with voices
       numVox = 0;
    }
 
-   boolean charEv( char );             // process a character event 
-   void dynamics();                    // perform a dynamic update
    virtual Osc   *newOsc( byte nth );  // create oscillator for nth voice
    virtual Voice *newVox( byte nth );  // create nth voice 
+
+   bool charEv( char );                // process a character event 
+   void configVoices( byte numVox );   // sets up vox[] via newVox()/newOsc()
+   void dynamics();                    // perform a dynamic update
    void noteOn( key );                 // turn a note on
    void noteOff( key );                // turn a note off
-   void setAttack( byte attack );      // set envAmp attack for all voices
-   void setDecay( byte decay );        // set envAmp decay for all voices
-   void setRelease( byte release );    // set envAmp release for all voices
-   void setSustain( byte sustain );    // set envAmp sustain for all voices
    void setVoicing( char* v );         // set transposition interval per voice
-   void setupVoices( byte numVox );    // sets up vox[] via newVox()/newOsc()
    void setVol( byte );                // set volume level of synth
 
    #ifdef KEYBRD_MENUS
@@ -138,7 +135,7 @@ class OneVoxSynth : public VoxSynth    // stock one voice (monophonic) synth
 
    public:
 
-   void setup();                       // executed at system startup
+   void config();                      // executed at system startup
    void output( char* );               // write mono output to an audio buffer
 
    #ifdef KEYBRD_MENUS
@@ -159,7 +156,7 @@ class TwoVoxSynth : public VoxSynth    // stock two voice (stereo) synth
 
    public:
 
-   void setup();                       // executed at system startup
+   void config();                      // executed at system startup
    void output( char*, char* );        // write stereo output to audio buffers
 
 } ;
@@ -172,7 +169,7 @@ class TwoVoxSynth : public VoxSynth    // stock two voice (stereo) synth
 
 class TwoVoxPanSynth : public TwoVoxSynth // two voice stereo synth with panning
 {
-   typedef TwoVoxSynth super;             // superclass is VoxSynth
+   typedef TwoVoxSynth super;          // superclass is VoxSynth
 
    protected:
 
@@ -189,7 +186,7 @@ class TwoVoxPanSynth : public TwoVoxSynth // two voice stereo synth with panning
 
    public:
 
-   void setup();                       // executed at system startup
+   void config();                      // executed at system startup
 
    boolean charEv( char code );        // handle a character event
    void dynamics();                    // perform a dynamic update

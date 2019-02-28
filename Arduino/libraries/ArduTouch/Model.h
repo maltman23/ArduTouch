@@ -54,7 +54,7 @@
 
    ------------------------------------------------------------------------ */
 
-// #define BUILD_166
+//#define BUILD_166
 
 /* ---------------------------------------------------------------------------
 
@@ -67,8 +67,8 @@
 
    ------------------------------------------------------------------------ */
 
-// #define MONITOR_CPU                  // monitor % CPU used rendering audio
-// #define MONITOR_RAM                  // monitor free RAM 
+//#define MONITOR_CPU                  // monitor % CPU used rendering audio
+//#define MONITOR_RAM                  // monitor free RAM 
 
 /* ---------------------------------------------------------------------------
 

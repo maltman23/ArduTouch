@@ -1,5 +1,12 @@
 Versions:
 
+   1.11  Synth::setup() renamed ::config() to circumvent Arduino bug
+         syncs with 1.10
+         [30476 / 1000] 
+   1.10  add explicit setAttack(), setRelease()
+         rewrite setPostAttack() with typecast ADSRVoice ptr 
+         syncs with 1.10u
+         [30476 / 1000] 
    1.09  set_baud_rate() nixed
          syncs with 1.08
    1.08  synth renamed arpSynth

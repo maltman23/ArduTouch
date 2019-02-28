@@ -12,7 +12,7 @@
 //  This sketch shows how to use a OneVoxSynth to produce a sawtooth waveform,
 //  which can then be played using the keyboard.
 //
-//  A OneVoxSynth uses a "voice", which allows for a lot of cool stuff!
+//  A OneVoxSynth uses a "StockVoice", which allows for a lot of cool stuff!
 //  See the comments at the bottom for more info.
 //  We'll see more of what it can do in later examples.
 //

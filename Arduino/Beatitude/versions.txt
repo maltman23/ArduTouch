@@ -1,5 +1,21 @@
 Versions:
 
+   1.03  Synth::setup() renamed ::config() to circumvent Arduino bug
+         ::setupVoices() renamed ::configVoices()
+         syncs with library 1.10
+         [32096 / 788] __STNDLONE__ 1.10
+   1.02  Bass class uses ADSRVoice as superclass
+         DrumKit class uses Voice as superclass
+         syncs with library 1.10m
+         [32058 / 788] __STNDLONE__ 1.10m
+   1.01  corrected comments on how-to-use
+         [32180 / 768] __STNDLONE__ 1.10j
+         [32180 / 768] __STNDLONE__ 1.10g
+         [32182 / 770] __STNDLONE__ 1.10e
+         [32192 / 770] __STNDLONE__ 1.10d
+         [32186 / 770] __STNDLONE__ 1.10c
+         [32190 / 770] __STNDLONE__ 1.10b
+         [32174 / 768] __STNDLONE__ 1.10a
    1.00  optimize DrumKit::noteOn() for size
          [32194 / 768] __STNDLONE__ 1.09v
          <FreeRAM 317>

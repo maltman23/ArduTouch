@@ -35,7 +35,7 @@ class MultiOctaveSynth : public Synth
 
    WaveOsc osc;                              // use 1 wave oscillator 
 
-   void setup() 
+   void config() 
    {                                         
       osc.reset();
       osc.setTable( wavetable(dVox) );       // use dVox wavetable from library

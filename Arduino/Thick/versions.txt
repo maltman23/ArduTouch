@@ -1,5 +1,9 @@
 Versions:
 
+   0.71  Synth::setup() renamed ::config() to circumvent Arduino bug
+         syncs with 1.10
+   0.70  add explicit setRelease()
+         syncs with 1.10u
    0.69  set_baud_rate() nixed
          normal blink rate
          syncs with 1.08

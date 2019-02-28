@@ -101,7 +101,7 @@
 
 #endif
 
-about_program( Xoid, 0.93 )
+about_program( Xoid, 0.94 )
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -371,9 +371,9 @@ class XoidSynth : public OneVoxSynth
 
    Control *sendControl;            // send pot/button events to this control
 
-   void setup() 
+   void config() 
    { 
-      super::setup();
+      super::config();
       presets.load( myPresets );    // load bank of presets
    }
 

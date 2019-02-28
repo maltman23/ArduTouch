@@ -42,7 +42,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( ZapShot, 1.29 )               // specify sketch name & version
+about_program( ZapShot, 1.30 )               // specify sketch name & version
 
   
 /*----------------------------------------------------------------------------*
@@ -918,9 +918,9 @@ class ZapShotSynth : public TwoVoxPanSynth
 
    public:
 
-   void setup()
+   void config()
    {
-      super::setup();                  // allocates voices and oscillators
+      super::config();                 // allocates voices and oscillators
 
       depthPan = new DepthPan();
       freqPan  = new FreqPan();

@@ -1,7 +1,7 @@
 /*
     Envelope.h  
 
-    Declaration of the Envelope class.
+    Declaration of envelope classes.
 
     ---------------------------------------------------------------------------
  
@@ -24,13 +24,13 @@
 #include "Control.h"
 #include "Scroller.h"
 
-class Envelope : public Factor, public Scroller
+class ADSR : public Factor, public Scroller
 {
    typedef Factor super;         // superclass is Factor
 
    public:
 
-   Envelope()
+   ADSR()
    {
       setScrollable(4);
       shortcut = 'e';

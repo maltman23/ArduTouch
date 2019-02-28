@@ -135,7 +135,7 @@ volatile signed char curKey = -1;      // currently pressed key (-1 means none)
  *  Name:  ardutouch_setup
  *
  *  Desc:  Initialize ardutouch resources.
- *         Invoke synthesizer's setup() method.
+ *         Invoke synthesizer's config() method.
  *
  *  Args:  x                - ptr to synthesizer object 
  *
@@ -189,12 +189,12 @@ void ardutouch_setup( Synth *x )
 
    #endif
 
-   x->setup();                         // set up the synth
+   x->config();                        // configure the synth
    x->reset();                         // reset the synth
    audio::enable();                    // enable audio output
    x->welcome();                       // execute any post-reset code
 
-   #ifdef AUTO_METRICS                 // for develiopers only!
+   #ifdef AUTO_METRICS                 // for developers only!
       audio::wait(100);                // run the synth for a bit
       writeMetrics();                  // write processor metrics to NVS
    #endif

@@ -79,7 +79,7 @@ class DualOscSynth : public OneVoxSynth
    //    {
    //       ... initialize the system ...
    //
-   //       s->setup();
+   //       s->config();
    //       s->reset();
    //       s->welcome();
    //    }
@@ -93,7 +93,7 @@ class DualOscSynth : public OneVoxSynth
       ((DualOsc *)vox[0]->osc)->freqRatio = 1.5;  // we have to typecast the generic osc               
    }                                              // ptr of vox[0] to set freqRatio
 
-   // The reason we use welcome(), and not setup(), to set the frequency ratio
+   // The reason we use welcome(), and not config(), to set the frequency ratio
    // for our dual oscillator is that this ratio would be reset to 1.0 (the default)
    // when the synth is reset in ardutouch_setup().
 

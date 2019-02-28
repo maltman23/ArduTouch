@@ -1,16 +1,17 @@
 //
 //  _61_Voice_Part_1.ino
 // 
-//  This sketch introduces the Voice class, a ready-to-use class from
+//  This sketch introduces the StockVoice class, a ready-to-use class from
 //  the ArduTouch library, which implements features found in a typical 
 //  synthesizer voice (such as an oscillator, a volume control, detuning, 
-//  vibrato, tremolo, portamento, amplitude and filter envelopes, and an 
-//  effects loop). In this example we are only interested in:
+//  portamento, an ADSR amplitude envelope, vibrato, and an effects loop).
+//
+//  In this example we are only interested in:
 //
 //    1) how to initialize a Voice by assigning it an oscillator
 //    2) how to call the Voice's noteOn() and noteOff() methods 
 //    
-//  We will use the Voice's built-in vibrato control to reproduce the 
+//  We will use the StockVoice's built-in vibrato control to reproduce the 
 //  VibratoSynth from example _08_. 
 //
 //  Target:   ArduTouch board
@@ -38,9 +39,20 @@ class VoiceVibratoSynth : public Synth
    WaveOsc    osc;                           // use a wave oscillator 
    StockVoice voc;                           // and a stock voice to run it in
 
+   // The StockVoice class inherits from ADSRVoice (which inherits from Voice)
+   //
+   //   These classes implement the following features:
+   //
+   //     Voice      - oscillator, volume, detuning, portamento, effects loop,
+   //                  control chains for amplitude and pitch modifiers
+   //
+   //     ADSRVoice  - adds a built-in ADSR amplitude envelope (.envAmp)
+   //
+   //     StockVoice - adds a built-in vibrato control (.vibrato)
+
    public:
 
-   void setup() 
+   void config() 
    { 
       osc.setTable( wavetable( Sine ) );     // use Sine wave from library
 
@@ -49,7 +61,7 @@ class VoiceVibratoSynth : public Synth
       voc.useOsc( &osc );                    // assign oscillator to voice
       voc.reset();                           // reset the voice
 
-      // Voice contains a built-in ADSR amplitude envelope (public Voice::envAmp). 
+      // StockVoice contains a built-in ADSR amplitude envelope (.envAmp). 
       // ADSR stands for Attack, Decay, Sustain, Release.  It is a standard way 
       // of shaping the amplitude of waveforms in synthesizers. By default the 
       // release time for the envelope is 0, which means that a note will play 
@@ -115,7 +127,7 @@ class VoiceVibratoSynth : public Synth
 
    // Our output() and dynamics() methods are routed through the voice 
    // object (not the osc object, as before). Since we assigned the osc 
-   // to the voice in setup, the voice object will automatically manage 
+   // to the voice in config, the voice object will automatically manage 
    // calls to the oscillator, as well as manage calls to all the voice's 
    // built-in controls (such as the vibrato).
                

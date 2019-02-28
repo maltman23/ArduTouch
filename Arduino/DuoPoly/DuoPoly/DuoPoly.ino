@@ -22,7 +22,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.48 )            // specify program name & version
+about_program( DuoPoly, 2.49 )            // specify program name & version
 
 #ifndef INTERN_CONSOLE
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
@@ -165,11 +165,11 @@ class DuoSynth : public VoxSynth
    public:
 
    boolean charEv( char );          // handle a character event
+   void    config();                // executed at system startup
    boolean evHandler( obEvent );    // handle an onboard event
    Osc    *newOsc( byte nth );      // create oscillator for nth voice
    Voice  *newVox( byte nth );      // create nth voice 
    void    output( char*, char* );  // write stereo output
-   void    setup();                 // executed at system startup
    void    welcome();               // perform post-reset startup tasks
 
    #ifdef KEYBRD_MENUS
@@ -506,7 +506,7 @@ void Chnl::setFreqLatch( boolean state )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:   DuoSynth::setup
+ *  Name:   DuoSynth::config
  *
  *  Desc:   Initialize the synthesizer:
  *
@@ -516,9 +516,9 @@ void Chnl::setFreqLatch( boolean state )
  *
  *----------------------------------------------------------------------------*/      
 
-void DuoSynth::setup()
+void DuoSynth::config()
 {
-   setupVoices(2);
+   configVoices(2);
 
    left = (Chnl *)vox[0];
    rght = (Chnl *)vox[1];

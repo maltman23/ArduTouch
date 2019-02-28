@@ -58,7 +58,7 @@ class QuadSynth : public VoxSynth
                                           // at next dynamic update
    public:
 
-   void setup();                          // initialize synth 
+   void config();                         // configure synth 
 
    void dynamics();                       // perform a dynamic update
    Voice *newVox( byte nth );             // create nth voice 
@@ -88,7 +88,7 @@ class QuadPanSynth : public QuadSynth
 
    public:
 
-   void setup();                          // initialize synth 
+   void config();                         // configure synth 
 
    boolean charEv( char code );           // handle a character event
    void dynamics();                       // perform a dynamic update
@@ -120,7 +120,7 @@ class QuadDualPanSynth : public QuadPanSynth
 
    public:
 
-   void setup();                          // initialize synth 
+   void config();                         // configure synth 
 
    boolean charEv( char code );           // handle a character event
    void dynamics();                       // perform a dynamic update

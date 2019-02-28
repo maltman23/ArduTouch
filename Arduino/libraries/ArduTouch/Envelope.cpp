@@ -1,7 +1,7 @@
 /*
     Envelope.cpp
 
-    Implementation of the Envelope class.
+    Implementation of envelope classes.
 
     ---------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::charEv
+ *  Name:  ADSR::charEv
  *
  *  Desc:  Process a character event.
  *
@@ -41,7 +41,7 @@
  *
  *----------------------------------------------------------------------------*/      
 
-boolean Envelope::charEv( char key )
+boolean ADSR::charEv( char key )
 {
    switch ( key )
    {
@@ -135,7 +135,7 @@ boolean Envelope::charEv( char key )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::dynamics
+ *  Name:  ADSR::dynamics
  *
  *  Desc:  Perform a dynamic update.
  *
@@ -150,7 +150,7 @@ boolean Envelope::charEv( char key )
  *
  *----------------------------------------------------------------------------*/      
 
-void Envelope::dynamics()
+void ADSR::dynamics()
 {
    switch ( phase )
    {
@@ -200,7 +200,7 @@ void Envelope::dynamics()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::evHandler
+ *  Name:  ADSR::evHandler
  *
  *  Desc:  Handle an onboard event.
  *
@@ -212,7 +212,7 @@ void Envelope::dynamics()
  *
  *----------------------------------------------------------------------------*/      
 
-boolean Envelope::evHandler( obEvent ev )
+boolean ADSR::evHandler( obEvent ev )
 {
    if ( byte param = getScrollParm( ev ) )
    {
@@ -247,7 +247,7 @@ boolean Envelope::evHandler( obEvent ev )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::exptime
+ *  Name:  ADSR::exptime
  *
  *  Desc:  Given an 8-bit number indicating a relative duration of time,
  *         translate this into an absolution duration, as measured in  
@@ -259,7 +259,7 @@ boolean Envelope::evHandler( obEvent ev )
  *
  *----------------------------------------------------------------------------*/
 
-word Envelope::exptime( byte t )
+word ADSR::exptime( byte t )
 {
    // expands t { 1..255 } pseudo-exponentially to { 1 .. 2411 }
 
@@ -277,7 +277,7 @@ word Envelope::exptime( byte t )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::finish
+ *  Name:  ADSR::finish
  *
  *  Desc:  Mark an envelope cycle as having been completed.
  *
@@ -286,7 +286,7 @@ word Envelope::exptime( byte t )
  *
  *----------------------------------------------------------------------------*/      
 
-void Envelope::finish()
+void ADSR::finish()
 {
    phase = finPhase;
    flags |= DONE;
@@ -296,7 +296,7 @@ void Envelope::finish()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Envelope::menu
+ *  Name:  ADSR::menu
  *
  *  Desc:  Given a key, return a character (to be processed via charEv()). 
  *
@@ -332,7 +332,7 @@ void Envelope::finish()
  *
  *----------------------------------------------------------------------------*/      
 
-char Envelope::menu( key k )
+char ADSR::menu( key k )
 {
    switch ( k.position() )
    {
@@ -347,39 +347,39 @@ char Envelope::menu( key k )
 #endif
 
 #ifdef CONSOLE_OUTPUT
-const char *Envelope::prompt()                     
+const char *ADSR::prompt()                     
 {
    return CONSTR("envelope");
 }
 #endif
 
-byte Envelope::getAttack()  { return attack; }
-byte Envelope::getDecay()   { return decay; }
-byte Envelope::getRelease() { return relTime; }
-byte Envelope::getSustain() { return sustain; }
+byte ADSR::getAttack()  { return attack; }
+byte ADSR::getDecay()   { return decay; }
+byte ADSR::getRelease() { return relTime; }
+byte ADSR::getSustain() { return sustain; }
 
-void Envelope::setAttack( byte val )
+void ADSR::setAttack( byte val )
 {
    attack = val;
    if ( val )
       attStep = 1.0 / exptime( val );
 }
 
-void Envelope::setDecay( byte val )
+void ADSR::setDecay( byte val )
 {
    decay = val;
    if ( val )
       decStep = (1.0 - susLevel) / exptime( val );
 }
 
-void Envelope::setRelease( byte val )
+void ADSR::setRelease( byte val )
 {
    relTime = val;
    if ( val )
       relStep = 1.0 / exptime( val );
 }
 
-void Envelope::setSustain( byte val )
+void ADSR::setSustain( byte val )
 {
    #define ONE_256TH  .00390625
 

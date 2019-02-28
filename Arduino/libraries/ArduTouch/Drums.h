@@ -42,6 +42,7 @@ extern_wavetable( Hat03 )
 extern_wavetable( Hat04 )    
 extern_wavetable( Hat05 )    
 extern_wavetable( Hat06 )    
+extern_wavetable( Wood01 )    
 
 extern_wavetable( lofi_Kick01 )    
 extern_wavetable( lofi_Kick02 )    
@@ -62,5 +63,6 @@ extern_wavetable( lofi_Hat03 )
 extern_wavetable( lofi_Hat04 )    
 extern_wavetable( lofi_Hat05 )    
 extern_wavetable( lofi_Hat06 )    
+extern_wavetable( lofi_Wood01 )    
 
 #endif   // ifndef DRUMS_H_INCLUDED

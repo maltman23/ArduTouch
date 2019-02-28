@@ -34,9 +34,9 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.69 )                 // specify sketch name & version
+about_program( Thick, 0.71 )                 // specify sketch name & version
 
-#ifndef INTERN_CONSOLE                       // required for setup macro to work
+#ifndef INTERN_CONSOLE                       // required for config macro to work
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
 #endif
 
@@ -65,9 +65,9 @@ class ThickSynth : public QuadSynth
 
    public:
 
-   void setup() 
+   void config() 
    { 
-      QuadSynth::setup();
+      QuadSynth::config();
 
       keybrd.setTopOct( 3 );         // constrain keyboard to octaves 0-3
       keybrd.setDefOct( 2 );         // start keyboard in octave 2
@@ -265,6 +265,12 @@ class ThickSynth : public QuadSynth
       glideRatio = r;
       portRatio.val = 256 - ( r >> 1 );
       calcGlides();
+   }
+
+   void setRelease( byte release )
+   {
+      for ( byte i = 0; i < numVox; i++ )
+         ((ADSRVoice *)vox[i])->envAmp.setRelease( release );
    }
 
    void setTopGlide( byte g )                // set the top portamento speed

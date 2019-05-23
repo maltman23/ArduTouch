@@ -26,7 +26,7 @@
 #include "Synth.h"
 #include "Model.h"
 
-#define LIBRARY_VERSION "1.10"
+#define LIBRARY_VERSION "1.11"
 
 /* ------------------------------------------------------------------------- */
 

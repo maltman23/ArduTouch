@@ -8,7 +8,7 @@
 //                      ==== Diagram of the Xoid Voice ====
 //
 //     ----------------------                 
-//     | Oscillator Section | --> envelope --> Gain --> AutoWah --> [output]
+//     | Oscillator Section | --> envelope --> AutoWah --> Gain --> [output]
 //     ----------------------                                           
 //              ^
 //              | 
@@ -101,65 +101,65 @@
 
 #endif
 
-about_program( Xoid, 0.94 )
+about_program( Xoid, 0.96 )
 
 /*----------------------------------------------------------------------------*
  *                                 presets
  *----------------------------------------------------------------------------*/      
 
 define_preset( Empty, "" )               
-define_preset( Reset, "!" )               
+define_preset( Reset, "'" )               
 
-define_preset( Bass,  "!r<m127\\r.749\\0m47\\r<1.25\\`1m44\\r0.5\\```" )
-define_preset( Gonk,  "!k6`r<m8\\r.5\\D-.7\\0m8\\r6\\`1m50\\r0.629\\```" )               
+define_preset( Bass,  "'r<m127\\r.749\\0m47\\r<1.25\\`1m44\\r0.5\\```" )
+define_preset( Gonk,  "'k6`r<m8\\r.5\\D-.7\\0m8\\r6\\`1m50\\r0.629\\```" )               
 
-define_preset( XFuzz2, "!x26\\"
+define_preset( XFuzz2, "'x26\\"
                        "rr.125\\m81\\"
                        "0r.667\\m67\\D1.4\\`"
                        "1r.441\\m127\\```"
                        "0ea5\\d200\\s170\\r32\\`"
                        "Vf5.5\\d1\\t100\\`"
-                       "Ag<g2.5\\``"
+                       "Eg<g2.5\\``"
                        "Ea<l<d.36\\f.7\\````" 
                        )
 
-define_preset( Zonk,   "!x24\\k6`"
+define_preset( Zonk,   "'x24\\k6`"
                        "rr.111\\m114\\D.5\\"
                        "0<r3.5\\m36\\`"
                        "1<r.567\\m81\\D3\\```"
                        "0ea2\\d145\\s0\\r100\\`"
                        "Vf.24\\d.5\\t30\\`"
-                       "Ag<g2.5\\``"
+                       "Eg<g2.5\\``"
                        "Ea<l<d.6\\f.2\\````" 
                        )
 
-define_preset( Besot,  "!"
+define_preset( Besot,  "'"
                        "rr6.6\\m38\\"
                        "0r.667\\m76\\`"
                        "1<r12\\m53\\```"
                        "0ea0\\d200\\s179\\r200\\`"
                        "V<-f5\\d.7\\t5\\`"
-                       "Ag<g1\\``"
+                       "Eg<g1\\``"
                        "Ea<c120\\l<d1\\f3.858\\````" 
                        )
 
-define_preset( Morbo,  "!"
+define_preset( Morbo,  "'"
                        "r<r1\\m68\\D.25\\"
                        "0<r.707\\m76\\D-.35\\`"
                        "1r.5\\m5\\```"
                        "0ea59\\d50\\s0\\r32\\`"
                        "V<f3.2\\d.3\\t40\\`"
-                       "Ag<g1.5\\``"
+                       "Eg<g1.5\\``"
                        "Ea<c40\\l.d.5\\f.5\\````" 
                        )
 
-define_preset( Static, "!"
+define_preset( Static, "'"
                        "r<r23\\m79\\"
                        "0<r2.244\\m44\\`"
                        "1<r4\\m91\\```"
                        "0ea79\\d100\\s120\\r190\\`"
                        "V.-f2.5\\d1\\t30\\`"
-                       "Ag<g2.25\\``"
+                       "Eg<g2.25\\``"
                        "Ea<c60\\l<d.305\\f1.73\\````" 
                        )
 
@@ -230,81 +230,31 @@ class Pair1 : public XorOsc
 
 // ==================================================================================
 
-class Gain : public Factor
+class XGain : public Gain
 {
-   typedef Factor super;            // superclass is Factor
-
-   protected:
-
-   double gain;                     // gain amount (1.0 = parity)
+   typedef Gain super;              // superclass is Gain
 
    public:
 
-   Gain()
-   {
-      shortcut = 'g';
-   }
-
-   boolean charEv( char code )      // process a character event
+   bool charEv( char code )
    {
       switch ( code )
       {
-         #ifdef INTERN_CONSOLE
-         case 'g':                        // set gain
-         {
-            double userInp;
-            if ( console.getDouble( CONSTR("gain"), &userInp ) )
-               setGain( userInp );
-            break;
-         }
-         #endif
-
-         #ifdef CONSOLE_OUTPUT
-         case chrInfo:
-         {
-            super::charEv( code );
-            console.infoDouble( CONSTR("gain"), gain );
-            break;
-         }
-         #endif
-
-         case '.':                        // mute
+         case '!':                  // reset
 
             super::charEv( code );
-            value = 1.0;
-            break;
-
-         case '<':                        // unmute
-
-            super::charEv( code );
-            value = gain;
-            break;
-
-         case '!':                        // reset
-
-            super::charEv( code );
-            setMute( false );
-            setGain( 1.0 );
+            setMaxGain( 2.5 );
+            autoClip = false;       // retain old-school "nasty" overdrive
             break;
 
          default:
+
             return super::charEv( code );
       }
       return true;
    }
 
-   void setGain( double g )
-   {
-      gain = g;
-      if ( ! muted() )
-         value = gain;
-   }
-
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt() { return CONSTR("gain"); }
-   #endif
 } ;
-
 
 // ==================================================================================
 
@@ -314,13 +264,13 @@ class XVoice : public StockVoice    // stock voice with added effects
 
    public:
 
-   AutoWah wah;                     // built-in low pass filter
-   Gain    gain;                    // built-in gain control
+   AutoWah wah;                     // built-in low pass filter with LFO
+   XGain   gain;                    // built-in gain control
 
    XVoice()
    {
       addEffect( &this->wah );
-      addAmpMod( &this->gain );
+      addEffect( &this->gain );
    }
 
 } ;
@@ -516,7 +466,7 @@ class XoidSynth : public OneVoxSynth
          case BUT1_DTAP:                     // override "one-shot menu" 
 
             presetMenu.waitKey();
-            execute( (const char *)presets.dataPtr( presetMenu.value ) );
+            runPreset( (const char *)presets.dataPtr( presetMenu.value ) );
             break;
 
          case BUT0_TPRESS:                    
@@ -599,7 +549,7 @@ class XoidSynth : public OneVoxSynth
          case FRAME22:
 
             if ( pot0 )
-               voice->gain.setGain( 1.0 + potVal*.0058823 );
+               voice->gain.evHandler(ev);
             else
                voice->setGlide( potVal );
             break; 

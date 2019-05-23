@@ -29,16 +29,38 @@ class Tuning
 
    virtual double pitch( key ) = 0;       // return frequency for a given key
 
+   protected:
+
+   static const byte   numNotes = 13;     // number of notes in an octave (+1)
+
 } ;
 
 class EqualTemperament : public Tuning
 {
-   private:
+   protected:
 
-   static const byte   numNotes = 13;     // number of notes in an octave (+1)
    static const double freq[ numNotes ];  // frequencies for notes in octave 0
 
    public:
+
+   double pitch( key );                   // return frequency for a given key
+
+} ;
+
+class HarmonicTuning : public Tuning
+{
+   protected:
+
+   static const double intervals[ numNotes ];  // freq ratios for notes 
+
+   public:
+
+   double   tonic0;                       // tonic frequency for C0
+
+   HarmonicTuning()
+   {
+      tonic0 = 16.351601;
+   }
 
    double pitch( key );                   // return frequency for a given key
 

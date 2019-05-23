@@ -1,5 +1,13 @@
 Versions:
 
+   1.11  add Gain class to StdEffects module
+         add HarmonicTuning class to Tuning module
+         ::numNotes moved from EqualTemperament to Tuning
+         add Synth::runPreset()
+         add empty DualOsc() MixOsc() constructors
+         XorOsc::freqDiff made public
+         Synth::preset_loading made protected (from private) 
+         use PROMPT_STR() macro in Osc DualOsc QuantumOsc StdEffects WaveGen modules
    1.10  Synth::setup() renamed ::config() to circumvent Arduino bug
          VoxSynth::setupVoices() renamed ::configVoices()
          ADSRVoice class is broken out from Voice class

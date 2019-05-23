@@ -176,13 +176,6 @@ void DualOsc::output( char *buf )
    }
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *DualOsc::prompt()                     
-{
-   return CONSTR("dual");
-}
-#endif
-
 /******************************************************************************
  *
  *                                 MixOsc 
@@ -472,13 +465,6 @@ void MixOsc::setSpectrum( byte nth )
    spectrum = nth;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *MixOsc::prompt()
-{
-   return CONSTR("mix");
-}
-#endif
-
 /******************************************************************************
  *
  *                                  XorOsc 
@@ -611,13 +597,6 @@ void XorOsc::output( char *buf )
    }
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *XorOsc::prompt()
-{
-   return CONSTR("xor");
-}
-#endif
-
 /******************************************************************************
  *
  *                                  RingMod 
@@ -663,11 +642,4 @@ void RingMod::output( char *buf )
       buf[i] = sum._.msb;
    }
 }
-
-#ifdef CONSOLE_OUTPUT
-const char *RingMod::prompt()
-{
-   return CONSTR("ring");
-}
-#endif
 

@@ -19,7 +19,6 @@
 */
 
 #include "types.h"
-#include "Console_.h"
 #include "Audio.h"
 #include "Osc.h"
 
@@ -160,13 +159,6 @@ void Osc::modFreq( double factor )
    extFactor = factor;
    onFreq();
 }
-
-#ifdef CONSOLE_OUTPUT
-const char *Osc::prompt()                     
-{
-   return CONSTR("osc");
-}
-#endif
 
 /*----------------------------------------------------------------------------*
  *

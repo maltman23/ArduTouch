@@ -63,9 +63,7 @@ class BSFilter : public Effect      // bit-shift filter
    char    menu( key );             // map key event to character 
    #endif
 
-   #ifdef CONSOLE_OUTPUT
-   const  char *prompt();           // return object's prompt string
-   #endif
+   PROMPT_STR( bsf ) 
 
 } ;  // BSFilter
 
@@ -106,9 +104,7 @@ class LPFilter : public Effect      // low-pass filter (via exponential movavg)
    char    menu( key );             // map key event to character 
    #endif
 
-   #ifdef CONSOLE_OUTPUT
-   const  char  *prompt();          // return object's prompt string
-   #endif
+   PROMPT_STR( lpf ) 
 
 } ;  // LPFilter
 
@@ -134,9 +130,7 @@ class FiltEnv : public LPFilter     // filter envelope
    boolean charEv( char );          // process a character event
    void    dynamics();              // update dynamics
 
-   #ifdef CONSOLE_OUTPUT
-   const  char  *prompt();          // return object's prompt string
-   #endif
+   PROMPT_STR( filtenv ) 
 
 } ;
 
@@ -169,9 +163,46 @@ class AutoWah : public LPFilter     // oscillating low-pass filter
    boolean charEv( char );          // process a character event
    void    dynamics();              // update dynamics
 
-   #ifdef CONSOLE_OUTPUT
-   const  char  *prompt();          // return object's prompt string
-   #endif
+   PROMPT_STR( autowah ) 
+
+} ;
+
+/******************************************************************************
+ *
+ *                                   Gain
+ *
+ ******************************************************************************/
+
+class Gain : public Effect
+{
+   typedef Effect super;            // superclass is Effect
+
+   protected:
+
+   double gain;                     // gain amount (1.0 = parity)
+   double maxGain;                  // maximum permitted gain
+
+   Word   effGain;                  // effective gain (msb: integral part,
+                                    //                 lsb: fractional part)
+
+   byte   clipThresh;               // abs val of clipping threshold
+
+   public:
+
+   bool   autoClip;                 // automatically clip excessive values 
+
+   Gain()
+   {
+      shortcut = 'g';
+   }
+
+   bool charEv( char code );        // process a character event
+   bool evHandler( obEvent ev );    // handle an onboard event
+   void process( char *buf );       // process an input buffer
+   void setGain( double g );        // set the gain amount
+   void setMaxGain( double g );     // set the maximum permitted gain
+
+   PROMPT_STR( gain ) 
 
 } ;
 

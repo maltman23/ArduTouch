@@ -257,10 +257,30 @@ setSpectrum		KEYWORD2
 
 XorOsc			KEYWORD1
 RingMod			KEYWORD1
+freqDiff		KEYWORD2
+
+Synth			KEYWORD1
+config			KEYWORD2
+runPreset		KEYWORD2
+welcome			KEYWORD2
+
+VoxSynth		KEYWORD1
+configVoices		KEYWORD2
+newOsc			KEYWORD2
+newVox			KEYWORD2
 
 OneVoxSynth		KEYWORD1
 TwoVoxSynth		KEYWORD1
-vox			KRYWORD2
+TwoVoxSynth		KEYWORD1
+vox			KEYWORD2
+
+PanControl		KEYWORD1
+
+ByteMenu		KEYWORD1
+
+Gain			KEYWORD1
+setGain			KEYWORD2
+setMaxGain		KEYWORD2
 
 QuantumOsc		KEYWORD1
 periodHz		KEYWORD2

@@ -2,7 +2,7 @@
 ![photo of ArduTouch](https://cornfieldelectronics.com/cfe/images/projects/ArduTouch_C_LR.jpg)
 ArduTouch is an Arduino-compatible music synthesizer kit.  
 Build it, and it works!  
-Way low cost (target price per kit is $25 -- currently $30.)  
+Way low cost (currently $30.)  
 It comes with a pre-programmed music synthesizer that makes way cool sounds and music and noise.
 
 An ArduTouch library is available for programming in more super nice synthesizer features, and for making your own synthesizers.

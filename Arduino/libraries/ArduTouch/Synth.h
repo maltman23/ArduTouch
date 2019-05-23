@@ -61,6 +61,8 @@ class Synth : public StereoInstrument  // basic synthesizer class
 {
    typedef StereoInstrument super;     // superclass is StereoInstrument
 
+   protected:
+
    boolean preset_loading;             // a preset is in the process of loading
    boolean quiet_reset;                // preset has performed a quiet reset 
 
@@ -70,14 +72,13 @@ class Synth : public StereoInstrument  // basic synthesizer class
    virtual void welcome() {};          // perform post-reset startup tasks
 
    boolean charEv( char );             // process a character event
+   void    runPreset( const char * );  // run a preset 
 
    #ifdef KEYBRD_MENUS
    char    menu( key );                // given a key, return a character 
    #endif
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();               // return object's prompt string
-   #endif
+   PROMPT_STR( synth ) 
 
 } ;
 

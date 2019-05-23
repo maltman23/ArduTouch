@@ -22,6 +22,7 @@
 #define OSC_H_INCLUDED
 
 #include "Control.h"
+#include "Console_.h"
 
 /******************************************************************************
  *
@@ -56,9 +57,7 @@ class Osc : public TControl
    void    setDetune( char );       // set the amount of local detuning
    void    setFreq( double );       // set the ideal frequency
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();            // return object's prompt string
-   #endif
+   PROMPT_STR( osc ) 
 
 } ;  
 

@@ -40,6 +40,8 @@ class DualOsc : public Osc                // container for 2 oscillators
 
    double freqRatio;                      // frequency ratio between osc1/0
 
+   DualOsc() : super() {};
+
    DualOsc( Osc *o0, Osc *o1 )
    {
       osc0 = o0;
@@ -51,9 +53,7 @@ class DualOsc : public Osc                // container for 2 oscillators
    void  onFreq();                        // compute frequency dependent state vars
    void  output( char* );                 // write one buffer of output
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
+   PROMPT_STR( dual ) 
 
 } ;
 
@@ -71,6 +71,7 @@ class MixOsc : public DualOsc             // Mixes 2 oscillators
 
    public:
 
+   MixOsc() : super() {};
    MixOsc( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
    bool  charEv( char );                  // process a character event
@@ -82,9 +83,7 @@ class MixOsc : public DualOsc             // Mixes 2 oscillators
    virtual double getSpecFreq( byte );    // returns nth frequency in current spectrum
    virtual byte   numSpectrums();         // returns number of frequency spectrums
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
+   PROMPT_STR( mix ) 
 
    protected:
 
@@ -107,19 +106,15 @@ class XorOsc : public MixOsc              // XORs mixed output of 2 oscillators
 
    public:
 
+   double freqDiff;                       // apply this difference to osc1 (post-ratio)
+
    XorOsc( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
    bool  charEv( char );                  // process a character event
    void  onFreq();                        // compute frequency dependent state vars
    void  output( char* );                 // write one buffer of output
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
-
-   protected:
-
-   double freqDiff;                       // apply this difference to osc1 (post-ratio)
+   PROMPT_STR( xor ) 
 
 } ; 
 
@@ -139,9 +134,7 @@ class RingMod : public MixOsc             // a ring modulator
 
    void  output( char* );                 // write one buffer of output
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
+   PROMPT_STR( ring ) 
 
 } ; 
 

@@ -126,9 +126,7 @@ class PwLFO : public LFO                     // pulse-width modulator
 
    boolean charEv( char code );              // handle a character event
 
-   #ifdef CONSOLE_OUTPUT 
-      const char* prompt() { return CONSTR("pwLFO"); }
-   #endif
+   PROMPT_STR( pwLFO ) 
 
 } ;
 

@@ -75,9 +75,7 @@ class PureSquare : public QuantumOsc
    void   setPeak( byte );          // set the peak amplitude
    void   track( double freq );     // set osc to freq nearest target freq
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();            // return object's prompt string
-   #endif
+   PROMPT_STR( pureSq ) 
 
 } ;
 
@@ -120,9 +118,7 @@ class SweepOsc : public PureSquare
    void setRepeats( byte val );     // set # times to play upon trigger
    void setStretch( byte val );     // set the stretch factor
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();            // return object's prompt string
-   #endif
+   PROMPT_STR( sweep ) 
 
    private:
 

@@ -306,13 +306,6 @@ void PureSquare::output( char *buf )
    }
 }
     
-#ifdef CONSOLE_OUTPUT
-const char *PureSquare::prompt() 
-{ 
-   return CONSTR("pureSq"); 
-}
-#endif
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  PureSquare::realFreq
@@ -584,13 +577,6 @@ void SweepOsc::loadEdge( byte val )
    maxOutAt = 1 + (val >> PWR);
    bumpDC   = maxOutAt < stretch ? maxOutAt : stretch;
 }
-
-#ifdef CONSOLE_OUTPUT
-const char *SweepOsc::prompt() 
-{ 
-   return CONSTR("sweep"); 
-}
-#endif
 
 /*----------------------------------------------------------------------------*
  *

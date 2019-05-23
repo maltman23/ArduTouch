@@ -37,23 +37,9 @@ boolean Synth::charEv( char code )
    {
       #ifdef INTERN_CONSOLE
 
-      case 'p':                     // choose a preset
+      case 'p':                     // choose a preset from the presets bank
       {
-         preset_loading = true;
-         quiet_reset    = false;
-         if ( flags & RSTMUTE )     // if synth is prefigured for mute reset
-            presets.choose();
-         else                       // synth normally unmuted upon reset
-         {      
-            presets.choose();
-            if ( quiet_reset )
-            {
-               flags &= ~RSTMUTE;
-               setMute( false );
-            }
-         }
-         preset_loading = false;
-         quiet_reset    = false;
+         runPreset( NULL );
          break;
       }
 
@@ -135,12 +121,57 @@ char Synth::menu( key k )
 }
 #endif
 
-#ifdef CONSOLE_OUTPUT
-const char *Synth::prompt()                     
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Synth::runPreset
+ *
+ *  Desc:  Run a preset. 
+ *
+ *  Args:  presetStr        - pointer to preset string in ROM. if NULL, 
+ *                            interactively choose preset from presets bank
+ *
+ *  Memb: +flags.RSTMUTE    - synth should be muted on reset
+ *        +preset_loading   - a preset is in the process of loading
+ *        +quiet_reset      - preset has performed a quiet reset 
+ *
+ *  Note:  A preset is a string of characters which is executed like any
+ *         other macro string (i.e., the characters are fed to the charEv()
+ *         method of whatever id the top mode on the mode stack.
+ *
+ *         The ' character has a special significance in a preset macro,
+ *         signifying that a quiet reset should be executed, and that audio 
+ *         should be suppressed while the preset is loading.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Synth::runPreset( const char *presetStr )
 {
-   return CONSTR("synth");
+   preset_loading = true;
+   quiet_reset    = false;    // this will be set by preset macro (or not)
+
+   if ( flags & RSTMUTE )     // if synth is prefigured for mute reset
+   {
+      if ( presetStr )
+         execute( presetStr );
+      else
+         presets.choose();
+   }
+   else                       // synth normally unmuted upon reset
+   {
+      if ( presetStr )
+         execute( presetStr );
+      else
+         presets.choose();
+      if ( quiet_reset )
+      {
+         flags &= ~RSTMUTE;
+         setMute( false );
+      }
+   }
+
+   preset_loading = false;
+   quiet_reset    = false;
 }
-#endif
 
 /******************************************************************************
  *

@@ -180,13 +180,6 @@ char LPFilter::menu( key k )
 }
 #endif
 
-#ifdef CONSOLE_OUTPUT
-const char *LPFilter::prompt()
-{
-   return CONSTR("lpf");
-}
-#endif
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  LPFilter::process
@@ -343,14 +336,6 @@ void FiltEnv::dynamics()
    env.dynamics();                     // update envelope dynamics
    calcWeight();                       // recalculate the weight for input term
 }
-
-#ifdef CONSOLE_OUTPUT
-const char *FiltEnv::prompt()
-{
-   return CONSTR("filtenv");
-}
-#endif
-
 
 /******************************************************************************
  *
@@ -523,13 +508,6 @@ void BSFilter::process( char *buf )
    }
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *BSFilter::prompt()
-{
-   return CONSTR("bsf");
-}
-#endif
-
 void BSFilter::setClip( byte n )
 {
    Word m;                            // working register for clipMask
@@ -637,13 +615,6 @@ void AutoWah::dynamics()
    calcWeight();                       // recalculate the weight for input term
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *AutoWah::prompt()
-{
-   return CONSTR("autowah");
-}
-#endif
-
 /******************************************************************************
  *
  *                                  WahLFO 
@@ -678,6 +649,214 @@ boolean WahLFO::charEv( char code )
          return LFO::charEv( code );
    }
    return true;
+}
+
+/******************************************************************************
+ *
+ *                                   Gain
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Gain::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +autoClip         - automatically clip excessive values 
+ *         gain             - gain amount (1.0 = parity)
+ *         maxGain          - maximum permitted gain
+ *
+ *  Rets:  status           - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+
+bool Gain::charEv( char code )      
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE
+
+      case 'a':
+
+         console.getBool( CONSTR("autoClip"), &autoClip );
+         break;
+
+      case 'g':                        // set gain
+      {
+         double userInp;
+         if ( console.getDouble( CONSTR("gain"), &userInp ) )
+            setGain( userInp );
+         break;
+      }
+
+      case 'm':                        // set max gain
+      {
+         double userInp;
+         if ( console.getDouble( CONSTR("maxGain"), &userInp ) )
+            setMaxGain( userInp );
+         break;
+      }
+
+      #endif
+
+      #ifdef CONSOLE_OUTPUT
+      case chrInfo:
+      {
+         super::charEv( code );
+         console.infoDouble( CONSTR("gain"), gain );
+         console.infoDouble( CONSTR("maxGain"), maxGain );
+         console.infoBool( CONSTR("autoClip"), autoClip );
+         break;
+      }
+      #endif
+
+      case '!':                        // reset
+
+         super::charEv( code );
+         autoClip = true;
+         setMute( false );
+         setMaxGain( 2.0 );
+         setGain( 1.0 );
+         break;
+
+      default:
+         return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Gain::evHandler
+ *
+ *  Desc:  Handle an onboard event.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Memb:  maxGain          - maximum permitted gain
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool Gain::evHandler( obEvent ev )
+{
+   switch ( ev.type() )
+   {
+      case POT0:                 // set the gain
+      {
+         byte potPos = ev.getPotVal();
+         setGain( 1.0 + (double )potPos * ((maxGain - 1.0)/255.0)) ;
+         break;
+      }
+
+      default:
+
+         return super::evHandler(ev);
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Gain::process
+ *
+ *  Desc:  Process an input buffer.
+ *
+ *  Args:  buf              - ptr to buffer to process
+ *
+ *  Glob:  audioBufSz       - size of input buffer
+ *
+ *  Args:  gain             - new gain amount (1.0 == parity)
+ *
+ *  Memb:  clipThresh       - abs val of clipping threshold
+ *         effGain          - effective gain (msb: integral, lsb: fractional)
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Gain::process( char *buf )
+{
+   byte icnt;                    // counter for iterating through buffer
+
+   // clip extreme values to avoid overflow/underflow when gain is applied
+
+   if ( autoClip && effGain.val > 256 )
+   {
+      char *tryBuf = buf;         
+      icnt = audioBufSz;
+      while ( icnt-- )
+      {
+         if ( *tryBuf > clipThresh )
+            *tryBuf = clipThresh;
+         else if ( *tryBuf < -clipThresh )
+            *tryBuf = -clipThresh;
+         ++tryBuf;
+      }
+   }
+      
+   // apply gain
+
+   icnt = audioBufSz;            // process this many ticks of input
+   while ( icnt-- )              // while there are ticks to process ...
+   {
+      Int gained;
+      gained.val  = effGain.val;
+      gained.val *= *buf;
+      *buf++   = gained._.msb;
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Gain::setGain
+ *
+ *  Desc:  Set the gain amount.
+ *
+ *  Args:  gain             - new gain amount (1.0 == parity)
+ *
+ *  Memb: +clipThresh       - abs val of clipping threshold
+ *        +effGain          - effective gain (msb: integral, lsb: fractional)
+ *        +gain             - gain amount (1.0 = parity)
+ *         maxGain          - maximum permitted gain
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Gain::setGain( double g )
+{
+   if ( g > maxGain ) 
+      g = maxGain;
+
+   gain = g;
+
+   effGain.val = 256 * gain;
+   clipThresh = 127.0 / gain;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Gain::setMaxGain
+ *
+ *  Desc:  Set the maximum permiited gain.
+ *
+ *  Args:  gain             - new max permitted gain
+ *
+ *  Memb:  gain             - gain amount (1.0 = parity)
+ *        +maxGain          - maximum permitted gain
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Gain::setMaxGain( double g )
+{
+   if ( g < 1.0 ) 
+      g = 1.0;
+
+   maxGain = g;
+
+   if ( gain > maxGain )
+      setGain( maxGain );
 }
 
 

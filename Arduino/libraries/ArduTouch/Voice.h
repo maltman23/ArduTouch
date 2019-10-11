@@ -38,12 +38,7 @@
 
 class AmpMods : public Factors      // chain of amplitude modifiers
 {
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt()            // return object's prompt string
-   {
-      return CONSTR("Amp");
-   }
-   #endif
+   PROMPT_STR( Amp ) 
 } ;
 
 /******************************************************************************
@@ -54,12 +49,7 @@ class AmpMods : public Factors      // chain of amplitude modifiers
 
 class PitchMods : public Factors    // chain of pitch modifiers
 {
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt()            // return object's prompt string
-   {
-      return CONSTR("Pitch");
-   }
-   #endif
+   PROMPT_STR( Pitch ) 
 } ;
 
 

@@ -20,7 +20,7 @@
 
 #include "Tuning.h"
 
-Tuning *masterTuning = new EqualTemperament();
+Tuning *masterTuning;
 
 const double EqualTemperament::freq[] PROGMEM = 
 { 

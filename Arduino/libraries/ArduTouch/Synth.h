@@ -23,6 +23,7 @@
 
 #include "Console_.h"
 #include "Instrument.h"
+#include "Tuning.h"
 #include "Voice.h"
 #include "Bank.h"
 #include "Pan.h"
@@ -68,7 +69,8 @@ class Synth : public StereoInstrument  // basic synthesizer class
 
    public:
 
-   virtual void config() {};           // executed at system startup
+   virtual void config() {};           // executed at startup
+   virtual Tuning *tuning();           // return ptr to tuning obj (called at startup)
    virtual void welcome() {};          // perform post-reset startup tasks
 
    boolean charEv( char );             // process a character event

@@ -5,7 +5,7 @@
 //
 //  In this synth (which will make no sound):
 //  The onboard keyboard is used to control the two onboard LEDs (on, off, or blinking).
-//  The bottom pot is used to change the LED blink rate.
+//  The bottom pot is used to change the LED blink time.
 //
 //  This sketch *requires* a Runtime Model of __STNDLONE__ or __BAREBONE__.
 //  (please consult example _12_ on how to set the Runtime Model).
@@ -51,13 +51,27 @@ class LEDSynth : public Synth
    //
    //    void onLED( byte nth );             // turn nth (0-based) LED on
    //    void offLED( byte nth );            // turn nth LED off
-   //    void blinkLED( byte nth );          // blink nth LED
-   //    void setBlinkRate( byte x );        // set blink rate for LEDs
-   //    byte getBlinkRate();                // returns blink rate for LEDs
+   //    void blinkLED( byte nth );          // blink nth LED 
+   //    void setBlinkTime( byte x );        // set blink time for LEDs
+   //    byte getBlinkTime();                // returns blink time for LEDs
+   //
+   //    -----------------------------------------------------------------
+   //
+   // The blinkLED() routine takes an optional 2nd argument -- invert:
+   //
+   //    void blinkLED( byte nth, bool invert = false );  // blink LED, invert phase
+   //
+   // An LED blinking with an inverted phase will be ON when a normally blinking LED
+   // is off, and vice-versa. This allows you to set up the two onboard LEDs to blink
+   // alternatively instead of in unison. See evHandler() case for the 'B' note below 
+   // for an example. 
+   //
+   //    ------------------------------------------------------------------
    //
    // Symbolic constants are pre-defined which allow you to refer to the LEDs
    // by position ( LEFT_LED, RIGHT_LED ) or color ( RED_LED, BLUE_LED )
-   // In the code, below, we'll use all of these, just to show that they are the same.
+   // In the code, below, we'll use all of these, just to show that they are 
+   // the same.
 
    boolean evHandler( obEvent e )            // event handler
    {
@@ -65,7 +79,7 @@ class LEDSynth : public Synth
       {
          case POT1:                          // bottom pot was moved
          {
-            setBlinkRate( e.getPotVal() );   // set LED blink rate
+            setBlinkTime( e.getPotVal() );   // set LED blink time
             return true;
          }
          case KEY_DOWN:                      // a key has been pressed
@@ -89,6 +103,9 @@ class LEDSynth : public Synth
                   break;
                case 9:                       // 'A'
                   offLED( BLUE_LED );        // ... turn off LED 1 -- "1", "RIGHT_LED", and "BLUE_LED" are all the same!
+                  break;
+               case 11:                      // 'B'
+                  blinkLED( 1, true );       // ... blink LED 1 (with inverted phase)
                   break;
             }
             return true;                     // KEY_DOWN event was handled
@@ -114,14 +131,15 @@ void loop()
 //
 //   Once you compile and upload this sketch to the ArduTouch:
 //
-//      1) Pressing the low 'C' note on the keyboard will turn the red LED on.
-//      2) Pressing the 'D' note on the keyboard will blink the red LED.
-//      3) Pressing the 'E' note on the keyboard will turn the red LED off.
-//      4) Pressing the 'F' note on the keyboard will turn the blue LED on.
-//      5) Pressing the 'G' note on the keyboard will blink the blue LED.
-//      6) Pressing the 'A' note on the keyboard will turn the blue LED off.
-//      7) Turning the bottom pot will change the blink rate.
+//     (1) Pressing the low 'C' note on the keyboard will turn the red LED on.
+//     (2) Pressing the 'D' note on the keyboard will blink the red LED.
+//     (3) Pressing the 'E' note on the keyboard will turn the red LED off.
+//     (4) Pressing the 'F' note on the keyboard will turn the blue LED on.
+//     (5) Pressing the 'G' note on the keyboard will blink the blue LED.
+//     (6) Pressing the 'A' note on the keyboard will turn the blue LED off.
+//     (7) Pressing the 'B' note will blink the blue LED with an inverted phase.
+//         Try this together with (2) to set up alternating blinking LEDs.
+//     (8) Turning the bottom pot will change the blink time.
 //
 //  ---------------------------------------------------------------------------
-
 

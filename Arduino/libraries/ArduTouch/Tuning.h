@@ -68,6 +68,6 @@ class HarmonicTuning : public Tuning
 
 /* ------------------------      public vars      -------------------------- */
 
-extern Tuning *masterTuning;
+extern Tuning *masterTuning;              // ptr to the master tuning object 
 
 #endif   // ifndef TUNING_H_INCLUDED

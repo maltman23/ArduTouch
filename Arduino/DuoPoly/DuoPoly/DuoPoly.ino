@@ -3,6 +3,17 @@
  
     A duophonic stereo wavetable synthesizer with dual step sequencers.
 
+                               ***** NOTE *****
+
+    This synth makes use of keyboard menus, which is a deprecated feature of
+    the ArduTouch library. You will need to uncomment the "#define KEYBRD_MENUS" 
+    statement in Model.h of the library in order to compile this sketch. Once 
+    you have compiled this sketch, you should make sure to comment out the 
+    "#define KEYBRD_MENUS" statement in Model.h so that subsequent compilations 
+    of other synths do not unnecessarily include the keyboard menus code.
+
+                               ****************
+
     Target:   ArduTouch board
  
     ---------------------------------------------------------------------------
@@ -22,7 +33,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.49 )            // specify program name & version
+about_program( DuoPoly, 2.50 )            // specify program name & version
 
 #ifndef INTERN_CONSOLE
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)

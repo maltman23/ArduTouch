@@ -74,7 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.11 )              // specify sketch name & version
+about_program( Arpology, 1.12 )              // specify sketch name & version
 
 // Specify whether the voices of Arpology can be panned in stereo by 
 // uncommenting the following defines
@@ -88,10 +88,6 @@ about_program( Arpology, 1.11 )              // specify sketch name & version
 
 #ifndef INTERN_CONSOLE                       
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
-#endif
-
-#ifndef KEYBRD_MENUS
-   #error This sketch requires KEYBRD_MENUS to be defined (Model.h)
 #endif
 
 /*----------------------------------------------------------------------------*
@@ -704,6 +700,8 @@ class ArpSynth : public ARP_BASE_CLASS
 {
    typedef ARP_BASE_CLASS super;             // superclass is ARP_BASE_CLASS
 
+   ByteMenu presetMenu;                      // keybrd menu for selecting presets
+
    Tonality *tonality;                       // current tonality for synth
    
    Tonality *majorTonality;
@@ -1033,7 +1031,8 @@ class ArpSynth : public ARP_BASE_CLASS
 
          case BUT1_DTAP:                     // override "one-shot menu" 
 
-            presets.choose();                // choose a preset
+            presetMenu.waitKey();
+            execute( (const char *)presets.dataPtr( presetMenu.value ) );
             break;
 
          default:                            // pass on unhandled events

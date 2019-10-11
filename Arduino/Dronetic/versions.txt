@@ -1,3 +1,5 @@
 Versions:
 
+   0.61  use the tuning() call-back method to (indirectly) set the master tuning
+         syncs with library 1.12f
    0.60  === FIRST PUBLISHED VERSION ===

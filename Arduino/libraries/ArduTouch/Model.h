@@ -90,14 +90,39 @@
 
 /* ---------------------------------------------------------------------------
 
-    The following optional features can be omitted by commenting out the
-    relevant defines below. This will free up extra memory (both RAM and 
-    ROM) and reduce CPU overhead for synths which have no need for these 
-    features.
+    The KEYBRD_MENUS define enables a "legacy" feature of the library 
+    which allows classes derived from the Mode class to use the onboard 
+    keyboard to generate character events, turning the keyboard into
+    a defacto menu by which to drive the Console interface for an object. 
+    This is an admittedly obscure feature, currently used only by the 
+    DuoPoly synth (which was the 1st synth ever written for the ArduTouch).
+
+    Because KEYBRD_MENUS consumes valuable resources but is rarely if ever 
+    used it is considered a legacy feature which is now deprecated. 
+    
+    The KEYBRD_MENUS statement below is by default commented out, and should
+    remain that way unless for some reason you want to explore the possibility 
+    of running the Console from the onboard keyboard.
+
+    You will need to define KEYBRD_MENUS if you want to compile the DuoPoly 
+    synth.    
+    
+   ------------------------------------------------------------------------ */
+
+//#define KEYBRD_MENUS                 // Modes have built-in keyboard menus
+
+/* ---------------------------------------------------------------------------
+
+    The IMPLICIT_SEQUENCER feature can be disabled by commenting out the
+    define below. This will free up extra memory (both RAM and ROM) for 
+    synths which do not use sequencers.
+
+    Unless you have completely run out of memory for a specific synth 
+    (that does not use sequencers) it is recommended that you leave 
+    IMPLICIT_SEQUENCER defined.
 
    ------------------------------------------------------------------------ */
 
-#define KEYBRD_MENUS                 // Modes have built-in keyboard menus
 #define IMPLICIT_SEQUENCER           // Instruments may use built-in sequencers
 
 /* ---------------------------------------------------------------------------

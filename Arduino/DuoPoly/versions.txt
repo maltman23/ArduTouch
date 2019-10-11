@@ -1,5 +1,6 @@
 Versions:
 
+   2.50  add note in header regarding the deprecation of KEYBRD_MENUS
    2.49  Synth::setup() renamed ::config() to circumvent Arduino bug
          VoxSynth::setupVoices() renamed ::configVoices()
          syncs with 1.10

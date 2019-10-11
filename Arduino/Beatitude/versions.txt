@@ -1,5 +1,8 @@
 Versions:
 
+   1.04  use presetMenu + event logic to eliminate need for KEYBRD_MENUS
+         syncs with library 1.12
+         [31632 / 741] __STNDLONE__ 1.12b
    1.03  Synth::setup() renamed ::config() to circumvent Arduino bug
          ::setupVoices() renamed ::configVoices()
          syncs with library 1.10

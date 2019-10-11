@@ -164,6 +164,7 @@ class Console
    bool  getBits( const char *, byte, byte* );// prompt for and get a bitfield
    bool  getBool( const char*, bool* );       // prompt for and get a boolean
    bool  getByte( const char*, byte* );       // prompt for and get a byte (0:255)
+   bool  getChar( const char*, char* );       // prompt for and get a character
    char  getDigit( const char*, byte );       // get '0' thru '9', (0 = aborted)
    bool  getDouble( const char*, double* );   // prompt for and get a double
    bool  getInt( const char*, int* );         // prompt for and get an int
@@ -173,6 +174,7 @@ class Console
    void  infoBits( const char *, byte, byte );// print a bitfield value (with label)
    void  infoBool( const char*, bool );       // print a boolean value (with label)
    void  infoByte( const char*, byte );       // print a byte value (with label)
+   void  infoChar( const char*, char );       // print a character (with label)
    void  infoCharBits( const char*, byte );   // print a char as a bit string (with label)
    void  infoDouble( const char*, double );   // print a double value (with label)
    void  infoInt( const char*, int );         // print an int value (with label)

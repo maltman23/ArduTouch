@@ -64,7 +64,28 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Mantra, 0.94 )                // specify sketch name & version
+about_program( Mantra, 0.95 )                // specify sketch name & version
+
+define_preset( Empty, "" )               
+define_preset( ADrone, "A" )               
+define_preset( BDrone, "B" )               
+
+begin_bank( myPresets )                   
+
+   _preset( ADrone )                      // C
+   _preset( Empty )                       // C#
+   _preset( BDrone )                      // D
+   _preset( Empty )                       // D#
+   _preset( Empty )                       // E
+   _preset( Empty )                       // F
+   _preset( Empty )                       // F#
+   _preset( Empty )                       // G
+   _preset( Empty )                       // G#
+   _preset( Empty )                       // A
+   _preset( Empty )                       // A#
+   _preset( Empty )                       // B
+
+end_bank()
 
 /*----------------------------------------------------------------------------*
  *                                 Drones
@@ -508,27 +529,29 @@ class Mantra : public VoxSynth
 
    public:
 
+   ByteMenu presetMenu;             // keybrd menu for selecting presets
+
    Mantra()
    {
       configVoices(4);
-      masterTuning = new MantraTuning();
    }
 
    void config()
    {
       super::config();
-      keybrd.setDefOct( 4 );         // start keyboard in octave 4
+      keybrd.setDefOct( 4 );        // start keyboard in octave 4
+      presets.load( myPresets );    // load bank of presets
    }
 
    bool   charEv( char code );      // handle a character event
    bool   evHandler( obEvent );     // handle an onboard event
    void   loadDrone(const Drone*);  // load the drone voice sequencers
-   char   menu( key );              // given a key, return a character 
    Osc   *newOsc( byte nth );       // create oscillator for nth voice
    Voice *newVox( byte nth );       // create nth voice 
    void   output( char*, char* );   // write stereo output to pair of audio buffers
    void   start();                  // start playback of drone sequencers
    void   stop();                   // stop playback of drone sequencers
+   Tuning *tuning();                // return ptr to the tuning object for synth
 
 } ;
 
@@ -628,6 +651,12 @@ bool Mantra::evHandler( obEvent ev )
          lead->setAutoWah( ev.getPotVal() );
          break;
 
+      case BUT1_DTAP:                  // override "one-shot menu" 
+
+         presetMenu.waitKey();
+         runPreset( (const char *)presets.dataPtr( presetMenu.value ) );
+         break;
+
       default: 
 
          return super::evHandler( ev );
@@ -682,54 +711,6 @@ void Mantra::loadDrone( const Drone *drone )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Mantra::menu
- *
- *  Desc:  Given a key, return a character (to be processed via charEv()). 
- *
- *  Args:  k                - key
- *
- *  Rets:  c                - character (0 means "no character")
- *
- *  Note:  If a sketch is compiled with KEYBRD_MENUS defined, then this method 
- *         can be used to map the onboard keys to characters which the system 
- *         will automatically feed to the charEv() method.
- *
- *         This method is only called by the system if the MENU flag in this
- *         object is set (in the ::flags byte inherited from Mode), or if the
- *         keyboard is in a "oneShot menu selection" state.
- *
- *         The key mapping (inclusive of super class) is as follows:
- *
- *           -------------------------------------------------
- *           |   |   |   |   |   |   |   |   |   |   |   |   |
- *           |   |   |   |   |   |   |   |   |   |   |   |   |
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   | # |   |   |   |   |   |   | k |   | . |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |    ___     ___    |    ___     ___     ___    | 
- *           |     |       |     |     |       |       |     |
- *           |     |       |     |     |       |       |     |
- *           |  A  |   B   |     |     |   x   |   <   |  !  |
- *           |     |       |     |     |       |       |     |
- *           |     |       |     |     |       |       |     |
- *           -------------------------------------------------
- *
- *----------------------------------------------------------------------------*/      
-
-char Mantra::menu( key k )
-{
-   switch ( k.position() )
-   {
-      case  0: return 'A';
-      case  2: return 'B';
-      default: return super::menu(k);
-   }
-}
-
-/*----------------------------------------------------------------------------*
- *
  *  Name:  Mantra::newOsc
  *
  *  Desc:  Return a pointer to the oscillator which is to be used by the nth 
@@ -766,7 +747,7 @@ Osc *Mantra::newOsc( byte nth )
 
       case 2:  // oscillator for bass
 
-         return new DualOsc( new Square(), new Square() );
+            return new DualOsc( new Square(), new Square() );
 
       case 3:  // oscillator for obligato
 
@@ -908,6 +889,25 @@ void Mantra::stop()
    for ( byte i = begDRONE; i <= endDRONE; i++ )
       vox[i]->sqnc->stop();
    offLED( 0 );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Synth::tuning
+ *
+ *  Desc:  Returns a ptr to the tuning object to be used as the master tuning
+ *         object for the synth.
+ *
+ *  Note:  This callback method is executed once by the system at startup.
+ *         Its purpose is to instantiate a master tuning object for the synth.
+ *
+ *         Do not explicitly call this method!
+ *
+ *----------------------------------------------------------------------------*/
+
+Tuning *Mantra::tuning()
+{
+   return new MantraTuning();
 }
 
 Mantra mySynth;

@@ -1,5 +1,22 @@
 Versions:
 
+   1.12  KEYBRD_MENUS is deprecated
+         add Synth::tuning() callback method
+         ardutouch_setup() instantiates master tuning object via Synth::tuning() 
+         add AutoADSR class
+         add MasterADSR, MasterAutoADSR classes
+         add optional invert arg to blinkLED()
+         add LEDFrame struct
+         add saveLEDs() restoreLEDs()
+         add LED_ONOFF LED_INVERT
+         add syncLED()
+         blinkRate, setBlinkRate() getBlinkRate() renamed to *BlinkTime*
+         add Console::getChar() ::infoChar()
+         private function readPot() renamed scanPot()
+         add public function readPot()
+         add empty RingMod() constructor
+         Envelope get* routines defined in header file instead of module
+         use PROMPT_STR() macro in Voice, Envelope, Sequencer modules
    1.11  add Gain class to StdEffects module
          add HarmonicTuning class to Tuning module
          ::numNotes moved from EqualTemperament to Tuning

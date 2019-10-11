@@ -26,7 +26,7 @@
 #include "Synth.h"
 #include "Model.h"
 
-#define LIBRARY_VERSION "1.11"
+#define LIBRARY_VERSION "1.12"
 
 /* ------------------------------------------------------------------------- */
 
@@ -51,6 +51,12 @@
 #define NumLEDs   2                    // number of onboard LEDs 
 #define NumKeys  12                    // # of onboard keys
 
+struct LEDFrame                        // for saving and restoring LED frames
+{
+   byte LEDState[NumLEDs];             // state per LED { LED_ONOFF/BLINK/INVERT }
+   byte blinkTime;                     // LED blink time (in dynamic updates)
+} ;
+
 /* ------------------------      public vars      -------------------------- */
 
 extern Synth *synth;                   // ptr to the runtime synth 
@@ -65,12 +71,15 @@ void ardutouch_info();                 // display ArduTouch library info to cons
 void ardutouch_loop();                 // perform ongoing ardutouch tasks
 void ardutouch_setup( Synth * );       // initialize ardutouch resources
 void device_io();                      // manage device I/O
+byte readPot( byte );                  // read and return a pot's value
 
 extern void onLED( byte );             // turn an LED on
 extern void offLED( byte );            // turn an LED off
-extern void blinkLED( byte );          // blink an LED 
-extern byte getBlinkRate();            // return LED blink rate
-extern void setBlinkRate( byte );      // set LED blink rate
+extern void blinkLED( byte, bool invert = false ); // blink an LED 
+extern byte getBlinkTime();            // return LED blink time
+extern void setBlinkTime( byte );      // set LED blink time
+extern void restoreLEDs( LEDFrame* );  // restore runtime LED state from an LED Frame
+extern void saveLEDs( LEDFrame* );     // save runtime LED state to an LED Frame
 
 extern void bufStats();                // prints audio buffer stats
 extern int  freeRam();                 // returns space between heap & stack

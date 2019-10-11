@@ -21,6 +21,7 @@
 #ifndef SEQUENCER_H_INCLUDED
 #define SEQUENCER_H_INCLUDED
 
+#include "Console_.h"
 #include "Control.h"
 #include "Instrument.h"
 
@@ -193,9 +194,7 @@ class Sequencer : public Mode
 
    virtual bool load(const byte*)=0;  // load a sequence from ROM
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();
-   #endif
+   PROMPT_STR( Sqnc ) 
 
    bool   playing()              // returns true if sequencer is playing
    { 

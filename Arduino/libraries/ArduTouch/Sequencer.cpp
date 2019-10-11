@@ -314,14 +314,6 @@ byte Sequencer::length()
    return i;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *Sequencer::prompt()
-{ 
-   return CONSTR("Sqnc");
-}
-#endif
-
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  Sequencer::record

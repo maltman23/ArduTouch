@@ -3,6 +3,15 @@
 
     Implementation of envelope classes.
 
+    Two classes are available:
+
+      ADSR     - traditional Attack / Decay / Sustain / Release envelope.
+
+      AutoADSR - an ADSR with a fixed sustain time. The release stage occurs 
+                 automatically after the sustain stage has finished, so that 
+                 once triggered this envelope runs through the ADSR sequence 
+                 without regards to any incoming release event.
+
     ---------------------------------------------------------------------------
 
     Copyright (C) 2016, Cornfield Electronics, Inc.
@@ -18,8 +27,13 @@
    ---------------------------------------------------------------------------
 */
 
-#include "Console_.h"
 #include "Envelope.h"
+
+/******************************************************************************
+ *
+ *                                  ADSR 
+ *
+ ******************************************************************************/
 
 /*----------------------------------------------------------------------------*
  *
@@ -346,18 +360,6 @@ char ADSR::menu( key k )
 
 #endif
 
-#ifdef CONSOLE_OUTPUT
-const char *ADSR::prompt()                     
-{
-   return CONSTR("envelope");
-}
-#endif
-
-byte ADSR::getAttack()  { return attack; }
-byte ADSR::getDecay()   { return decay; }
-byte ADSR::getRelease() { return relTime; }
-byte ADSR::getSustain() { return sustain; }
-
 void ADSR::setAttack( byte val )
 {
    attack = val;
@@ -392,3 +394,431 @@ void ADSR::setSustain( byte val )
 
    #undef ONE_256TH
 }
+
+/******************************************************************************
+ *
+ *                                AutoADSR 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  AutoADSR::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +flags.DONE       - control is ready to be triggered
+ *        +phase            - current phase of envelope
+ *        +susTime          - sustain level
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+boolean AutoADSR::charEv( char key )
+{
+   switch ( key )
+   {
+      case chrTrigger:                 // trigger the envelope
+
+         super::charEv( chrTrigger );
+         if ( phase == susPhase )      // check for initial sustain
+         {
+            if ( susExpTime )
+               susDC = susExpTime;
+            else
+               super::charEv( chrRelease );
+         }
+         break;
+
+      case chrRelease:                 // release the envelope
+
+         break;                        // ignore release
+
+      #ifdef INTERN_CONSOLE
+
+      case 't':                        // set sustain time
+
+         console.getByte( CONSTR("susTime"), &this->susTime );
+         setSusTime( susTime );
+         break;
+
+      #endif
+
+      #ifdef CONSOLE_OUTPUT
+
+      case chrInfo:                    // display object info to console
+
+         super::charEv( chrInfo );
+         console.infoByte( CONSTR("time"), susTime );
+         break;
+
+      #endif
+
+      case '!':                        // reset
+
+         super::charEv( key );
+         setSusTime(0);
+         break;
+
+      default:
+
+         return super::charEv( key );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  AutoADSR::dynamics
+ *
+ *  Desc:  Perform a dynamic update.
+ *
+ *  Memb: +phase            - current phase of envelope
+ *        +susDC            - downcounter to end of sustain
+ *         susExpTime       - sustain time (expanded pseudo-exponentially)
+ *
+ *----------------------------------------------------------------------------*/      
+
+void AutoADSR::dynamics()
+{
+   if ( phase == susPhase )
+   {
+      if ( --susDC == 0 )
+         super::charEv( chrRelease );
+   }
+   else
+   {
+      super::dynamics();
+      if ( phase == susPhase )
+      {
+         if ( susExpTime )
+            susDC = susExpTime;
+         else
+            super::charEv( chrRelease );
+      }
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  AutoADSR::evHandler
+ *
+ *  Desc:  Handle an onboard event.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool AutoADSR::evHandler( obEvent ev )
+{
+   if ( getScrollParm(ev) == 5 )
+   {
+      setSusTime( ev.getPotVal() );  
+      return true;
+   }
+
+   return super::evHandler(ev);
+}
+
+void AutoADSR::setSusTime( byte val )
+{
+   susTime = val;
+   susExpTime = exptime( val );
+}
+
+/******************************************************************************
+ *
+ *                                MasterADSR 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool MasterADSR::charEv( char code )    
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE
+
+      case '0':                     // push a slave envelope
+      case '1':
+      case '2':
+      case '3':
+      {
+         char ith = code-'0';
+         if ( ith <= maxSlave )
+            console.pushMode( slave[ ith ] );
+         break;
+      }
+
+      case 'a':                     // set envelope params
+      case 'd':
+      case 's':
+      case 'r':
+
+         charParam( code );
+         break;
+
+      #endif
+
+      #ifdef CONSOLE_OUTPUT
+
+      case chrInfo:                 // display object info to console
+
+         if ( maxSlave >= 0 ) 
+            slave[0]->charEv( chrInfo );
+         break;
+
+      #endif
+
+      case '.':                     // mute
+      case '<':                     // unmute
+      case '!':                     // perform a reset
+
+         super::charEv( code );  
+
+         // broadcast to all slaves
+
+         for ( char i = 0; i <= maxSlave; i++ )
+            slave[i]->charEv( code );
+
+         if ( code == '!' )
+            setMute( true );  
+
+         break;
+
+      default:
+
+         return super::charEv( code );  
+
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+void MasterADSR::charParam( char code )
+{
+   if ( maxSlave >= 0 ) 
+   {
+      slave[0]->charEv( code );
+      copyParams();
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::copyParams
+ *
+ *  Desc:  Copy slave 0 envelope parameters to the other slaves.
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+void MasterADSR::copyParams()
+{
+   for ( char i = 0; i <= maxSlave; i++ )
+   {
+      slave[i]->setAttack ( slave[0]->getAttack() );
+      slave[i]->setDecay  ( slave[0]->getDecay() );
+      slave[i]->setSustain( slave[0]->getSustain() );
+      slave[i]->setRelease( slave[0]->getRelease() );
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::setNumSlaves
+ *
+ *  Desc:  Se the number of slave envelopes to control..
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *  Note:  You must call this method before registering individual slaves.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void MasterADSR::setNumSlaves( char num )
+{
+   if ( num > MAXSLAVES ) 
+      num = MAXSLAVES;
+   maxSlave = num-1;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::setSlave
+ *
+ *  Desc:  Register a slave envelope.
+ *
+ *  Args:  nth              - slave # (0-based)
+ *         ptr              - pointer to slave envelope 
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *  Note:  You must call setNumSlaves() before registering individual slaves.
+ *
+ *----------------------------------------------------------------------------*/      
+
+void MasterADSR::setSlave( byte nth, ADSR *ptr )
+{
+   if ( nth <= maxSlave ) slave[nth] = ptr;
+}
+
+// ---  MasterADSR methods for getting individual envelope parameters:
+
+byte MasterADSR::getAttack()
+{ 
+   return maxSlave >= 0 ? slave[0]->getAttack() : 0 ;
+}
+
+byte MasterADSR::getDecay()
+{ 
+   return maxSlave >= 0 ? slave[0]->getDecay() : 0;
+}
+
+byte MasterADSR::getSustain()
+{ 
+   return maxSlave >= 0 ? slave[0]->getSustain() : 0; 
+}
+
+byte MasterADSR::getRelease()
+{ 
+   return maxSlave >= 0 ? slave[0]->getRelease() : 0;
+}
+
+// ---  MasterADSR methods for setting individual envelope parameters:
+
+void MasterADSR::setAttack( byte val ) 
+{ 
+   for ( char i = 0; i <= maxSlave; i++ ) slave[i]->setAttack( val ); 
+}
+
+void MasterADSR::setDecay( byte val )
+{
+   for ( char i = 0; i <= maxSlave; i++ ) slave[i]->setDecay( val );
+}
+
+void MasterADSR::setSustain( byte val )
+{
+   for ( char i = 0; i <= maxSlave; i++ ) slave[i]->setSustain( val );
+}
+
+void MasterADSR::setRelease( byte val )
+{
+   for ( char i = 0; i <= maxSlave; i++ ) slave[i]->setRelease( val );
+}
+
+/******************************************************************************
+ *
+ *                              MasterAutoADSR 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterADSR::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool MasterAutoADSR::charEv( char code )    
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE
+
+      case 't':                     // set envelope sustain time
+
+         charParam( code );
+         break;
+
+      #endif
+
+      default:
+
+         return super::charEv( code );  
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  MasterAutoADSR::copyParams
+ *
+ *  Desc:  Copy slave 0 envelope parameters to the other slaves.
+ *
+ *  Memb:  maxSlave         - max valid index for slave[] (-1 means "no slaves")
+ *         slave[]          - ptrs to slave envelopes
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+void MasterAutoADSR::copyParams()
+{
+   super::copyParams();
+   for ( char i = 0; i <= maxSlave; i++ )
+      ((AutoADSR *)slave[i])->setSusTime( ((AutoADSR *)slave[0])->getSusTime() );
+}
+
+byte MasterAutoADSR::getSusTime() 
+{ 
+   return maxSlave >= 0 ? ((AutoADSR *)slave[0])->getSustain() : 0 ; 
+}
+
+void MasterAutoADSR::setSusTime( byte val )
+{
+   for ( char i = 0; i <= maxSlave; i++ ) 
+      ((AutoADSR *)slave[i])->setSusTime( val );
+}
+
+

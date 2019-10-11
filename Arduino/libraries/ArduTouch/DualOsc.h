@@ -130,6 +130,8 @@ class RingMod : public MixOsc             // a ring modulator
 
    public:
 
+   RingMod() : super() {};
+
    RingMod( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
    void  output( char* );                 // write one buffer of output

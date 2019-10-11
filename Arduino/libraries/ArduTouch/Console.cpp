@@ -662,6 +662,40 @@ boolean Console::getBool( const char* prompt, bool* val )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Console::getChar
+ *
+ *  Desc:  Display an input prompt, and wait for a string to be input, then 
+ *         write the 1st character in the string to the address supplied by 
+ *         the calling routine.
+ *
+ *  Args:  prompt           - string to display to left of input field
+ *         ptrChar          - address of boolean to be written to 
+ *
+ *  Rets:  status           - if true, input was successfully completed
+ *
+ *  Note:  If this routine returns a false status (i.e., the user hit escape
+ *         before completing input) then no value is written to the address
+ *         supplied in the 2nd argument.
+ *
+ *         Only the 1st character of the string is examined.
+ *         If the 1st character if a 't' or 'T' a true value is written.
+ *         If the 1st character if a 'f' or 'F' a false value is written.
+ *         Any other 1st character results in no value being written. 
+ *
+ *----------------------------------------------------------------------------*/
+       
+bool Console::getChar( const char* prompt, char* val )
+{
+   bool status = getStr( prompt );
+
+   if ( status )
+      *val = strMode.result()[0]; 
+
+   return status;
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Console::getByte
  *
  *  Desc:  Display an input prompt, and wait for a string to be input, then 
@@ -1026,6 +1060,29 @@ void Console::infoCharBits( const char* label, byte val )
 {
    begInfo( label );
    dispBits( val, 8 );
+   endInfo();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoChar
+ *
+ *  Desc:  Display a character (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - character
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+       
+void Console::infoChar( const char* label, char val )
+{
+   begInfo( label );
+   print( val );
    endInfo();
 }
 

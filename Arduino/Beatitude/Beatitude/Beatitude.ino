@@ -154,18 +154,14 @@
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
 #ifndef __STNDLONE__
-//   #error This sketch requires the __STNDLONE__ runtime model (Model.h)
-#endif
-
-#ifndef KEYBRD_MENUS
-   #error This sketch requires KEYBRD_MENUS to be defined (Model.h)
+   #error This sketch requires the __STNDLONE__ runtime model (Model.h)
 #endif
 
 #ifndef IMPLICIT_SEQUENCER
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Beatitude, 1.03 )             // specify sketch name & version
+about_program( Beatitude, 1.04 )             // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -393,6 +389,8 @@ class Beatitude : public VoxSynth
 {
    typedef VoxSynth super;          // superclass is VoxSynth
 
+   ByteMenu presetMenu;             // keybrd menu for selecting presets
+
    bool clickOn;                    // if true, click track is playing
    bool cueing;                     // if true, sequencer is cueing to record
    bool liveBass;                   // if true, bass is being played live
@@ -613,6 +611,12 @@ bool Beatitude::evHandler( obEvent ev )
             offLED( 0 );
          }
          break;   
+
+      case BUT1_DTAP:                  // select a preset 
+
+         presetMenu.waitKey();
+         execute( (const char *)presets.dataPtr( presetMenu.value ) );
+         break;
 
       default: 
                       

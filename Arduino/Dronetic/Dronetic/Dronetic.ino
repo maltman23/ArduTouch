@@ -261,7 +261,7 @@
  #endif
 #endif
 
-about_program( Dronetic, 0.60 )       
+about_program( Dronetic, 0.61 )       
 
 /******************************************************************************
  *
@@ -885,6 +885,15 @@ class DroneSynth : public TwoVoxPanSynth
       panControl = new PanControl( &this->panPos );
    }
 
+   Tuning *tuning()
+   {
+      // use a harmonic tuning based on a F tonic (C on keybrd will sound as F)
+
+      HarmonicTuning *harmonic = new HarmonicTuning();
+      harmonic->tonic0 = 43.578;
+      return harmonic;
+   }
+
    // Note: newOsc() will never be called (back) by the system because all 
    // oscillators in this sketch are allocated and registered via useOsc() 
    // within their respective voice constructors, and the system only calls 
@@ -1209,12 +1218,6 @@ class DroneSynth : public TwoVoxPanSynth
 
    void welcome()
    {
-      // set up a harmonic tuning based on a F tonic (C on keybrd will sound as F)
-
-      HarmonicTuning *tuning = new HarmonicTuning();
-      tuning->tonic0 = 43.578;
-      masterTuning = tuning;
-
       presets.load( myPresets );               
 
       // set up preset 0 (without playing it)

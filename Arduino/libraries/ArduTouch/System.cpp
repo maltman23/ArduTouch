@@ -73,17 +73,16 @@
    #define LED_OFF LOW
 #endif
 
-#define LED_BLINK HIGH+LOW+1
-
 /* ----------------------    private functions    -------------------------- */
 
 
-void     audio_setup() __attribute__((always_inline));
-boolean  readKey( byte keyNum );
-void     readPot( byte num );
-boolean  render_audio();
-void     scanBut( byte ) __attribute__((always_inline)); 
-void     scanKeys(); 
+void  audio_setup() __attribute__((always_inline));
+bool  readKey( byte keyNum );
+bool  render_audio();
+void  scanBut( byte ) __attribute__((always_inline)); 
+void  scanKeys(); 
+void  scanPot( byte num );
+void  syncLED( byte nth );
 
 /* ----------------------     public variables    -------------------------- */
 
@@ -97,34 +96,40 @@ byte     cpu;                          // %CPU used rendering audio (parts per 2
 
 #ifdef MONITOR_CPU
 
-byte    cpuCount;                      // counter for sampling CPU usage
-byte    runCpu;                        // running CPU usage (parts per cpuCount)
-boolean usingCpu;                      // currently using CPU to render audio 
+byte  cpuCount;                        // counter for sampling CPU usage
+byte  runCpu;                          // running CPU usage (parts per cpuCount)
+bool  usingCpu;                        // currently using CPU to render audio 
 
 #endif
 
 #define NUMBUFS  3                     // # of audio buffers
 
-const   double scanRate = 20.0;        // rate at which to scan hardware
-byte    bufsPerScan;                   // # buffers to render per I/O scan
-byte    scanDC;                        // downcounter to next I/O scan
+const double scanRate = 20.0;          // rate at which to scan hardware
+byte  bufsPerScan;                     // # buffers to render per I/O scan
+byte  scanDC;                          // downcounter to next I/O scan
 
-byte        butPin[] = { 17, 16 };     // associated digital pin # per button
+byte  butPin[] = { 17, 16 };           // associated digital pin # per button
 signed char butCount[ NumButs ];       // # scans in present state per button
                                        // (- means up, + means down)
-boolean     tapPending[ NumButs ];     // if true, potential tap in progress 
+bool  tapPending[ NumButs ];           // if true, potential tap in progress 
 
-byte        potPin[] = { 1, 0 };       // associated pin # per pot
-word        potVal[ NumPots ];         // last value read per pot
-byte        nextPot;                   // next pot # to scan
+byte  potPin[] = { 1, 0 };             // associated pin # per pot
+word  potVal[ NumPots ];               // last value read per pot
+byte  nextPot;                         // next pot # to scan
 
 #ifndef USE_SERIAL_PORT
 
-byte        LEDPin[] = { 1, 0 };       // pin # per LED (left to right)
-byte        ledState[ NumLEDs ];       // state per LED { LED_ON/OFF/BLINK }
-byte        blinkRate = 80;            // blink rate (in dynamic updates)
-byte        blinkDC = 80;              // down-counter to next blink transition
-boolean     blinkEdge;                 // if true turn blinkers on at transition
+// LED state bits:
+
+#define LED_ONOFF  1                   // denotes whether LED is on or off
+#define LED_BLINK  2                   // denotes whether LED is blinking
+#define LED_INVERT 4                   // denotes whether blinking is inverted
+
+byte  LEDPin[] = { 1, 0 };             // pin # per LED (left to right)
+byte  LEDState[ NumLEDs ];             // state per LED { LED_ONOFF/BLINK/INVERT }
+byte  blinkTime = 80;                  // LED blink time (in dynamic updates)
+byte  blinkDC = 80;                    // down-counter to next blink transition
+bool  blinkEdge;                       // if true, blinking LEDs are ON
 
 #endif
 
@@ -143,6 +148,7 @@ volatile signed char curKey = -1;      // currently pressed key (-1 means none)
  *        +bufsPerScan      - # buffers to render per I/O scan
  *         butPin[]         - associated pin # per button (left to right) 
  *         LEDPin[]         - associated pin # per LED (left to right) 
+ *        +masterTuning     - ptr to master tuning object
  *         potPin[]         - associated pin # per pot (top to bot)
  *        +potVal[]         - last value read per pot
  *        +scanDC           - downcounter (in bufs) to next I/O scan
@@ -184,12 +190,13 @@ void ardutouch_setup( Synth *x )
       for ( byte i = 0; i < NumLEDs; i++ )
       {
          pinMode( LEDPin[i],  OUTPUT );
-         digitalWrite( LEDPin[i], LED_OFF );
+         offLED(i);
       }
 
    #endif
 
    x->config();                        // configure the synth
+   masterTuning = x->tuning();         // instantiate master tuning
    x->reset();                         // reset the synth
    audio::enable();                    // enable audio output
    x->welcome();                       // execute any post-reset code
@@ -246,7 +253,6 @@ void ardutouch_info()
    console.newlntab();
    console.infoDouble( CONSTR("scanRate"), scanRate );
    console.infoInt( CONSTR("bufsPerScan"), bufsPerScan );
-   console.newprompt();
 }
 
 /*----------------------------------------------------------------------------*
@@ -289,9 +295,9 @@ void device_io()
       for ( byte i = 0; i < NumButs; i++ )
          scanBut(i);
 
-      /* read next pot */
+      /* scan next pot */
 
-      readPot( nextPot );
+      scanPot( nextPot );
       if ( ++nextPot >= NumPots )
          nextPot = 0;
    }
@@ -371,6 +377,36 @@ void scanBut( byte num )
  *
  *  Name:  readPot
  *
+ *  Desc:  Perform an analog read of a pot, and return its value.
+ *
+ *  Args:  num              - pot number to read
+ *
+ *  Rets:  potVal           - value of pot
+ *
+ *  Glob:  potPin[]         - associated pin # per pot 
+ *
+ *  Note:  Analog values are scaled to 8 bits. 
+ *
+ *----------------------------------------------------------------------------*/      
+
+byte readPot( byte num ) 
+{
+   if ( num >= NumPots )
+      return 0;
+
+   #ifdef CLOCKWISE_POTS 
+       word val = analogRead( potPin[num] );
+   #else
+       word val = 1023 - analogRead( potPin[num] );
+   #endif
+
+   return val >> 2;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  scanPot
+ *
  *  Desc:  Perform an analog read of a pot, and post a corresponding event 
  *         if has changed value from the last read.
  *
@@ -384,7 +420,7 @@ void scanBut( byte num )
  *
  *----------------------------------------------------------------------------*/      
 
-void readPot( byte num ) 
+void scanPot( byte num ) 
 {
    #define JITTER_EPSILON 2
 
@@ -605,59 +641,227 @@ void writeMetrics( word addrNVS )
  *
  *                                   LEDs
  *
+ *         Note: LEDs are not operable if the serial port is enabled.
+ *
  ******************************************************************************/
 
-/*
-   Note: LEDs are not operable if the serial port is enabled.
-*/
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  blinkLED
+ *
+ *  Desc:  Set an LED so that it blinks on and off.
+ *
+ *  Args:  nth              - LED # (0-based)
+ *         invert           - (optional) invert the phase of the blinking.
+ *
+ *  Glob: +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *  Note:  1) if invert is not supplied, it is set to false.
+ *
+ *----------------------------------------------------------------------------*/      
 
-void blinkLED( byte nth )
+void blinkLED( byte nth, bool invert )
 {
    #ifndef USE_SERIAL_PORT
-   if ( nth < NumLEDs && ledState[ nth ] != LED_BLINK )
+
+   if ( nth < NumLEDs )
    {
-      digitalWrite( LEDPin[ nth ], ! ledState[ nth ] );
-      ledState[ nth ] = LED_BLINK;
+      LEDState[nth] = LED_BLINK;
+      if ( invert )
+         LEDState[nth] |= LED_INVERT;
+      syncLED(nth);
    }
+
    #endif
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  onLED
+ *
+ *  Desc:  Turn an LED on.
+ *
+ *  Args:  nth              - LED # (0-based)
+ *
+ *  Glob:  LEDPin[]         - pin # per LED (left to right)
+ *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *----------------------------------------------------------------------------*/      
 
 void onLED( byte nth )
 {
    #ifndef USE_SERIAL_PORT
+
    if ( nth < NumLEDs )
    {
-      digitalWrite( LEDPin[ nth ], LED_ON );
-      ledState[ nth ] = LED_ON;
+      digitalWrite( LEDPin[nth], LED_ON );
+      LEDState[nth] = LED_ON;
    }
+
    #endif
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  offLED
+ *
+ *  Desc:  Turn an LED off.
+ *
+ *  Args:  nth              - LED # (0-based)
+ *
+ *  Glob:  LEDPin[]         - pin # per LED (left to right)
+ *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *----------------------------------------------------------------------------*/      
 
 void offLED( byte nth )
 {
    #ifndef USE_SERIAL_PORT
+
    if ( nth < NumLEDs )
    {
-      digitalWrite( LEDPin[ nth ], LED_OFF );
-      ledState[ nth ] = LED_OFF;
+      digitalWrite( LEDPin[nth], LED_OFF );
+      LEDState[nth] = LED_OFF;
    }
+
    #endif
 }
 
-byte getBlinkRate()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  syncLED
+ *
+ *  Desc:  Sync a blinking LED to the ongoing blink cycle.
+ *
+ *  Args:  nth              - LED # (0-based)
+ *
+ *  Glob:  blinkEdge        - if true, blinking LEDs are ON
+ *         LEDPin[]         - pin # per LED (left to right)
+ *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void syncLED( byte nth )
 {
    #ifndef USE_SERIAL_PORT
-      return blinkRate;
+
+   byte signal = blinkEdge ? LED_ON : LED_OFF;
+   if ( LEDState[nth] & LED_INVERT )
+      signal ^= LED_ONOFF;
+   digitalWrite( LEDPin[nth], signal );
+
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  getBlinkTime
+ *
+ *  Desc:  Return the LED blink time.
+ *
+ *  Glob:  blinkTime        - LED blink time (in dynamic updates)
+ *
+ *  Note:  The LED blink time is the interval in which a blinking LED is ON or 
+ *         OFF, measured in dynamic updates. So, a blinkTime of 20 means that
+ *         the LED will be ON for 20 dynamic update cycles, and then off for 
+ *         20 dynamic update cycles.
+ *  
+ *----------------------------------------------------------------------------*/      
+
+byte getBlinkTime()
+{
+   #ifndef USE_SERIAL_PORT
+      return blinkTime;
    #else
       return 0;
    #endif
 }
 
-void setBlinkRate( byte rate )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  setBlinkTime
+ *
+ *  Desc:  Set the LED blink time.
+ *
+ *  Args:  time             - new LED blink time (in dynamic updates)
+ *
+ *  Glob: +blinkTime        - LED blink time (in dynamic updates)
+ *  
+ *  Note:  The LED blink time is the interval in which a blinking LED is ON or 
+ *         OFF, measured in dynamic updates. So, a blinkTime of 20 means that
+ *         the LED will be ON for 20 dynamic update cycles, and then off for 
+ *         20 dynamic update cycles.
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void setBlinkTime( byte time )
 {
    #ifndef USE_SERIAL_PORT
-   if ( rate ) 
-      blinkRate = rate;
+
+   if ( time ) 
+      blinkTime = time;
+
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  restoreLEDs
+ *
+ *  Desc:  Restore runtime state of LEDs from an LEDFrame.
+ *
+ *  Args:  frame            - ptr to the LEDFrame
+ *
+ *  Glob: +blinkDC          - downcounter to next blink transition
+ *        +blinkEdge        - if true, blinking LEDs are ON
+ *        +blinkTime        - LED blink time (in dynamic updates)
+ *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void restoreLEDs( LEDFrame *frame )
+{
+   #ifndef USE_SERIAL_PORT
+
+   blinkTime = frame->blinkTime;
+   blinkDC   = blinkTime;
+   blinkEdge = true;
+
+   for ( byte i = 0; i < NumLEDs; i++ )
+   {
+      LEDState[i] = frame->LEDState[i];
+      if ( LEDState[i] & LED_BLINK )
+         syncLED(i);
+      else if ( (LEDState[i] & LED_ONOFF) == LED_ON ) 
+         onLED(i);
+      else
+         offLED(i);
+   }
+
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  saveLEDs
+ *
+ *  Desc:  Save runtime state of the LEDs to an LEDFrame.
+ *
+ *  Args:  frame            - ptr to the LEDFrame
+ *
+ *  Glob:  blinkTime        - LED blink time (in dynamic updates)
+ *         LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
+ *----------------------------------------------------------------------------*/      
+
+void saveLEDs( LEDFrame *frame )
+{
+   #ifndef USE_SERIAL_PORT
+
+   for ( byte i = 0; i < NumLEDs; i++ )
+      frame->LEDState[i] = LEDState[i];
+   frame->blinkTime = blinkTime;
+
    #endif
 }
 
@@ -795,10 +999,10 @@ void audio_setup()
  *
  *  Rets:  status           - if true, a buffer was rendered
  *
- *  Glob:  ledState[]       - true if LED is ledState
- *         blinkRate        - blink rate (in dynamic updates)
+ *  Glob:  LEDState[]       - true if LED is LEDState
+ *         blinkTime        - blink rate (in dynamic updates)
  *        +blinkDC          - downcounter to next blink transition
- *        +blinkEdge        - if true, turn ledState LEDs on at transition
+ *        +blinkEdge        - if true, blinking LEDs are ON
  *        +dynaDC           - downcounter to next dynamic update
  *        +lock[]           - write-lock status per buffer
  *         synth            - ptr to runtime synth 
@@ -824,13 +1028,13 @@ boolean render_audio()
       synth->dynamics();               // perform a dynamic update
 
       #ifndef USE_SERIAL_PORT       
-      if ( --blinkDC == 0 )            // update any ledState LEDs 
+      if ( --blinkDC == 0 )            // update any LEDState LEDs 
       {
-         blinkDC   = blinkRate;        // reload downcounter
+         blinkDC   = blinkTime;        // reload downcounter
          blinkEdge = ! blinkEdge;      // invert edge
          for ( byte i = 0; i < NumLEDs; i++ )
-            if ( ledState[i] == LED_BLINK )
-               digitalWrite( LEDPin[i], blinkEdge ? LED_ON : LED_OFF );
+            if ( LEDState[i] & LED_BLINK )
+               syncLED(i);
       } 
       #endif
 

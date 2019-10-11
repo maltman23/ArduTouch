@@ -1,9 +1,15 @@
 Versions:
 
+   0.96  use tuning() call-back method to set the master tuning
+         syncs with library 1.12f
+         [29436 / 796] __STNDLONE__ 1.12f
+   0.95  use presetMenu + event logic to eliminate need for KEYBRD_MENUS
+         syncs with library 1.12
+         [29594 / 800] __STNDLONE__ 1.12b
    0.94  Synth::setup() renamed ::config() to circumvent Arduino bug
          ::setupVoices() renamed ::configVoices()
          syncs with library 1.10
-         [29920 / 855]
+         [29920 / 855] __STNDLONE__
    0.93  Lead, Bass, Obligato classes use ADSRVoice as superclass
          DrumKit class uses Voice as superclass
          syncs with library 1.10u

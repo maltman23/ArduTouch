@@ -70,8 +70,8 @@ setOctave		KEYWORD2
 onLED			KEYWORD2
 offLED			KEYWORD2
 blinkLED		KEYWORD2
-getBlinkRate		KEYWORD2
-setBlinkRate		KEYWORD2
+getBlinkTime		KEYWORD2
+setBlinkTime		KEYWORD2
 
 Mode			KEYWORD1
 charEv			KEYWORD2
@@ -113,11 +113,15 @@ PEAK			KEYWORD3
 Vibrato			KEYWORD1
 Tremolo			KEYWORD1
 
-Envelope		KEYWORD1
+ADSR			KEYWORD1
 setAttack		KEYWORD2
 setDecay		KEYWORD2
 setSustain		KEYWORD2
 setRelease		KEYWORD2
+
+AutoADSR		KEYWORD1
+MasterADSR		KEYWORD1
+MasterAutoADSR		KEYWORD1
 
 Effect			KEYWORD1
 process			KEYWORD2
@@ -139,7 +143,11 @@ WaveOsc			KEYWORD1
 setTable		KEYWORD2
 
 Voice			KEYWORD1
+ADSRVoice		KEYWORD1
+StockVoice		KEYWORD1
+addAmpMod		KEYWORD2
 addEffect		KEYWORD2
+addPitchMod		KEYWORD2
 effects			KEYWORD2
 envAmp			KEYWORD2
 osc			KEYWORD2
@@ -147,7 +155,10 @@ tremolo			KEYWORD2
 vibrato			KEYWORD2
 noteOn			KEYWORD2
 noteOff			KEYWORD2
+release			KEYWORD2
 setGlide		KEYWORD2
+setGlobVol		KEYWORD2
+trigger			KEYWORD2
 useOsc			KETWORD2
 
 MonoSynth		KEYWORD1
@@ -159,14 +170,18 @@ console 		KEYWORD2
 disable			KEYWORD2
 done			KEYWORD2
 enable			KEYWORD2
+getBool			KEYWORD2
 getByte 		KEYWORD2
+getChar			KEYWORD2
 getDigit		KEYWORD2
 getDouble 		KEYWORD2
 getInt			KEYWORD2
 getSByte 		KEYWORD2
 getStr			KEYWORD2
 getULong		KEYWORD2
+infoBool		KEYWORD2
 infoByte		KEYWORD2
+infoChar		KEYWORD2
 infoDouble		KEYWORD2
 infoInt			KEYWORD2
 infoStr			KEYWORD2
@@ -262,6 +277,7 @@ freqDiff		KEYWORD2
 Synth			KEYWORD1
 config			KEYWORD2
 runPreset		KEYWORD2
+tuning			KEYWORD2
 welcome			KEYWORD2
 
 VoxSynth		KEYWORD1
@@ -270,7 +286,6 @@ newOsc			KEYWORD2
 newVox			KEYWORD2
 
 OneVoxSynth		KEYWORD1
-TwoVoxSynth		KEYWORD1
 TwoVoxSynth		KEYWORD1
 vox			KEYWORD2
 

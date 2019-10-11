@@ -173,6 +173,25 @@ void Synth::runPreset( const char *presetStr )
    quiet_reset    = false;
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Synth::tuning
+ *
+ *  Desc:  Returns a ptr to the tuning object to be used as the master tuning
+ *         object for the synth.
+ *
+ *  Note:  This callback method is executed once by the system at startup.
+ *         Its purpose is to instantiate a master tuning object for the synth.
+ *
+ *         Do not explicitly call this method!
+ *
+ *----------------------------------------------------------------------------*/
+
+Tuning *Synth::tuning()
+{
+   return new EqualTemperament();
+}
+
 /******************************************************************************
  *
  *                                 VoxSynth 

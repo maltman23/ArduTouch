@@ -1,28 +1,33 @@
 /*
- *             ************************************************
- *             *                                              *
- *             *               The Voice Class                *
- *             *                                              *
- *             ************************************************
- *
  * _22_Amp_Modifiers
  *
  * This synth shows how to set up, use, and access multiple amplitude 
  * modifiers for a Voice.
  *
  * In this synth, the amplitude of each note will be modified both by
- * the Voice's built-in envelope and by an added tremolo control. 
+ * the StockVoice's built-in envelope and by an added tremolo control. 
+ *
+ *                                NOTE
+ *
+ *  The StockVoice class used in this example inherits from other simpler 
+ *  voice classes:
+ *
+ *          StockVoice <---- ADSRVoice <----- Voice
+ *
+ *  The differences between these 3 classes is that ADSRVoice adds an ADSR envelope
+ *  to Voice, and StockVoice adds a vibrato control to ADSRVoice.
+ * 
  *
  *             ##############################################
  *             #######            ampMods             #######
  *             ##############################################
  *
- * The Voice class has a chain of controls, ampMods, which are used to modify
+ * The StockVoice class has a chain of controls, ampMods, which are used to modify
  * the instantaneous output level ("amplitude") of the voice. The Voice class
  * also has a method, addAmpMod(), for adding a control to the chain of 
  * amplitude modifiers.
  * 
- *    class Voice  ...
+ *    class StockVoice  ...
  *    {
  *       AmpMods  ampMods;                // chain of amplitude modifiers
  * 
@@ -36,9 +41,9 @@
  *             #######              envAmp            #######
  *             ##############################################
  *
- * The Voice class has a built-in ADSR envelope, named envAmp:
+ * The StockVoice class has a built-in ADSR envelope, named envAmp:
  * 
- *    class Voice  ...
+ *    class ADSRVoice  ...
  *    {
  *       Envelope    envAmp;              // built-in envelope
  *
@@ -47,9 +52,9 @@
  *    } ;
  *                                      
  * This envelope is automatically added to the chain of amplitude modifiers 
- * in the Voice constructor:
+ * in the constructor (StockVoice inherits from ADSRVoice):
  *
- *   Voice()
+ *   ADSRVoice()
  *   {
  *     addAmpMod( &this->envAmp );
  *
@@ -190,9 +195,9 @@ about_program( Amp Nodifiers, 1.00 )
 // An instance of this class will be created via the call-back method newVox()
 // in the synth class (see below)
 
-class AmpModVoice : public Voice
+class AmpModVoice : public StockVoice
 {
-   typedef Voice super;                // superclass is Voice
+   typedef StockVoice super;            // superclass is StockVoice
    
    public:
 
@@ -265,7 +270,6 @@ class AmpModSynth : public OneVoxSynth
                                "A"
                                "tf2.5\\d1\\<`"
                                "``" ) );
-
             break;
          }
          default:

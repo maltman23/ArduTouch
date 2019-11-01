@@ -9,6 +9,16 @@
  * In this synth, each time a note is played it will quickly "ramp" up
  * an octave and back down to the original pitch while a vibrato is also 
  * active. 
+ *                                NOTE
+ *
+ *  The Voice class used in this example serves as a base class for more
+ *  sophisticated voice classes:
+ *
+ *          StockVoice <---- ADSRVoice <----- Voice
+ *
+ *  The differences between these 3 classes is that ADSRVoice adds an ADSR envelope
+ *  to Voice, and StockVoice adds a vibrato control to ADSRVoice.
+ * 
  *
  *             ##############################################
  *             #######        Control Chains          #######
@@ -312,7 +322,6 @@ class RamplerSynth : public OneVoxSynth
 
             console.exe( PSTR( "k6\\`"
                                "0"
-                               "er100\\`"
                                "P"
                                "vf8\\d.5\\t10\\<`"
                                "rf2\\t2\\<`"

@@ -1,47 +1,50 @@
 /*
  *             ************************************************
  *             *                                              *
- *             *               The Voice Class                *
+ *             *            The StockVoice Class              *
  *             *                                              *
  *             ************************************************
  *
- * _20_Voice_Overview
+ * _20_StockVoice
  *
- * This sketch introduces the Voice class, and constructs a simple one-voice
- * synth with a wave table oscillator using a Sine wave table.
+ * This sketch introduces the StockVoice class. 
  *
  * The ArduTouch library contains a number of high-level classes which
  * you can use to quickly build customizable, multi-voice synths.
  *
- * There are two base classes which form the foundation for all of these
- * synths:
+ * There are two base classes which form the foundation for most multi-voice synths:
  *
- *      1) class VoxSynth       - a synth using 1 or more voices
- *      2) class Voice          - a synth voice
+ *      1) StockVoice  - a standard synth voice
+ *      2) VoxSynth    - a synth using 1 or more voices
  *
- * The VoxSynth class allows you to define a synth with an arbitrary number
- * of voices (up to 8, but in practice around 5 maxes out the CPU.)  In later
- * examples this class will be fully explored. The intention of this and the
- * following sketches is to explain the Voice class. To keep things simple 
- * the example synths will all derive from a class which inherits from VoxSynth:
+ * If you want just a one voice synth the following class can be used:
  *
- *             ##############################################
- *             #######         OneVoxSynth            #######
- *             ##############################################
+ *      3) OneVoxSynth - a synth using exactly 1 voice.
  *
- * OneVoxSynth is a VoxSynth which has been initialized to use 1 voice.
+ *                                NOTE
+ *
+ *  The StockVoice class inherits from other simpler voice classes:
+ *
+ *          StockVoice <---- ADSRVoice <----- Voice
+ *
+ *  The differences between these 3 classes is that ADSRVoice adds an ADSR envelope
+ *  to Voice, and StockVoice adds a vibrato control to ADSRVoice.
+ *
+ *  By default VoxSynth instantiates voices of the StockVoice class.
  *
  *  -------------------------------------------------------------------------
  *
- * The Voice class provides a basic operational framework for an oscillator.
- * It has built-in volume, detuning, portamento and transposition features. 
+ * The StockVoice class provides a basic operational framework for an oscillator.
+ * It has built-in volume, detuning, ADSR envelope (for amplitude), vibrato, 
+ * portamento and transposition controls. 
+ *
  * Most importantly it has:
  *
  *             ##############################################
  *             #######        Control Chains          #######
  *             ##############################################
  *
- * The Voice class contains 3 built-in control "chains", and 3 corresponding
+ * The StockVoice class contains 3 built-in control "chains", and 3 corresponding
  * methods by which a control can be added to its respective chain:
  * 
  *    class Voice  ...
@@ -64,6 +67,12 @@
  *
  * These chains will be explained in the following sketches.
  *
+ *********************************************************************************
+ *
+ *      THE REMAINING SECTIONS ARE QUITE TECHNICAL AND CAN BE SKIPPED 
+ *
+ *********************************************************************************
+ *
  *             ##############################################
  *             #######       Console Interface        #######
  *             ##############################################
@@ -81,6 +90,7 @@
  *      k    - push console's virtual keyboard (explained further down)
  *      P    - push the chain of pitch modifiers
  *      v    - set volume
+ *      V    - push built-in vibrato
  *      x    - set note transposition (in semi-tones) for voice
  *      .    - mute 
  *      <    - unmute
@@ -91,6 +101,10 @@
  *
  *      Note: the built-in envelope is actually a control which has been
  *            added to the chain of amplitude modifiers in the Voice()
+ *            constructor. This will be explained in a later sketch.
+ * 
+ *      Note: the built-in vibrato is actually a control which has been
+ *            added to the chain of pitch modifiers in the StockVoice()
  *            constructor. This will be explained in a later sketch.
  * 
  *             ##############################################
@@ -137,7 +151,7 @@
  *             #######         OnBoard Buttons        #######
  *             ##############################################
  *
- * When in Voice mode, the buttons do the following:
+ * When in StockVoice mode, the buttons do the following:
  *
  *   action        button      action
  *  -----------------------------------------------------------------------
@@ -193,50 +207,17 @@
  *
  */
 
-/* Our synth in this example is not customized.
+/* 
+ * Our synth in this example is not customized.
  * We simply instantiate a OneVoxSynth object from the library.
  * This will give us a single voice synth.
  * The voice's oscillator wil be of type WaveOsc, using a sine wave table. 
- *
- * At startup the current mode will be the synth itself.
- * Here is a quick survey of some commands that can be typed at the synth>
- * prompt in the console for OneVoxSynth.
- *
- *      0    - push voice 0
- *      k    - push console's virtual keyboard
- *      p    - load a preset (there are no presets in this example)
- *      x    - set note transposition (in semi-tones) for synth
- *      .    - mute synth
- *      <    - unmute synth
- *      !    - reset synth
- *      ?    - display synth info to console
- *      ESC  - exit sketch
- *      `    - exit sketch
- *
- * Here is the OneVoxSynth keyboard menu, which can be brought up by double-
- * tapping the right button:
- *
- *           -------------------------------------------------
- *           |   |   |   |   |   |   |   |   |   |   |   |   |
- *           |   |   |   |   |   |   |   |   |   |   |   |   |
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   | 0 |   |   |   |   |   |   | k |   | . |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |   |   |   |   |   |   |   |   |   |   |   |   | 
- *           |    ___     ___    |    ___     ___     ___    | 
- *           |     |       |     |     |       |       |     |
- *           |     |       |     |     |       |       |     |
- *           |  p  |       |     |     |   x   |   <   |  !  |
- *           |     |       |     |     |       |       |     |
- *           |     |       |     |     |       |       |     |
- *           -------------------------------------------------
  *
  */
 
 #include "ArduTouch.h"                       
 
-about_program( Voice Overview, 1.00 )       
+about_program( StockVoice, 1.00 )       
 
 OneVoxSynth mySynth;
 

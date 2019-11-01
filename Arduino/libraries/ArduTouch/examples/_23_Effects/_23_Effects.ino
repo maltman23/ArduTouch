@@ -1,14 +1,8 @@
 /*
- *             ************************************************
- *             *                                              *
- *             *               The Voice Class                *
- *             *                                              *
- *             ************************************************
- *
  * _23_Effects
  *
  * This synth demonstrates how to set up, use, and access multiple effects 
- * for a Voice.
+ * for a voice.
  *
  * In this synth, the voice's oscillator output will be run through 2 
  * effects: an autowah and a bit-shift filter (used here for distortion).

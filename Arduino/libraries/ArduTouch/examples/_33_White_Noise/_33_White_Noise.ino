@@ -68,6 +68,7 @@ class WhiteNoiseSynth : public OneVoxSynth
          default:             
                      
             return super::charEv( code );
+
       }
       return true;
     }
@@ -76,6 +77,7 @@ class WhiteNoiseSynth : public OneVoxSynth
    {
       switch ( ev.type() )
       {
+
          case POT0:                 // pot 0 controls cutoff frequency
 
             // pass POT0 events to the lowpass filter, which by default uses
@@ -111,5 +113,3 @@ void loop()
 {
    ardutouch_loop();                            
 }                                             
-
-                                             

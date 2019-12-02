@@ -1,3 +1,9 @@
 Versions:
 
-   1.66  === FIRST PUBLISHED VERSION ===
+   1.70  nix BUILD_166 conditional compilation sections
+   1.69  add FRAME21 pots to control lead 1 detune and transpose
+         [31742] _STNDLONE_ BUILD_166
+   1.68  edit presets/macros to use byte values <= 128 when setting LFO depths 
+         syncs with library 1.13
+         [31684] _STNDLONE_ BUILD_166
+   1.67  === FIRST PUBLISHED VERSION ===

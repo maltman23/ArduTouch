@@ -1,5 +1,15 @@
 Versions:
 
+   1.13  re-implementation of LFO class:
+           1) internally uses 16-bit fixed pt math instead of floating pt math
+           2) adds signed/unsigned oscillator ranges
+           3) adds square, rising sawtooth and falling sawtooth waveforms
+           4) LFO::setDepth() takes 8-bit values (0 to 128, where 128 == 1.0)
+           5) add lfoIniPos command
+           6) nix lfoOnDepth command
+           7) flags.PEAK renamed .PHASE
+         add Long type
+         use PROMPT_STR() macro in KeyBrd, Bank, NoiseOsc modules
    1.12  KEYBRD_MENUS is deprecated
          add Synth::tuning() callback method
          ardutouch_setup() instantiates master tuning object via Synth::tuning() 

@@ -42,7 +42,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( ZapShot, 1.30 )               // specify sketch name & version
+about_program( ZapShot, 1.32 )               // specify sketch name & version
 
   
 /*----------------------------------------------------------------------------*
@@ -105,7 +105,7 @@ define_preset( Empty,   "" )
 define_preset( Pong,    "!M0\\"                // execute macro 0 (Pong) per voice
                         "0OLt\\``"             // set latching on
                         "1ON5\\X250\\``"       // set osc 1 min/max edglen to 5/250
-                        "P<P36\\f.25\\d.5\\p`" // set panning pin/freq/depth
+                        "P<P36\\f.25\\d64\\p`" // set panning pin/freq/depth
                         )
 
 define_preset( Bong,    "!M4\\"                  // execute Bong macro
@@ -113,13 +113,13 @@ define_preset( Bong,    "!M4\\"                  // execute Bong macro
                         "b142\\e230\\``"         // set osc 0 begin/end
                         "1ON5\\X250\\"           // set osc 1 min/max edglen to 5/250
                         "b142\\e230\\``"         // set osc 1 begin/end
-                        "P<P129\\f5.118\\d1\\p`" // set panning pin/freq/depth
+                        "P<P129\\f5.118\\d128\\p`" // set panning pin/freq/depth
                         "t"                      // trigger
                         )
 
 define_preset( AirRaid, "!M1\\d.2\\t" )  
 
-define_preset( Stuka,   "!M2\\1v128\\`d10.35\\P<f.1\\d.75\\`t" )
+define_preset( Stuka,   "!M2\\1v128\\`d10.35\\P<f.1\\d96\\`t" )
 
 define_preset( Alarms,  "!M3\\1OX250\\``t" )
 
@@ -127,7 +127,7 @@ define_preset( Quizzle, "!0Oaf\\Lt\\p2\\s8\\b50\\e35\\Bl45\\r60\\`El25\\r40\\```
                         "0v230\\Ebs2\\c3\\-<```"
                         "1Oat\\p20\\r2\\s16\\b4\\e30\\Bl2\\r8\\`El25\\r35\\```"
                         "1Ebs6\\c4\\-<```"
-                        "P<d.25\\`"
+                        "P<d32\\`"
                         )
 
 begin_bank( myPresets )                   // these presets will be loaded
@@ -584,6 +584,7 @@ bool MasterZapOsc::charEv( char code )
 
          super::charEv( code );
          latched = false;
+         refreshLED();
          break;
 
       default:

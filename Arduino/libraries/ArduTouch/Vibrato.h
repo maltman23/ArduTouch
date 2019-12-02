@@ -31,6 +31,8 @@
 
 class Vibrato : public FadeLFO      // stock vibrato
 {
+   typedef FadeLFO super;           // superclass is FadeLFO
+
    public:
 
    Vibrato()
@@ -38,12 +40,10 @@ class Vibrato : public FadeLFO      // stock vibrato
       shortcut = 'v';
    }
 
+   bool   charEv( char );           // process a character event
    void   evaluate();               // set output val (as a function of LFO pos)
-   void   iniPos();                 // set initial osc position
 
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt();           // return object's prompt string
-   #endif
+   PROMPT_STR( vibrato ) 
 
 } ;
 

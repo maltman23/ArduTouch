@@ -207,10 +207,4 @@ void KeyBrd::setOctave( byte o )
    octave = o;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *KeyBrd::prompt()
-{
-   return CONSTR("keybrd");
-}
-#endif
 

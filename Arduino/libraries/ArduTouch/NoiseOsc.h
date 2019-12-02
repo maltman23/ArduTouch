@@ -54,9 +54,7 @@ class NoiseOsc : public Osc                  // template for noise oscillator
    NoiseOsc();                               // initialize state vars
    void onFreq();                            // compute freq dependent state vars
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                     // return object's prompt string
-   #endif
+   PROMPT_STR( noise )
 
 } ;
 
@@ -74,9 +72,7 @@ class WhiteNoise : public NoiseOsc           // a white noise oscillator
 
    void output( char *buf );                 // write one buffer of output
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();               // return object's prompt string
-   #endif
+   PROMPT_STR( white )
 
 } ;
 

@@ -33,48 +33,55 @@
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Vibrato::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Rets:  status           - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+       
+boolean Vibrato::charEv( char code )
+{
+   switch ( code )
+   {
+      case '!':                        // reset
+
+         super::charEv( code );
+         setSigned( true );
+         iniVal();
+         break;
+
+      default:
+
+         return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Vibrato::evaluate
  *
  *  Desc:  Compute output value based on oscillator position.
  *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +fader            - current fader value
- *         pos              - current position within oscillation range
- *        +value            - current output value
+ *  Memb: +value            - current output value
  *
  *----------------------------------------------------------------------------*/
 
 void Vibrato::evaluate()
 {
-   double spos = fader * ((2.0 * pos) - depth);
-   if ( spos >= 0 )
-      value = 1.0 + (spos * (RATIO_SEMITONE-1.0) );
+   super::evaluate();
+
+   if ( value >= 0.0 )
+      value *= (RATIO_SEMITONE-1.0);
    else
-      value = 1.0 + (spos * (1.0 - INVERT_SEMITONE));
+      value *= (1.0-INVERT_SEMITONE);
+   value += 1.0;
 }
 
-/*----------------------------------------------------------------------------*
- *
- *  Name:  Vibrato::iniPos
- *
- *  Desc:  Set initial oscillator position.
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +pos              - cur position within oscillation range
- *
- *----------------------------------------------------------------------------*/
-       
-void Vibrato::iniPos()
-{
-   pos = depth * 0.5;
-}
-
-#ifdef CONSOLE_OUTPUT
-const char* Vibrato::prompt()
-{
-   return CONSTR("vibrato");
-}
-#endif
 
 /******************************************************************************
  *

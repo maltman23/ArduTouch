@@ -268,7 +268,7 @@ class AmpModSynth : public OneVoxSynth
                                "0"
                                "ed68\\s64\\r100\\`"
                                "A"
-                               "tf2.5\\d1\\<`"
+                               "tf2.5\\d128\\<`"
                                "``" ) );
             break;
          }

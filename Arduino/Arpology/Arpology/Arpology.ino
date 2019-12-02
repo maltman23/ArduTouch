@@ -74,7 +74,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.12 )              // specify sketch name & version
+about_program( Arpology, 1.13 )              // specify sketch name & version
 
 // Specify whether the voices of Arpology can be panned in stereo by 
 // uncommenting the following defines
@@ -83,7 +83,7 @@ about_program( Arpology, 1.12 )              // specify sketch name & version
 #define DUAL_PANNING                         // and superclass = QuadDualPanSynth 
                                              // (otherwise     = QuadPanSynth)
 
-// The following 2 statements insure that presets will work and be accessible
+// The following statements insure that presets will work and be accessible
 // from the ArduTouch keyboard
 
 #ifndef INTERN_CONSOLE                       
@@ -130,27 +130,27 @@ define_preset( Pan3, "Pf5.6\\<`"             // fast pan
 
 #endif
                                              // vibrato
-define_preset( Vib, "2V+<t5\\d.5\\``"
-                    "3V+<f4.5\\t10\\d.625\\``"
+define_preset( Vib, "2V+<t5\\d64\\``"
+                    "3V+<f4.5\\t10\\d80\\``"
               )
 
 define_preset( Ambia, "!a120\\d100\\N6\\r33\\U"
-                      "2V<-f3.6\\d.375\\t9\\``"
-                      "3V<-f4.15\\d.375\\t15\\``"
+                      "2V<-f3.6\\d48\\t9\\``"
+                      "3V<-f4.15\\d48\\t15\\``"
                   #ifdef ENABLE_PANNING
-                      "Pf.7\\d1\\<`"
+                      "Pf.7\\d128\\<`"
                     #ifdef DUAL_PANNING
-                      "Xf.4\\d1\\<`"
+                      "Xf.4\\d128\\<`"
                     #endif
                   #endif
               )
 
 define_preset( Streaker, "!-a9\\d55\\N7\\r213\\U"
-                         "2g100\\V<f6\\d.375\\t6\\``"
+                         "2g100\\V<f6\\d48\\t6\\``"
                   #ifdef ENABLE_PANNING
-                         "Pf3\\d1\\<`"
+                         "Pf3\\d128\\<`"
                      #ifdef DUAL_PANNING
-                         "Xf1.5\\d1\\<`"
+                         "Xf1.5\\d128\\<`"
                      #endif
                   #endif
               )
@@ -582,9 +582,9 @@ class ArpImprov : public VoiceFollowingImprov
  *
  ******************************************************************************/
 
-class PeriodicCue : public LFO
+class PeriodicCue : public LFO       
 {
-   boolean issued;                  // a new cue has been issued
+   typedef LFO super;               // superclass is LFO
 
    public:
 
@@ -594,30 +594,23 @@ class PeriodicCue : public LFO
    {
       switch( code )
       {
-
          case '!':                  // reset
 
-            LFO::charEv('!');
-            issued   = false;
+            super::charEv('!');
+            issued  = false;
             handled = false;
-            setDepth( 1.0 );
             break;
 
          default:
 
-            return LFO::charEv( code );
+            return super::charEv( code );
       }
       return true;
    }
 
-   void dynamics()                  // update object dynamics
+   void evaluate()                  // toggles pending cue status once per period
    {
-      if ( muted() )
-         return;
-
-      LFO::dynamics();
-
-      if ( pos > .5 )
+      if ( idx&LFO_HIGHBIT )        // test for LFO::idx ">= 50%"
       {
          if ( ! handled )
             issued = true;
@@ -637,6 +630,9 @@ class PeriodicCue : public LFO
       return ( issued && ! handled );
    }
 
+   protected:
+
+   boolean issued;                  // a new cue has been issued
 
 } ;
 

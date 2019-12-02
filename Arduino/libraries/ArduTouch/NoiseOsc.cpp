@@ -71,13 +71,6 @@ void NoiseOsc::onFreq()
    delta = effFreq * extFactor * coeff;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *NoiseOsc::prompt()                     
-{
-   return CONSTR("noise");
-}
-#endif
-
 /******************************************************************************
  *
  *                               WhiteNoise 
@@ -115,10 +108,4 @@ void WhiteNoise::output( char *buf )
    }
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *WhiteNoise::prompt()                     
-{
-   return CONSTR("white");
-}
-#endif
 

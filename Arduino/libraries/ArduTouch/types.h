@@ -135,4 +135,30 @@ typedef struct {
    } DWord;
 
 
+/*-----------------------------------------------------------------------------
+ *
+ *  STRU:  Long
+ *
+ *  DESC:  The Long type allows for independent manipulation of the lsw and 
+ *         msw of a long, without explicit type casting.
+ *
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+   union {
+
+      struct  {
+
+         Int  lsw;
+         Int  msw;
+
+         } _;
+
+      long val;
+
+      };
+
+   } Long;
+
 #endif   // ifndef TYPES_H_INCLUDED

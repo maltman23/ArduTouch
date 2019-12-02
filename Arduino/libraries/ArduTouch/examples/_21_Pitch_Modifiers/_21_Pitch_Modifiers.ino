@@ -213,26 +213,21 @@ class Ramp : public TermLFO            // ramp frequency effect
    // The evaluate() method is automatically called by the system at each dynamic
    // update. This is where we set the output value of our control.
 
-   // The LFO state variable "pos", which is referenced here, oscillates between 
-   // 0.0 and 1.0 and is automatically computed at each dynamic update before 
-   // evaluate() is called.
+   // super::evaluate(), which is called here, sets the state variable "value",
+   // which will oscillate between 0.0 and 1.0
 
    void evaluate()
    {
-      value = 1.0 + pos;      // value will be between 1.0 and 2.0
+      super::evaluate();               // will oscillate between 0.0 and 1.0
+      value = 1.0 + value;             // value will be between 1.0 and 2.0
    }
 
-   // we set the prompt for our control to "ramp". 
+   // we set the prompt for our control to "ramp" using the PROMPT_STR() macro. 
    // this is also the name which will be displayed for our control in the
    // Console when we type '?' at the "Pitch>" prompt.
    // (typing '?' at the "Pitch>" prompt lists all the pitch modifiers).
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt()
-   {
-      return CONSTR( "ramp" );
-   }
-   #endif
+   PROMPT_STR( ramp )
 
 } ;
 
@@ -315,15 +310,14 @@ class RamplerSynth : public OneVoxSynth
 
             // start keyboard in octave 6,
             // select voice 0 
-            // set envelope release to 100
             // select Pitch Modifiers
-            // initialize vibrato control (freq=8hz, depth=.5, time=10)
+            // initialize vibrato control (freq=8hz, depth=64 (50%), time=10)
             // initialize ramp control (freq=2hz, traversal_count=2)
 
             console.exe( PSTR( "k6\\`"
                                "0"
                                "P"
-                               "vf8\\d.5\\t10\\<`"
+                               "vf8\\d64\\t10\\<`"
                                "rf2\\t2\\<`"
                                "``" ) );
 

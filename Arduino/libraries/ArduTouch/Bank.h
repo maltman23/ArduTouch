@@ -22,6 +22,7 @@
 #define BANK_H_INCLUDED
 
 #include "Arduino.h"
+#include "Console_.h"
 #include "Mode.h"
 
 #define begin_bank(x)     const bankmem x[] PROGMEM = {
@@ -98,9 +99,8 @@ class MacroBank : public Bank
 
    void   onChoice();                  // execute this when member is chosen
 
-   #ifdef CONSOLE_OUTPUT
-   const  char *prompt();              // return object's prompt string
-   #endif
+   PROMPT_STR( macro )
+
 } ;
 
 #endif   // ifndef BANK_H_INCLUDED

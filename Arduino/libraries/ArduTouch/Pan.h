@@ -23,11 +23,15 @@
 
 #include "LFO.h"
 
-/* -------------------------------------------------------------------------- */
+/******************************************************************************
+ *       
+ *                                PanControl
+ *
+ ******************************************************************************/
 
 class PanControl : public LFO
 {
-   typedef  LFO super;                    // superclass is LFO
+   typedef  LFO super;                  // superclass is LFO
 
    protected:
 
@@ -35,7 +39,7 @@ class PanControl : public LFO
 
    byte  restPos;                         // pan position when at rest
    byte  center;                          // panning center
-   byte  diameter;                        // panning diameter
+   byte  radius;                          // panning radius
 
    boolean pinned;                        // pan is centered around restPos
 
@@ -58,9 +62,7 @@ class PanControl : public LFO
    char    menu( key );                   // given a key, return a character  
    #endif
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
+   PROMPT_STR( Pan ) 
 
 } ;
 

@@ -1,8 +1,13 @@
 //
-//  _59_Octaves.ino
+//  _91_Octave_Handling.ino
 // 
-//  This sketch explains the system octave setting, and how to use it to
-//  turn the ArduTouch's single octave into a multi-octave keyboard.
+//  For most users it is not necessary to know about how to set the keyboard
+//  octave. The ArduTouch library will automatically convert left and right button
+//  tap events into corresponding changes in the ArduTouch keyboard's octave.
+//
+//  However, if you want to "see what is under the hood", this sketch explains
+//  the system octave setting, and how to use it to turn the ArduTouch's single 
+//  octave into a multi-octave keyboard.
 //
 //  In this example, a synth is constructed in which the keyboard can be used 
 //  to play tones in an equal temperament tuning. The octave of the keyboard 
@@ -27,7 +32,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Octaves, 1.00 )               // specify sketch name & version
+about_program( Octave Handling, 1.00 )       // specify sketch name & version
 
 class MultiOctaveSynth : public Synth
 {

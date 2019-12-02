@@ -22,6 +22,7 @@
 #define KEYBRD_H_INCLUDED
 
 #include "Arduino.h"
+#include "Console_.h"
 #include "Control.h"
 
 class KeyBrd : public Control
@@ -63,9 +64,7 @@ class KeyBrd : public Control
    void  setOctave( byte );                     // set current octave 
    void  upOctave();                            // raise keyboard by 1 octave 
 
-   #ifdef CONSOLE_OUTPUT
-   const    char *prompt();                     // return object's prompt string
-   #endif
+   PROMPT_STR( keybrd )
 
 } ;
 

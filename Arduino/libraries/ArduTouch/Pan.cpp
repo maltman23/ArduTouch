@@ -34,7 +34,7 @@
  *  Desc:  Compute the panning extent.
  *
  *  Memb: +center           - panning center
- *        +diameter         - panning diameter
+ *        +radius           - panning radius
  *         pinned           - if true, pan is centered around restPos
  *         restPos          - position when at rest
  *
@@ -42,19 +42,8 @@
 
 void PanControl::calcExtent()
 {
-   if ( pinned )
-   {
-      center = restPos;
-      if ( center < 128 )
-         diameter = 2 * center;
-      else
-         diameter = 2 * (255 - center);
-   }
-   else
-   {
-      center   = 128;
-      diameter = 255;
-   }
+   center = pinned ? restPos : 128;
+   radius = center < 128 ? center : 255-center;
 }
 
 /*----------------------------------------------------------------------------*
@@ -78,11 +67,6 @@ boolean PanControl::charEv( char code )
 {
    switch( code )
    {
-      case lfoOnDepth:                    // depth has been set/changed
-
-         calcExtent();                    // re-compute panning diameter
-         break;
-
       #ifdef INTERN_CONSOLE               // compile cases needed by macros
 
       case 'p':                           // pin panning center to rest position
@@ -114,8 +98,9 @@ boolean PanControl::charEv( char code )
       case '!':                           // reset panning effect
 
          super::charEv( code );
+         setSigned( true );
          setPinned( false );
-         setDepth( 1.0 );
+         setDepth( 128 );
          break;
 
       #ifdef CONSOLE_OUTPUT   // compile cases that display to console 
@@ -149,22 +134,14 @@ boolean PanControl::charEv( char code )
  *  Ext:  +*panPos          - current pan position
  *
  *  Memb:  center           - panning center
- *         diameter         - panning diameter
- *         depth            - oscillation depth (0.0 - 1.0)
- *         pos              - cur position within oscillation diameter
+ *         radius           - panning radius
  *
  *----------------------------------------------------------------------------*/      
 
 void PanControl::evaluate()  
 {
-   // the folowing code is equivalent to:
-   //
-   //  double panPos = center + ( radius * ( pos - depth/2 ) );
-   //
-
-   double offset = ( diameter * ( 2 * pos - depth )  ) / 2;
-   double evPos  = center  + offset;
-   *panPos       = evPos;
+   super::evaluate();
+   *panPos = center + (char )((double )radius*value);
 }
 
 #ifdef KEYBRD_MENUS
@@ -202,13 +179,6 @@ char PanControl::menu( key k )
 
 #endif
 
-#ifdef CONSOLE_OUTPUT
-const char *PanControl::prompt() 
-{
-   return CONSTR("Pan");
-}
-#endif
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  PanControl::setPinned
@@ -224,7 +194,7 @@ const char *PanControl::prompt()
  *
  *----------------------------------------------------------------------------*/      
 
-void PanControl::setPinned( boolean pinned )
+void PanControl::setPinned( bool pinned )
 {
    this->pinned = pinned;
    calcExtent();
@@ -255,4 +225,7 @@ void PanControl::setRestPos( byte restPos )
    *panPos       = restPos;
    calcExtent();
 }
+
+
+
 

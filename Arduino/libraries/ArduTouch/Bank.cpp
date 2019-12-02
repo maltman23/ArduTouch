@@ -203,11 +203,3 @@ void MacroBank::onChoice()
    console.exe( (const char *)dataPtr() );
 }
 
-
-#ifdef CONSOLE_OUTPUT
-const char *MacroBank::prompt()
-{
-   return CONSTR("macro");
-}
-#endif
-

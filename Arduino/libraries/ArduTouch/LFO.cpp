@@ -19,45 +19,33 @@
 */
 
 #include "Console_.h"
+#include "types.h"
 #include "Audio.h"
 #include "LFO.h"
 
-#define DEF_DEPTH       0.25     // default depth of oscillation
+#define DEF_DEPTH        32         // default depth of oscillation
 
-#define MAX_LOW_FREQ   20.0      // maximum freq  of oscillation
-#define MIN_LOW_FREQ    0.01     // minimum freq  of oscillation
-#define DEF_LOW_FREQ    3.8      // default freq  of oscillation
+#define MAX_LOW_FREQ   20.0         // maximum freq  of oscillation
+#define MIN_LOW_FREQ    0.01        // minimum freq  of oscillation
+#define DEF_LOW_FREQ    3.8         // default freq  of oscillation
 
+#define LFO_QRT_IDX     0x4000 
+#define LFO_MID_IDX     0x8000 
+#define LFO_END_IDX     0xFFFF
+
+#define LFO_POS_ONE     0x4000
+#define LFO_NEG_ONE     ~LFO_POS_ONE
+
+#define LFO_UNIT_FADE   0x8000 
+#define LFO_FADE_PPS    8           // fade time denominated in this many parts per sec
+
+#define LFO_WF_MASK     0b00000011  // mask for extracting waveform # from waveform byte
 
 /******************************************************************************
  *
  *                                 LFO 
  *                                                                            
  ******************************************************************************/
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  LFO::calcStep
- *
- *  Desc:  Calculate the change in oscillator position per dynamic update.
- *
- *  Glob:  dynaRate         - dynamic udpate rate
- *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *         freq             - oscillation frequency
- *        +step             - change in osc position per dynamic update
- *
- *----------------------------------------------------------------------------*/
-       
-void LFO::calcStep()
-{
-   /* calculate the step, preserving the current direction */
-
-   boolean decreasing = ( step < 0.0 );
-   step = 2.0 * depth * freq / dynaRate;
-   if ( decreasing )
-      step = -step;
-}
 
 /*----------------------------------------------------------------------------*
  *
@@ -69,48 +57,108 @@ void LFO::calcStep()
  *
  *  Rets:  status           - if true, character was handled
  *
+ *  Memb: +idx              - cur position within oscillation cycle
+ *         waveform.SIGNED  - oscillator is signed 
+ *
  *----------------------------------------------------------------------------*/
        
-boolean LFO::charEv( char key )
+bool LFO::charEv( char key )
 {
-   double tempDouble;                  // return value from getDouble()
-
    switch ( key )
    {
-      #ifdef INTERN_CONSOLE
-      case 'd':                        // set depth of oscillation
+      case lfoIniPos:                  // set initial oscillator position
 
-         if ( console.getDouble( CONSTR("depth"), &tempDouble ) )
-            setDepth( tempDouble );
+         idx = (waveform&SIGNED) ? LFO_QRT_IDX : 0;
          break;
+
+      #ifdef INTERN_CONSOLE
+
+      case 'd':                        // set depth of oscillation
+      {
+         byte inpVal;
+         if ( console.getByte( CONSTR("depth"), &inpVal ) )
+            setDepth( inpVal );
+         break;
+      }
 
       case 'f':                        // set frequency of oscillation
-
-         if ( console.getDouble( CONSTR("freq"), &tempDouble ) )
-            setFreq( tempDouble );
+      {
+         double inpVal;            
+         if ( console.getDouble( CONSTR("freq"), &inpVal ) )
+            setFreq( inpVal );
          break;
+      }
+
+      case 's':                        // configure oscillator as signed
+
+         setSigned( true );
+         break;
+
+      case 'u':                        // configure oscillator as unsigned
+
+         setSigned( false );
+         break;
+
+      case 'F':                        // set oscillator to falling saw tooth
+
+         setWaveform( LFO_FSAW_WF );
+         break;
+         
+      case 'Q':                        // set oscillator to square wave
+
+         setWaveform( LFO_SQ_WF );
+         break;
+         
+      case 'R':                        // set oscillator to rising saw tooth
+
+         setWaveform( LFO_RSAW_WF );
+         break;
+         
+      case 'T':                        // set oscillator to triangle wave
+
+         setWaveform( LFO_TRI_WF );
+         break;
+         
       #endif
 
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
          super::charEv( chrInfo );
+         console.print( isSigned() ? 's' : 'u');
+         {
+            char wfLetter;
+            switch ( getWaveform() )
+            {
+               case LFO_TRI_WF:  wfLetter = 'T'; break;
+               case LFO_SQ_WF:   wfLetter = 'Q'; break;
+               case LFO_RSAW_WF: wfLetter = 'R'; break;
+               case LFO_FSAW_WF: wfLetter = 'F'; break;
+            }
+            console.print( wfLetter );
+         }
+         console.space();
          console.infoDouble( CONSTR("freq"), freq );
-         console.infoDouble( CONSTR("depth"), depth );
+         console.infoByte( CONSTR("depth"), getDepth() );
          break;
+
       #endif
 
       case '.':                        // mute
 
-         iniVal();                     // set to initial position
          super::charEv( key );
+         revaluate();
          break;
 
       case '!':                        // reset
 
-         iniOsc( DEF_DEPTH, DEF_LOW_FREQ );
-
-         // fall thru to superclass handler
+         super::charEv( key );
+         setFreq( DEF_LOW_FREQ );
+         setDepth( DEF_DEPTH );
+         setWaveform( LFO_TRI_WF );
+         setSigned( false );
+         iniVal();
+         break;
 
       default:
 
@@ -125,10 +173,8 @@ boolean LFO::charEv( char key )
  *
  *  Desc:  Perform a dynamic update by bumping the LFO position.
  *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *         flags.MUTE       - LFO is muted
- *        +pos              - cur position within oscillation range
- *         step             - change in osc position per dynamic update
+ *  Memb: +idx              - current position in oscillator cycle
+ *         step             - change in idx per dynamic update
  *
  *----------------------------------------------------------------------------*/
        
@@ -136,20 +182,7 @@ void LFO::dynamics()
 {
    if ( ! muted() )
    {
-      pos += step;                     // bump oscillator position
-
-      // turn oscillator back if bounds exceeded
-
-      if ( pos > depth )
-      {
-         pos  = 2 * depth - pos;
-         step = -step;
-      }
-      else if ( pos < 0.0 )
-      {
-         pos  = - pos;
-         step = -step;
-      }
+      idx += step;                     // advance oscillator 
       evaluate();                      // set output value
    }
 }
@@ -160,14 +193,46 @@ void LFO::dynamics()
  *
  *  Desc:  Compute output value based on oscillator position.
  *
- *  Memb:  pos              - current position within oscillation range
- *        +val              - current output value
+ *  Memb:  idx              - current position in oscillator cycle
+ *         instDepth        - instantaneous oscillation depth
+ *        +value            - current output value
  *
  *----------------------------------------------------------------------------*/
        
 void LFO::evaluate()
 {
-   value = 1.0 - pos;
+   word amp = (this->*computeAmp)();
+
+   if ( waveform&SIGNED )
+   {
+      // scale amplitude by depth
+
+      Long modAmp;                     // scaled amplitude 
+
+      modAmp.val = (int )amp;
+      modAmp.val *= instDepth;
+
+      // convert scaled amplitude to floating pt output value
+
+      value = modAmp.val * 0.000000476837158203125;
+   }
+   else  // oscillator is unsigned
+   {
+      // scale amplitude by depth
+
+      DWord modAmp;                    // scaled amplitude 
+     
+      modAmp.val = 0;
+      modAmp._.lsw._.msb = instDepth;
+      modAmp.val *= amp;               // scaled amplitude in msw
+
+      modAmp._.lsw.val = LFO_POS_ONE - modAmp._.msw.val;  
+
+      // convert scaled amplitude to floating pt output value
+
+      value = modAmp._.lsw.val * 0.00006103515625;
+  }
+
 }
 
 /*----------------------------------------------------------------------------*
@@ -193,15 +258,20 @@ boolean LFO::evHandler( obEvent ev )
          switch ( ev.type() )
          {
             case POT0:       
-            
-               setFreq( MAX_LOW_FREQ * val * val / 65025.0 );
+            {
+               word expVal = val * val;
+               setFreq( expVal * .000333 );      // logarithmic 0 - 21.65 Hz
                break;
+            }
             
             case POT1:       
-
-               setDepth( val ? (double )val / 255.0 : 0.0 );
+            {
+               word depth128 = val+1;
+               depth128 >>= 1;
+               setDepth( depth128 );
                break;
-          }
+            }
+         }
 
          return true;
          break;
@@ -218,13 +288,13 @@ boolean LFO::evHandler( obEvent ev )
  *
  *  Desc:  Get the oscillation depth.
  *
- *  Args:  d                - oscillation depth 
+ *  Rets:  d                - oscillation depth (0-128)
  *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
+ *  Memb:  depth            - oscillation depth
  *
  *----------------------------------------------------------------------------*/
 
-double LFO::getDepth()
+byte LFO::getDepth()
 {
    return depth;
 }
@@ -248,52 +318,50 @@ double LFO::getFreq()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  LFO::iniOsc
+ *  Name:  LFO::getWaveform
  *
- *  Desc:  Initialize the LFO.
+ *  Desc:  Returns the oscillator waveform number.
  *
- *  Args:  d                - oscillation depth 
- *         f                - oscillation frequency 
+ *  Rets:  wf_num           - waveform # 
  *
- *  Memb: +freq             - oscillation frequency
+ *  Memb:  waveform         - oscillator waveform
  *
  *----------------------------------------------------------------------------*/
 
-void LFO::iniOsc( double d, double f )
+byte LFO::getWaveform()
 {
-   freq = f;
-   setDepth( d );
-   iniPos();
-   evaluate();
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  LFO::iniPos
- *
- *  Desc:  Set initial oscillator position.
- *
- *  Memb: +pos              - cur position within oscillation range
- *
- *----------------------------------------------------------------------------*/
-       
-void LFO::iniPos()
-{
-   pos = 0.0;
+   return ( waveform & LFO_WF_MASK );
 }
 
 /*----------------------------------------------------------------------------*
  *
  *  Name:  LFO::iniVal
  *
- *  Desc:  Set initial oscillator position and evaluate.
+ *  Desc:  Set initial oscillator position and revaluate it.
  *
  *----------------------------------------------------------------------------*/
        
 void LFO::iniVal()
 {
-   iniPos();
-   evaluate();
+   charEv( lfoIniPos );             // set initial oscillator position
+   revaluate();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::isSigned
+ *
+ *  Desc:  Returns true if oscillation range is signed.
+ *
+ *  Rets:  signed           - if true, oscillation range is signed
+ *
+ *  Memb:  waveform.SIGNED  - oscillator is signed 
+ *
+ *----------------------------------------------------------------------------*/
+
+bool LFO::isSigned()
+{
+   return ( (waveform & SIGNED) == SIGNED );
 }
 
 #ifdef KEYBRD_MENUS
@@ -350,27 +418,119 @@ char LFO::menu( key k )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  LFO::revaluate
+ *
+ *  Desc:  Evaluate the LFO, taking into consideration whether it is muted.
+ *
+ *----------------------------------------------------------------------------*/
+       
+void LFO::revaluate()
+{
+   if ( muted() )
+      value = 1.0;
+   else
+      evaluate();                   
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::setAmpMethodPtr
+ *
+ *  Desc:  Set the computeAmp() pointer to the address of the appropriate 
+ *         method for computing the unscaled amplitude of the oscillator
+ *         at its current position.
+ *
+ *  Memb: +computeAmp       - ptr to method for computing unscaled amplitude
+ *
+ *  Note:  There are 2 different methods per waveform type, one for a
+ *         signed range, and one for an unsigned range.
+ *
+ *----------------------------------------------------------------------------*/
+
+   // individual methods per waveform type and (signed or unsigned) range:
+       
+   int LFO::_signTRI()
+   {
+      return ( idx < LFO_MID_IDX ) ? idx - LFO_POS_ONE : LFO_POS_ONE - (idx - LFO_MID_IDX);
+   }
+
+   int LFO::_unsignTRI()
+   {
+      return ( idx < LFO_MID_IDX ) ? idx : LFO_END_IDX - idx;
+   }
+
+   int LFO::_signSQ()
+   {
+      return ( idx < LFO_MID_IDX ) ? -LFO_POS_ONE : LFO_POS_ONE;
+   }
+
+   int LFO::_unsignSQ()
+   {
+      return ( idx < LFO_MID_IDX ) ? 0 : LFO_MID_IDX;
+   }
+
+   int LFO::_signRSAW()
+   {
+      return ( ( idx >> 1 ) - LFO_POS_ONE );
+   }
+
+   int LFO::_unsignRSAW()
+   {
+      return ( LFO_MID_IDX - ( idx >> 1 ) );
+   }
+
+   int LFO::_signFSAW()
+   {
+      return ( LFO_POS_ONE - (idx >> 1 ) );
+   }
+
+   int LFO::_unsignFSAW()
+   {
+      return ( idx >> 1 );
+   }
+
+void LFO::setAmpMethodPtr()
+{
+   if ( isSigned() )       // oscillator is signed
+
+      switch ( getWaveform() )
+      {
+         case LFO_TRI_WF:  computeAmp = &LFO::_signTRI;    break;
+         case LFO_SQ_WF:   computeAmp = &LFO::_signSQ;     break;
+         case LFO_RSAW_WF: computeAmp = &LFO::_signRSAW;   break;
+         case LFO_FSAW_WF: computeAmp = &LFO::_signFSAW;   break;
+      }
+
+   else                    // oscillator is unsigned
+
+      switch ( getWaveform() )
+      {
+         case LFO_TRI_WF:  computeAmp = &LFO::_unsignTRI;  break;
+         case LFO_SQ_WF:   computeAmp = &LFO::_unsignSQ;   break;
+         case LFO_RSAW_WF: computeAmp = &LFO::_unsignRSAW; break;
+         case LFO_FSAW_WF: computeAmp = &LFO::_unsignFSAW; break;
+      }
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  LFO::setDepth
  *
  *  Desc:  Set the oscillation depth.
  *
- *  Args:  d                - oscillation depth 
+ *  Args:  d                - oscillation depth (0-128)
  *
- *  Memb: +depth            - oscillation depth (0.0 - 1.0)
+ *  Memb: +depth            - oscillation depth 
+ *        +instDepth        - instantaneous oscillation depth 
  *
  *----------------------------------------------------------------------------*/
 
-void LFO::setDepth( double d )
+void LFO::setDepth( byte d )
 {
-   if ( d > 1.0 )
-      d = 1.0;
-   else if ( d < 0.0 )
-      d = 0.0;
-   depth = d;
-   if ( d == 0.0 )
-      iniPos();
-   calcStep();
-   charEv( lfoOnDepth );
+   if ( d > 128 ) d = 128;
+   instDepth = depth = d;
+   if ( d == 0 )
+      charEv( lfoIniPos );     
 }
 
 /*----------------------------------------------------------------------------*
@@ -387,20 +547,63 @@ void LFO::setDepth( double d )
 
 void LFO::setFreq( double f )
 {
-   if ( f > MAX_LOW_FREQ )
-      f = MAX_LOW_FREQ;
-   else if ( f < MIN_LOW_FREQ )
-      f = MIN_LOW_FREQ;
+   #ifdef BOUNDCHECK_LFOS
+      if ( f > MAX_LOW_FREQ )
+         f = MAX_LOW_FREQ;
+      else if ( f < MIN_LOW_FREQ )
+         f = MIN_LOW_FREQ;
+   #endif
+
    freq = f;
-   calcStep();
+   step = pow(2,16) * freq / dynaRate;
 }
 
-#ifdef CONSOLE_OUTPUT
-const char *LFO::prompt()
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::setSigned
+ *
+ *  Desc:  Set oscillation range as signed or unsigned.
+ *
+ *  Args:  signed           - if true, oscillation range is signed
+ *
+ *  Memb: +waveform.SIGNED  - set if oscillation range is signed 
+ *
+ *----------------------------------------------------------------------------*/
+
+void LFO::setSigned( bool s )
 {
-   return CONSTR("lfo");
+   if ( s )
+      waveform  |= SIGNED;
+   else
+      waveform &= ~SIGNED;
+
+   setAmpMethodPtr();
+   revaluate();
 }
-#endif
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  LFO::setWaveform
+ *
+ *  Desc:  Set the oscillator waveform.
+ *
+ *  Args:  wf_num           - waveform # 
+ *
+ *  Memb: +waveform         - oscillator waveform
+ *
+ *----------------------------------------------------------------------------*/
+
+void LFO::setWaveform( byte wf_num )
+{
+   if ( wf_num > LFO_MAX_WF )
+      return;
+
+   waveform &= ~LFO_WF_MASK;
+   waveform += wf_num;
+
+   setAmpMethodPtr();
+   revaluate();
+}
 
 /******************************************************************************
  *
@@ -421,8 +624,7 @@ const char *LFO::prompt()
  *
  *  Glob:  dynaRate         - dynamic udpate rate
  *
- *  Memb: +fadeStep         - increment fader this much per dynamic update
- *        +flags.DONE       - LFO is done fading
+ *  Memb: +flags.DONE       - LFO is done fading
  *        +flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
  *         flags.LEGATO     - trigger only if prior fade is completed
  *        +time             - fade time in 1/8th secs (0-255) 
@@ -437,10 +639,10 @@ boolean FadeLFO::charEv( char code )
    {
       case chrTrigger:                 // trigger the LFO
 
-         if ( time )                   // on trigger-ready
+         if ( time )                   // if trigger-sensitive
          {
-            iniVal();
             iniFader();
+            iniVal();
             flags &= ~DONE;
          }
          break;
@@ -470,39 +672,30 @@ boolean FadeLFO::charEv( char code )
 
       case '+':                        // set fade direction to "in"
 
-         flags   &= ~FADEOUT;
-         fadeStep = abs( fadeStep );
+         fadeIn();
          break;
 
       case '-':                        // set fade direction to "out"
 
-         flags   |= FADEOUT;
-         fadeStep = -abs( fadeStep );
+         fadeOut();
          break;
 
       case 't':                        // set fade time
+      {
+         byte inpVal;
+         if ( console.getByte( CONSTR("time"), &inpVal ) )
+            setFadeTime( inpVal );
+         break;
+      }       
 
-         console.getByte( CONSTR("time"), &this->time );
-
-         flags |= DONE;
-         if ( time > 0 )               // if fade enabled
-         {
-            fadeStep = 8.0 / (time * dynaRate);
-            if (flags & FADEOUT)
-               fadeStep = -fadeStep;
-            iniFader();
-            break;
-         }                             // else fall thru
       #endif
 
       case '!':                        // reset
 
-         flags   &= ~(DONE|FADEOUT);   
-         time     = 0;                 
-         fadeStep = 0.0;               
-         iniFader();
-
-         // fall thru to superclass handler
+         super::charEv( code );
+         fadeIn();
+         setFadeTime(0);
+         break;
 
       default:
 
@@ -522,29 +715,90 @@ boolean FadeLFO::charEv( char code )
  *         fadeStep         - increment fader this much per dynamic update
  *        +flags.DONE       - LFO is done fading
  *         flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
+ *         flags.MUTE       - LFO is muted 
  *
  *----------------------------------------------------------------------------*/      
 
 void FadeLFO::dynamics()
 {
-   super::dynamics();
+   if ( (flags&MUTE) )     // return if LFO is muted 
+      return;
+   
+   super::dynamics();      // super class performs basic osc dynamics
+
+   // update fader
+
+   if ( (flags&DONE) )     // return if LFO is done fading
+      return;
+
    fader += fadeStep;
-   if (flags & FADEOUT)
+   
+   if ( fader > LFO_UNIT_FADE )
    {
-      if ( fader < 0.0 ) 
-      {
-         fader = 0.0;
-         flags |= DONE;
-      }
+      fader = (flags & FADEOUT) ? 0 : LFO_UNIT_FADE;
+      flags |= DONE;
    }
-   else
-   {
-      if ( fader > 1.0 ) 
-      {
-         fader = 1.0;
-         flags |= DONE;
-      }
-   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FadeLFO::evaluate
+ *
+ *  Desc:  Compute output value based on oscillator & fader position.
+ *
+ *  Memb:  fader            - current fader value
+ *         depth            - oscillation depth
+ *        +instDepth        - instantaneous oscillation depth
+ *
+ *----------------------------------------------------------------------------*/
+       
+void FadeLFO::evaluate()
+{
+   // compute instantaneous depth = depth * fader
+
+   DWord regDepth;
+
+   regDepth.val = 0;
+   regDepth._.lsw.val = depth;
+   regDepth._.lsw.val <<= 1;
+   regDepth.val *= fader;
+   instDepth = regDepth._.msw._.lsb;
+
+   super::evaluate();         // super class will compute output value
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FadeLFO::fadeIn()
+ *
+ *  Desc:  Configure LFO to fade in,
+ *
+ *  Memb: +flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
+ *        +fadeStep         - increment fader this much per dynamic upd
+ *
+ *----------------------------------------------------------------------------*/
+       
+void FadeLFO::fadeIn()
+{
+   flags   &= ~FADEOUT;
+   fadeStep = abs(fadeStep);
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FadeLFO::fadeOut()
+ *
+ *  Desc:  Configure LFO to fade out.
+ *
+ *  Memb: +flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
+ *        +fadeStep         - increment fader this much per dynamic upd
+ *
+ *----------------------------------------------------------------------------*/
+       
+void FadeLFO::fadeOut()
+{
+   flags   |= FADEOUT;
+   fadeStep = -abs(fadeStep);
 }
 
 /*----------------------------------------------------------------------------*
@@ -555,17 +809,18 @@ void FadeLFO::dynamics()
  *
  *  Memb: +fader            - current fader value
  *         flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
- *         time             - fade time in 1/8th secs (0-255) 
+ *         time             - fade time in 1/8th secs 
  *
  *----------------------------------------------------------------------------*/
        
 void FadeLFO::iniFader()
 {
    if ( time == 0 )
-      fader = 1.0;
+      fader = LFO_UNIT_FADE;
    else
-      fader = (flags & FADEOUT) ? 1.0 : 0.0;
+      fader = (flags & FADEOUT) ? LFO_UNIT_FADE : 0;
 }
+
 
 #ifdef KEYBRD_MENUS
 
@@ -620,6 +875,44 @@ char FadeLFO::menu( key k )
 
 #endif
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  FadeLFO::setFadeTime
+ *
+ *  Desc:  Set time of fade.
+ *
+ *  Memb: +fader            - current fader value
+ *        +fadeStep         - increment fader this much per dynamic upd
+ *         flags.FADEOUT    - LFO fades out (if not set, LFO fades in) 
+ *         time             - fade time in 1/8th secs (0-255) 
+ *
+ *----------------------------------------------------------------------------*/
+       
+void FadeLFO::setFadeTime( byte t )
+{
+   #define LFO_UNIT_FADExPPS (unsigned long)LFO_UNIT_FADE*LFO_FADE_PPS
+
+   time = t;
+   if ( time > 0 )               // if fade enabled
+   {
+      DWord step;
+
+      step.val  = LFO_UNIT_FADExPPS;
+
+      //infoULongBits( CONSTR("Ux8"), step.val );
+      step.val /= (time * dynaRate);
+      fadeStep  = step._.lsw.val;
+      if ( (flags&FADEOUT) )
+         fadeStep = -fadeStep;
+   }
+   else
+   { 
+      fadeStep = 0;
+      flags |= DONE;             // probably not necessary
+   }
+   iniFader();
+}
+
 /******************************************************************************
  *
  *                               TermLFO 
@@ -639,7 +932,8 @@ char FadeLFO::menu( key k )
  *
  *  Memb: +flags.DONE       - LFO is done traversing
  *         flags.LEGATO     - trigger only if prior traversal has completed
- *        +flags.PEAK       - trigger LFO starting at peak value 
+ *        +flags.PHASE      - determines start/end phase 
+ *        +idx              - current position in oscillator cycle
  *        +runDC            - downcounter (in half-cycles) to end of traversal
  *        +trav             - traverse this many half-cycles (0 = run forever)
  *
@@ -661,46 +955,73 @@ boolean TermLFO::charEv( char code )
          }
          break;
 
-      case 't':                        // set traversal value
+      case lfoIniPos:                  // set initial oscillator position
 
-         console.getByte( CONSTR("trig"), &this->trav );
+         idx = 0;                      // default is to start at beginning of period
+         
+         // if any of the following compound conditons are true use default start index 
 
-         if ( trav == 0 )              // if now free-running
+         if ( sawtooth() )
          {
-            flags &= ~DONE;            // insure "not done"
-            runDC = 0;                 // insure "not traversing"
+            if ( isSigned() )  
+            {
+               if ( flags&PHASE ) break;
+            }
+            else 
+            {
+               if ( fullCycle() )  break;
+            }
          }
+         else // not a sawtooth
+         {
+            if ( ((flags&PHASE) && fullCycle()) || (!(flags&PHASE) && !fullCycle()) ) 
+               break;
+         }
+
+         // else start at the mid point of the period
+
+         idx = LFO_MID_IDX;            // start at half-cycle
 
          break;
 
       #ifdef INTERN_CONSOLE
-      case '+':                        // trigger begins at "peak" value
 
-         flags   |= PEAK;
+      case 't':                        // set traversal count
+      {
+         byte inpVal;
+         if ( console.getByte( CONSTR("trav"), &inpVal ) )
+            setTravCount( inpVal );
+         break;
+      }
+
+      case '+':                        // set phase flag
+      
+         flags |= PHASE;
          break;
 
-      case '-':                        // trigger begins at "trough" value
+      case '-':                        // unset phase flag
 
-         flags   &= ~PEAK;
+         flags &= ~PHASE;
          break;
+
       #endif
 
       #ifdef CONSOLE_OUTPUT
       case chrInfo:                    // display object info to console
 
          super::charEv( chrInfo );
-         console.infoByte( CONSTR("trig"), trav );
+         console.infoByte( CONSTR("trav"), trav );
          console.space();
-         console.print( ( flags & PEAK ) ? '+' : '-' );
+         console.print( ( flags & PHASE ) ? '+' : '-' );
          break;
       #endif
 
       case '!':                        // reset
 
-         flags &= ~(DONE|PEAK);        // "not done, trig from trough"
-         trav  = 0;                    // "free-running"
-         runDC = 0;                    // "not traversing"
-                                       // fall thru to super reset
+         super::charEv( code );
+         setTravCount(0);              // sets trav = runDC = 0, ~DONE
+         break;
+
       default:
 
          return super::charEv( code );
@@ -716,12 +1037,11 @@ boolean TermLFO::charEv( char code )
  *         traversal downcounter, and setting the DONE bit if the traversal 
  *         has completed.
  *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *        +flags.DONE       - LFO is done traversing
+ *  Memb: +flags.DONE       - LFO is done traversing
  *         flags.MUTE       - LFO is muted
- *        +pos              - cur position within oscillation range
+ *        +idx              - current position in oscillator cycle
  *        +runDC            - downcounter (in half-cycles) to end of traversal
- *         step             - change in osc position per dynamic update
+ *         step             - change in idx per dynamic update
  *         trav             - traverse this many half-cycles (0 = run forever)
  *
  *----------------------------------------------------------------------------*/
@@ -733,28 +1053,41 @@ void TermLFO::dynamics()
       return;
    }
 
-   pos += step;                        // bump oscillator position
+   word prior;     // high bit denotes which half-cycle idx was in prior to bump
+   word after;     // high bit denotes which half-cycle idx is in after bump
 
-   // if bounds exceeded, turn oscillator back and update traversal state
+   // bump oscillator while caching which half-cycle it was in prior to and 
+   // after the bump
 
-   if ( pos > depth )
+   prior = idx & LFO_HIGHBIT;
+   idx  += step;                      
+   after = idx & LFO_HIGHBIT;
+
+   // if oscillator has crossed a half-cycle and in doing so has completed an
+   // ongoing traversal, then adjust idx to the beginning of the half-cycle 
+   // and flag LFO as done.
+
+   if ( prior^after && ( runDC && --runDC == 0 ) )
    {
-      pos  = 2 * depth - pos;
-      step = -step;
-      if ( runDC && --runDC == 0 )     // if run just completed
+      idx = after ? LFO_MID_IDX : 0;
+      flags |= DONE;  
+      
+      // adjust sawtooth indices to proper terminal values
+
+      if ( ! isSigned() )
       {
-         pos = depth;                  // ... peg to max
-         flags |= DONE;  
-      }
-   }
-   else if ( pos < 0.0 )
-   {
-      pos  = - pos;
-      step = -step;
-      if ( runDC && --runDC == 0 )     // if run just completed
-      {
-         pos = 0.0;                    // ... peg to min
-         flags |= DONE;  
+         switch ( getWaveform() )
+         {
+            case LFO_RSAW_WF:
+
+               idx = flags&PHASE ? LFO_END_IDX : 0 ;
+               break;
+
+            case LFO_FSAW_WF:
+
+               idx = flags&PHASE ? 0 : LFO_END_IDX ;
+               break;
+         }
       }
    }
 
@@ -763,29 +1096,20 @@ void TermLFO::dynamics()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  TermLFO::iniPos
+ *  Name:  TermLFO::fullCycle
  *
- *  Desc:  Set initial oscillator position.
+ *  Desc:  Return a boolean indicating whether the traversal count is a 
+ *         multiple of a full waveform cycle.
  *
- *  Memb:  depth            - oscillation depth (0.0 - 1.0)
- *         flags.PEAK       - trigger LFO starting at peak value 
- *        +pos              - cur position within oscillation range
- *        +step             - change in osc position per dynamic update
+ *  Memb:  trav             - traversal count in half-cycles (0 = run forever)
+ *
+ *  Rets:  isFullCycle      - if true, character was handled
  *
  *----------------------------------------------------------------------------*/
        
-void TermLFO::iniPos()
+bool TermLFO::fullCycle()
 {
-   if ( flags&PEAK )
-   {
-      pos  = depth;                    // start at peak
-      step = -abs(step);               // insure decreasing initial step
-   }
-   else
-   {
-      pos  = 0.0;                      // start at trough
-      step = abs(step);                // insure increasing initial step
-   }
+   return ! (trav & 1);
 }
 
 #ifdef KEYBRD_MENUS
@@ -840,4 +1164,46 @@ char TermLFO::menu( key k )
 }
 
 #endif
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  TermLFO::sawtooth
+ *
+ *  Desc:  Return a boolean indicating whether the LFO waveform is of a 
+ *         sawtooth type.
+ *
+ *  Rets:  amSawTooth       - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+       
+bool TermLFO::sawtooth()
+{
+   return ( getWaveform() >= LFO_RSAW_WF );
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  TermLFO::setTravCount
+ *
+ *  Desc:  Set the traversal count
+ *
+ *  Args:  n                - new traversal count
+ *
+ *  Memb: +flags.DONE       - LFO is done traversing
+ *        +runDC            - downcounter (in half-cycles) to end of traversal
+ *        +trav             - traversal count (0 = run forever)
+ *
+ *  Rets:  status           - if true, character was handled
+ *
+ *----------------------------------------------------------------------------*/
+       
+void TermLFO::setTravCount( byte n )
+{
+   trav = n;
+   if ( n == 0 )                 // if now free-running
+   {
+      flags &= ~DONE;            // insure "not done"
+      runDC = 0;                 // insure "not traversing"
+   }
+}
 

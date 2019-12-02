@@ -43,9 +43,9 @@
 #define chrTrigger      -8             // trigger control
 #define chrRelease      -9             // release control
 
-// LFO sends following command to itself when depth parameter is set/changed
+// LFO sends following commands to itself 
 
-#define lfoOnDepth      -10            // LFO depth has been set/changed
+#define lfoIniPos       -10            // set initial LFO cycle position
 
 // status messages sent by sequencers 
 

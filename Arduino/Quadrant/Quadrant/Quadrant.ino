@@ -6,18 +6,6 @@
 //  To get the most out of Quadrant be sure to read these header comments 
 //  first. 
 //
-//  ***********************************************************************
-//
-//      IT IS STRONGLY RECOMMENDED THAT YOU USE ARDUINO VERSION 1.6.6.
-//
-//  Then uncomment the "#define BUILD_166" line in Model.h of the library.
-//
-//  Some features and/or presets may be omitted if BUILD_166 is not used.
-//  (In this version of Quadrant all features are present, and only the 
-//  "FraraJaqua" preset is omitted.)
-//
-//  ***********************************************************************
-//
 //  Target:   ArduTouch board
 // 
 //  ---------------------------------------------------------------------------
@@ -219,7 +207,7 @@
 //     BLINK         OFF        panning FREQ             panning DEPTH
 //       OFF          ON        autowah FREQ             autowah DEPTH
 //        ON          ON        autowah CUTOFF          echo PULSE WIDTH
-//     BLINK          ON         [ reserved ]             [ reserved ]                     
+//     BLINK          ON         lead 1 DETUNE**         lead 1 TRANSPOSE***                     
 //       OFF       BLINK       envelope ATTACK*          envelope DECAY*         
 //        ON       BLINK       envelope SUSTAIN*        envelope RELEASE*
 //     BLINK       BLINK         echo SUSTIME            lead PORTAMENTO
@@ -230,6 +218,10 @@
 //       1) only the LEAD voices
 //       2) only the ECHO voices 
 //       3) both the LEAD and ECHO voices
+//
+//    ** detunes lead1 from lead 0
+//
+//    ** transposes lead1 from lead0 (range is from -2 to +2 octaves)
 //
 //  ---------------------------------------------------------------------------
 //
@@ -368,7 +360,7 @@
 
 #include "ArduTouch.h"                       
 
-about_program( Quadrant, 1.66 )       
+about_program( Quadrant, 1.70 )       
 
 // If you've got your hacker shoes on and want to alter this sketch, uncommenting
 // the following line will help you move between __FULLHOST__ and __STNDLONE__
@@ -423,24 +415,24 @@ define_preset( Blur,       "!0g25\\`"
 define_preset( Farsy,      "!Ma60\\s200\\r180\\`1x5\\`"
                            #ifdef AUDIT_ECHO
                            "Et3\\d.32\\f190\\Ma10\\r165\\t180\\`"
-                           "0P31\\ac123\\lf3.2\\d.694\\```"
-                           "1P30\\ac130\\lf2.4\\d.65\\````"
+                           "0P31\\ac123\\lf3.2\\d89\\```"
+                           "1P30\\ac130\\lf2.4\\d83\\````"
                            #endif
                            "s1\\0g36\\`1g38\\`" )               
 
 define_preset( Glacial,    "!b50\\Ma160\\d200\\s170\\r210\\`"
                            #ifdef AUDIT_ECHO
-                           "Et5\\d2.7\\f255\\Pf.4\\d.5\\`"
+                           "Et5\\d2.7\\f255\\Pf.4\\d64\\`"
                            "Ma130\\d200\\s0\\r0\\t0\\`"
-                           "0P64\\ac160\\lf1.2\\d.4\\```"
-                           "1P117\\ac140\\lf.8\\d.4\\```"
+                           "0P64\\ac160\\lf1.2\\d51\\```"
+                           "1P117\\ac140\\lf.8\\d51\\```"
                            #endif
                            )
 
 define_preset( Scaffold,   "!0.`1.`"
                            #ifdef AUDIT_ECHO
                            "Et2\\d.037\\f255\\w4\\"
-                           "Pf5\\d1\\``"
+                           "Pf5\\d128\\``"
                            #endif
                            "" )  
                                         
@@ -459,8 +451,8 @@ define_preset( FraraJaqua, "!0.v120\\x-36\\ed0\\r255\\`Agg40\\```"
                            "b130\\"
                            #ifdef AUDIT_ECHO
                            "Ed.45\\"
-                           "0P96\\ac180\\lf6\\d.6\\```"
-                           "1P32\\alf1.65\\d.85\\```"
+                           "0P96\\ac180\\lf6\\d77\\```"
+                           "1P32\\alf1.65\\d109\\```"
                            "it\\t9\\f255\\Ma13\\d56\\s70\\t25\\``" 
                            #endif
                            )               
@@ -488,11 +480,7 @@ begin_bank( myPresets )
    _preset( Empty )                       // G#
    _preset( ToneJack )                    // A
    _preset( Empty )                       // A#
-   #ifdef BUILD_166
    _preset( FraraJaqua )                  // B
-   #else
-   _preset( Empty )                       // B
-   #endif
 
 end_bank()
 
@@ -509,11 +497,7 @@ end_bank()
  *
  ******************************************************************************/
 
-#ifdef BUILD_166
-   #define NUM_TROPES 10         // number of preset tropes in ROM
-#else
-   #define NUM_TROPES  9         // number of preset tropes in ROM
-#endif
+#define NUM_TROPES 10            // number of preset tropes in ROM
 
 #define EOT        -128          // "end-of-trope"
 
@@ -531,16 +515,12 @@ PROGMEM const char trope07[] = { 0, 0, -3, -1, -5, -3, EOT };
 
 PROGMEM const char trope08[] = { 9, 0, 5, 0, 12, 0, 9, 11, 0, 7, 0, 14, EOT };
 
-#ifdef BUILD_166
-
 // "Frara Jaqua"
 
 PROGMEM const char trope09[] = { 0, 2, 4, 0, 0, 2, 4, 0,
                                  4, 5, 7, 7, 4, 5, 7, 7,
                                  7, 5, 4, 0, 7, 5, 4, 0,
                                  0, -5, 0, 0, 0, -5, 0, 0, EOT };
-#endif
-
 
 PROGMEM const char* const tropes[] =   // an array of ptrs to preset tropes
 {
@@ -552,12 +532,8 @@ PROGMEM const char* const tropes[] =   // an array of ptrs to preset tropes
    &trope05[0],
    &trope06[0],
    &trope07[0],
-#ifdef BUILD_166 
    &trope08[0], 
    &trope09[0]
-#else
-   &trope08[0] 
-#endif
 } ;
 
 /*----------------------------------------------------------------------------*
@@ -784,7 +760,7 @@ class OscStack : public QuantumOsc
             }
 
             autowah->reset();
-            autowah->execute( PSTR("<c215\\lf.125\\d.35\\") );  // set cutoff,freq,depth
+            autowah->execute( PSTR("<c215\\lf.125\\d45\\") );  // set cutoff,freq,depth
 
             break;
 
@@ -1200,10 +1176,10 @@ class Echotron : public StereoInstrument
             side[1]->reset();
             side[1]->autowah->lfo.setFreq( .165 );  // override autowah 1 freq
 
-            // initialize pan control ( unmuted, panPos 0, freq .36, depth .33 )
+            // initialize pan control ( unmuted, panPos 0, freq .36, depth 50% )
 
             panControl.reset();
-            execute( PSTR( "P<P0\\f.36\\d.5\\" ) );
+            execute( PSTR( "P<P0\\f.36\\d64\\" ) );
 
             // initialize carousel parameters
 
@@ -2253,11 +2229,25 @@ class QuadrantSynth : public VoxSynth
                echo.setPwViaPot( potVal );
             break;
 
-         case FRAME21:                       // 
-
-            break;
-
          #endif // ifdef AUDI_ECHO
+
+         case FRAME21:                       // leadVox1 detune -- transpose
+
+            if ( pot0 )
+               leadVox1.osc->setDetune( potVal - 128 );
+            else
+            {
+               // transpose lead 1 by between -24 and 24 semitones
+
+               int transpose  = potVal;
+               if (transpose >= 254 ) transpose = 256; 
+                   transpose -= 128;
+                   transpose *= 48;
+                   transpose >>= 8;
+
+               leadVox1.xpose = transpose;
+            }
+            break;
 
          case FRAME02:                       // attack/decay for envelopes
 

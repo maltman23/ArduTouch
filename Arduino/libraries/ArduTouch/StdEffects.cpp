@@ -640,7 +640,7 @@ boolean WahLFO::charEv( char code )
       case '!':                        // perform a reset
 
          LFO::charEv( code );
-         setDepth( 1.0 );
+         setDepth( 128 );
          setMute( false );
          break;
 

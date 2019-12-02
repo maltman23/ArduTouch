@@ -366,17 +366,7 @@ class Obligato : public ADSRVoice
  *
  *                                  Bend
  *
- * This simple "Bend" control will oscillate in value from 1.0 to 2.0.
- *
- * We derive it from the library's TermLFO class ("Terminating LFO").
- * The TermLFO class implements a Low Frequency Oscillator that can be 
- * configured to traverse a specific number of half cycles after being
- * triggered and then stop oscillating.
- *
- * (In the "reset" code for our synth further down in this file, we will 
- * initialize our Ramp control so that it traverses 2 half cycles. 
- * This means that it will start at 1.0, move to 2.0, return to 1.0, and 
- * then stop oscillating, each time a note is played).
+ * This simple "Bend" control will oscillate 1.0 and the ratio of a semitone.
  *
  ******************************************************************************/
 
@@ -386,38 +376,19 @@ class Bend : public TermLFO            // bend frequency effect
 
    public:
 
-   // We set the shortcut state variable to 'b'. 
-   // This allows us to access our control by typing 'b' 
-   // when we are at the "Pitch>" prompt in the Console.
-
    Bend() 
    {
       shortcut = 'b';                  
    }
 
-   // The evaluate() method is automatically called by the system at each dynamic
-   // update. This is where we set the output value of our control.
-
-   // The LFO state variable "pos", which is referenced here, oscillates between 
-   // 0.0 and 1.0 and is automatically computed at each dynamic update before 
-   // evaluate() is called.
-
    void evaluate()
    {
-      value = 1.0 + (pos*(1.05946-1));  // value will be between 1.0 and semi-tone
+      super::evaluate();               // value set to between 0.0 and 1.0
+      value *= .05946;                 // *= fractional part of semi-tone
+      value += 1.0;                    // value between 1.0 and semi-tone ratio
    }
 
-   // we set the prompt for our control to "bend". 
-   // this is also the name which will be displayed for our control in the
-   // Console when we type '?' at the "Pitch>" prompt.
-   // (typing '?' at the "Pitch>" prompt lists all the pitch modifiers).
-
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt()
-   {
-      return CONSTR( "bend" );
-   }
-   #endif
+   PROMPT_STR( bend )
 
 } ;
 
@@ -458,7 +429,7 @@ class Lead : public ADSRVoice
 
             super::charEv( code );
             execute( PSTR("Ea<") );
-            execute( PSTR("Pb-f2\\t2\\d1\\<`v<D100\\d.16\\t27\\") );
+            execute( PSTR("Pb-f2\\t2\\d128\\<`v<D100\\d21\\t27\\") );
             execute( PSTR("ea18\\d120\\s220\\r50\\") );
             setAutoWah( 26 );
             setGlide( 225 );
@@ -499,9 +470,13 @@ class Lead : public ADSRVoice
 
       wah.lfo.setFreq( loFreq + ((hiFreq - loFreq) * percent) );
       if ( val > 0 )
-         wah.lfo.setDepth( loDepth + ((hiDepth - loDepth) * percent) );
+      {
+         double newDepth = loDepth + ((hiDepth - loDepth) * percent);
+         newDepth *= 128;
+         wah.lfo.setDepth( (byte )newDepth );
+      }
       else
-         wah.lfo.setDepth( 0.00 );
+         wah.lfo.setDepth( 0 );
    }
 
 } ;
@@ -531,15 +506,10 @@ class Mantra : public VoxSynth
 
    ByteMenu presetMenu;             // keybrd menu for selecting presets
 
-   Mantra()
-   {
-      configVoices(4);
-   }
-
    void config()
    {
-      super::config();
-      keybrd.setDefOct( 4 );        // start keyboard in octave 4
+      configVoices(4);
+      keybrd.setDefOct(4);          // start keyboard in octave 4
       presets.load( myPresets );    // load bank of presets
    }
 

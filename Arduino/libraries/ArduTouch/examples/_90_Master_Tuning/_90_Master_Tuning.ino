@@ -1,9 +1,15 @@
 //
-//  _56_Master_Tuning.ino
+//  _90_Master_Tuning.ino
+//
+//  For most users it is not necessary to know about the Master Tuning object.
+//  If you derive your synth from one of the standard VoxSynth classes, then
+//  the ArduTouch library will automatically handles key events, convert them
+//  into standard frequencies corresponding to an equal temperament tuning,
+//  and route them to your oscillator(s).
 // 
-//  This sketch shows how to use the system's built-in master tuning object to
-//  convert key events into frequencies corresponding to an equal temperament 
-//  tuning (which is "normal" tuning for Western musical scales).
+//  However, if you want to "see what is under the hood", this sketch shows 
+//  how to access the system's built-in master tuning object and "manually"
+//  convert key events into frequencies.
 //
 //  Target:   ArduTouch board
 // 
@@ -25,6 +31,12 @@
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
 about_program( Master Tuning, 1.00 )         // specify sketch name & version
+
+// We derive our synth not from a VoxSynth class (which would handle
+// key events automatically) but from the Synth class.
+//
+// The Synth class is a lower-level class which has no built-in
+// voice/oscillator structure.
 
 class EqualTempSynth : public Synth
 {

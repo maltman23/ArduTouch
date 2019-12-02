@@ -40,33 +40,7 @@ class Tremolo : public TermLFO         // stock tremolo
       shortcut = 't';
    }
 
-   boolean charEv( char code )         // process a character event
-   {
-      switch ( code )
-      {
-         case '.':                     // mute
-
-            super::charEv('.');
-            value = 1.0;               // "no effect"
-            break;
-
-         case '!':                     // reset
-
-            iniOsc( .4, 2.5 );         // default vals for depth and rate
-                                       // fall thru to super reset
-         default:
-
-            return super::charEv( code );
-      }
-      return true;
-   }
-
-   #ifdef CONSOLE_OUTPUT
-   const char*  prompt()               // return object's prompt string
-   {
-      return CONSTR("tremolo");
-   }
-   #endif
+   PROMPT_STR( tremolo ) 
 
 } ;
 

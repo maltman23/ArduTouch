@@ -261,7 +261,7 @@
  #endif
 #endif
 
-about_program( Dronetic, 0.61 )       
+about_program( Dronetic, 0.62 )       
 
 /******************************************************************************
  *
@@ -269,38 +269,38 @@ about_program( Dronetic, 0.61 )
  *
  ******************************************************************************/
 
-define_preset( Borea, "'S0ON4\\0n2\\1n9\\2n28\\3n33\\Ft\\`Ea<c50\\lf.125\\d.75\\``g```"
-                       "1ON4\\0n16\\1n21\\2n40\\3n28\\`Ea<c28\\lf.250\\d.5\\``g```"
+define_preset( Borea, "'S0ON4\\0n2\\1n9\\2n28\\3n33\\Ft\\`Ea<c50\\lf.125\\d96\\``g```"
+                       "1ON4\\0n16\\1n21\\2n40\\3n28\\`Ea<c28\\lf.250\\d64\\``g```"
              )
 
 define_preset( Cerebus, "'S0ON3\\0n2\\p48\\1n1\\p127\\2n3\\p133\\"
-                        "Ft\\P108\\`Ea<c60\\lf2.953\\d.364\\``g```"
+                        "Ft\\P108\\`Ea<c60\\lf2.953\\d46\\``g```"
                         "1ON4\\0n34\\p15\\1n21\\p23\\2n20\\p83\\3n28\\p22\\"
-                        "Ft\\P63\\`Ea<c33\\lf.9\\d.86\\``gg2\\```"
+                        "Ft\\P63\\`Ea<c33\\lf.9\\d110\\``gg2\\```"
                         "2cv168\\O<r.5\\m78\\D200\\`ea100\\d200\\s0\\r200\\`f0\\`k1\\`"
              )
 
-define_preset( Crystal, "'SPf.75\\d.625\\P140\\p`2g60\\`"
-                        "0ON4\\0n0\\1n22\\2n29\\3n38\\Ft\\`Ea<c29\\lf.150\\d1.0\\``g```"
-                        "1ON3\\0n10\\1n24\\2n38\\`Ea<c27\\lf1.67\\d.8\\``gg1.25\\```"
+define_preset( Crystal, "'SPf.75\\d80\\P140\\p`2g60\\`"
+                        "0ON4\\0n0\\1n22\\2n29\\3n38\\Ft\\`Ea<c29\\lf.150\\d128\\``g```"
+                        "1ON3\\0n10\\1n24\\2n38\\`Ea<c27\\lf1.67\\d102\\``gg1.25\\```"
              )
 
-define_preset( Eire, "'S0ON3\\0n0\\1n28\\2n31\\`Ea<c12\\lf1.0\\d.6\\``gg1.5\\```"
-                       "1ON3\\0n0\\1n12\\2n28\\`Ea<c5\\lf.5\\d.4\\``gg1.5\\```"
+define_preset( Eire, "'S0ON3\\0n0\\1n28\\2n31\\`Ea<c12\\lf1.0\\d77\\``gg1.5\\```"
+                       "1ON3\\0n0\\1n12\\2n28\\`Ea<c5\\lf.5\\d51\\``gg1.5\\```"
              )
 
-define_preset( Faroe, "'SPf.2\\d.5\\P90\\p`"
-                      "0ON4\\0n2\\p129\\1n14\\p36\\2n21\\p38\\3n30\\p3\\P98\\Ft\\`Ea<c22\\lf1.422\\d.3\\``g```"
-                      "1ON4\\0n26\\1n30\\2n40\\3n21\\P40\\`x7\\Ea<c15\\lf.93\\d.15\\``g```k2\\`"
+define_preset( Faroe, "'SPf.2\\d64\\P90\\p`"
+                      "0ON4\\0n2\\p129\\1n14\\p36\\2n21\\p38\\3n30\\p3\\P98\\Ft\\`Ea<c22\\lf1.422\\d38\\``g```"
+                      "1ON4\\0n26\\1n30\\2n40\\3n21\\P40\\`x7\\Ea<c15\\lf.93\\d19\\``g```k2\\`"
              )
 
-define_preset( Oslo,  "'SPf2.25\\d.6\\`"
-                      "0ON3\\0n0\\1n28\\2P64\\`x-10\\Ea<c24\\lf.8\\d.5\\``g```"
-                      "1ON3\\0n38\\1n33\\2`x5\\Ea<c24\\lf4\\d.36\\``g```k3\\`"
+define_preset( Oslo,  "'SPf2.25\\d77\\`"
+                      "0ON3\\0n0\\1n28\\2P64\\`x-10\\Ea<c24\\lf.8\\d64\\``g```"
+                      "1ON3\\0n38\\1n33\\2`x5\\Ea<c24\\lf4\\d46\\``g```k3\\`"
              )
 
-define_preset( Riven, "'S0ON4\\0n27\\p11\\1n28\\p60\\2n31\\p28\\3n32\\p30\\Ft\\P11\\`Ea<c180\\lf.1\\d.6\\``g```"
-                       "1ON3\\0n22\\p69\\1n28\\p30\\2n38\\p25\\Ft\\P30\\`Ea<c22\\lf.2\\d.5\\``gg1.2\\```"
+define_preset( Riven, "'S0ON4\\0n27\\p11\\1n28\\p60\\2n31\\p28\\3n32\\p30\\Ft\\P11\\`Ea<c180\\lf.1\\d77\\``g```"
+                       "1ON3\\0n22\\p69\\1n28\\p30\\2n38\\p25\\Ft\\P30\\`Ea<c22\\lf.2\\d64\\``gg1.2\\```"
                        "2cg30\\O<r.09\\m73\\D50\\`e~a151\\d100\\s128\\r160\\`f0\\`k1\\`"
              )
 
@@ -988,7 +988,7 @@ class DroneSynth : public TwoVoxPanSynth
             keybrd.setOctave(2);
             keybrd.setTopOct(3);
 
-            execute( PSTR( "P<d.25\\f.125\\" ) );
+            execute( PSTR( "P<d32\\f.125\\" ) );
             execute( PSTR( "2ea60\\r200\\" ) );
             break;
 

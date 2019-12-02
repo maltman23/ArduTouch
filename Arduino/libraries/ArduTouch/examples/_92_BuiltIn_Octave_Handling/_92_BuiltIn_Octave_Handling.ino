@@ -1,7 +1,7 @@
 //
-//  _60_Multi_Octave_Keybrd.ino
+//  _92_BuiltIn_Octave_Handling.ino
 //
-//  In the last example _9_ we explicitly coded octave changes when we tapped
+//  In the last example we explicitly coded octave changes when we tapped
 //  the buttons.  In this example we will allow the ArduTouch library to use 
 //  its defaults, which automatically uses the buttons to change the octave up
 //  or down.  This default behavior happens when we simply pass through 
@@ -9,8 +9,7 @@
 //  
 //  Though we aren't explicitly using this information in this example, we are
 //  taking the opportunity to introduce the concept of the ArduTouch class 
-//  hierarchy.  We'll also introduce the flags byte that is a member of the base 
-//  class of the hierarchy.
+//  hierarchy.  
 //
 //  Target:   ArduTouch board
 // 
@@ -30,7 +29,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Multi Octave Keybrd, 1.00 )   // specify sketch name & version
+about_program( BuiltIn Octave Handling, 1.00 )   // specify sketch name & version
 
 class MultiOctaveSynth : public Synth
 {

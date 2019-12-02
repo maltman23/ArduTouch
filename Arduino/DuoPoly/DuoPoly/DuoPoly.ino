@@ -33,7 +33,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.50 )            // specify program name & version
+about_program( DuoPoly, 2.51 )            // specify program name & version
 
 #ifndef INTERN_CONSOLE
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
@@ -69,13 +69,13 @@ define_preset( Industry, "'lw1Eb-s5c4<``St162.5\\rV120\\2zsvc```"
 
 // Omission tempo = 102.5 noteValue(l,r) = (eight, eight)
 
-define_preset( Omission, "'rv205\\Tf.64\\d.375\\t1\\L<`Vf5.3\\d.46\\t26\\-<`"
+define_preset( Omission, "'rv205\\Tf.64\\d48\\t1\\L<`Vf5.3\\d59\\t26\\-<`"
                          "St102.5\\r4.cb5x.........4cb5s.........4cb5z........z4m..........```"
-                         "lw1Tf4\\d1\\t3\\~<`St102.5\\r2c..3c.x.2b.nx.```[" )
+                         "lw1Tf4\\d128\\t3\\~<`St102.5\\r2c..3c.x.2b.nx.```[" )
 
 // Cadiz tempo = 120 noteValue(l,r) = (eight, quarter)
 
-define_preset( Cadiz, "'rw1V<f4.4\\d.13\\`"
+define_preset( Cadiz, "'rw1V<f4.4\\d17\\`"
                       "St30\\rQ1j......2j...3v..g.v.d.x.2m1j``f54\\g14\\`" 
                       "lw1g248\\"
                       "St120\\r2j4xv3j4jx3j4h2j4xv3j4jx3j4h2j4dg3j4jd3j4h2j4dg3j4gv3m4d```[" )

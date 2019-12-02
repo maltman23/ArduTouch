@@ -34,7 +34,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Thick, 0.71 )                 // specify sketch name & version
+about_program( Thick, 0.72 )                 // specify sketch name & version
 
 #ifndef INTERN_CONSOLE                       // required for config macro to work
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
@@ -182,10 +182,10 @@ class ThickSynth : public QuadSynth
             // the following line executes a macro which sets up each voice's 
             // detuning/autowah/vibrato so the voices sound groovy together
       
-            console.exe( PSTR( "0Ea<c180\\lf.5\\d.625\\````"
-                               "1Vf1\\d.075\\<`Ea<c200\\lf2.75\\d.6\\````"
-                               "2Vf.25\\d.1\\<`Ea<c150\\lf.75\\d.5\\````"
-                               "3Ea<c190\\lf.23\\d.75\\````"
+            console.exe( PSTR( "0Ea<c180\\lf.5\\d80\\````"
+                               "1Vf1\\d10\\<`Ea<c200\\lf2.75\\d77\\````"
+                               "2Vf.25\\d13\\<`Ea<c150\\lf.75\\d64\\````"
+                               "3Ea<c190\\lf.23\\d96\\````"
                               ) 
                         ); 
 

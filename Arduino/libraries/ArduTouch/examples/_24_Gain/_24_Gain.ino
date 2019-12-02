@@ -1,5 +1,5 @@
 //
-//  _45_Gain.ino
+//  _24_Gain.ino
 // 
 //  This sketch demonstrates how to use the ArduTouch library's Gain effect.
 //

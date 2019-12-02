@@ -430,7 +430,7 @@ boolean PwLFO::charEv( char code )
 
          super::charEv('!');
          super::charEv('~');        // legato re-trigering
-         setDepth( .62 );
+         setDepth( 79 );
          setFreq( .36 );
          break;
 

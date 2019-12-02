@@ -101,7 +101,7 @@
 
 #endif
 
-about_program( Xoid, 0.96 )
+about_program( Xoid, 0.97 )
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -118,9 +118,9 @@ define_preset( XFuzz2, "'x26\\"
                        "0r.667\\m67\\D1.4\\`"
                        "1r.441\\m127\\```"
                        "0ea5\\d200\\s170\\r32\\`"
-                       "Vf5.5\\d1\\t100\\`"
+                       "Vf5.5\\d128\\t100\\`"
                        "Eg<g2.5\\``"
-                       "Ea<l<d.36\\f.7\\````" 
+                       "Ea<l<d46\\f.7\\````" 
                        )
 
 define_preset( Zonk,   "'x24\\k6`"
@@ -128,9 +128,9 @@ define_preset( Zonk,   "'x24\\k6`"
                        "0<r3.5\\m36\\`"
                        "1<r.567\\m81\\D3\\```"
                        "0ea2\\d145\\s0\\r100\\`"
-                       "Vf.24\\d.5\\t30\\`"
+                       "Vf.24\\d64\\t30\\`"
                        "Eg<g2.5\\``"
-                       "Ea<l<d.6\\f.2\\````" 
+                       "Ea<l<d77\\f.2\\````" 
                        )
 
 define_preset( Besot,  "'"
@@ -138,9 +138,9 @@ define_preset( Besot,  "'"
                        "0r.667\\m76\\`"
                        "1<r12\\m53\\```"
                        "0ea0\\d200\\s179\\r200\\`"
-                       "V<-f5\\d.7\\t5\\`"
+                       "V<-f5\\d90\\t5\\`"
                        "Eg<g1\\``"
-                       "Ea<c120\\l<d1\\f3.858\\````" 
+                       "Ea<c120\\l<d128\\f3.858\\````" 
                        )
 
 define_preset( Morbo,  "'"
@@ -148,9 +148,9 @@ define_preset( Morbo,  "'"
                        "0<r.707\\m76\\D-.35\\`"
                        "1r.5\\m5\\```"
                        "0ea59\\d50\\s0\\r32\\`"
-                       "V<f3.2\\d.3\\t40\\`"
+                       "V<f3.2\\d38\\t40\\`"
                        "Eg<g1.5\\``"
-                       "Ea<c40\\l.d.5\\f.5\\````" 
+                       "Ea<c40\\l.d64\\f.5\\````" 
                        )
 
 define_preset( Static, "'"
@@ -158,9 +158,9 @@ define_preset( Static, "'"
                        "0<r2.244\\m44\\`"
                        "1<r4\\m91\\```"
                        "0ea79\\d100\\s120\\r190\\`"
-                       "V.-f2.5\\d1\\t30\\`"
+                       "V.-f2.5\\d128\\t30\\`"
                        "Eg<g2.25\\``"
-                       "Ea<c60\\l<d.305\\f1.73\\````" 
+                       "Ea<c60\\l<d39\\f1.73\\````" 
                        )
 
 begin_bank( myPresets )                   // these presets will be loaded
@@ -194,9 +194,7 @@ class RootPair : public XorOsc           // root is same as "combo"
 
    RootPair( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt() { return CONSTR("root"); }
-   #endif
+   PROMPT_STR( root )
 
 } ;
 
@@ -208,9 +206,7 @@ class Pair0 : public XorOsc
 
    Pair0( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt() { return CONSTR("pair0"); }
-   #endif
+   PROMPT_STR( pair0 )
 
 } ;
 
@@ -222,9 +218,7 @@ class Pair1 : public XorOsc
 
    Pair1( Osc* o0, Osc* o1 ) : super( o0, o1 ) {};
 
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt() { return CONSTR("pair1"); }
-   #endif
+   PROMPT_STR( pair1 )
 
 } ;
 

@@ -125,14 +125,6 @@
 //    The red LED will now turn off.
 //
 //
-//   ************************** IMPORTANT NOTE ***************************
-//
-//           For the best sounding snare, use Arduino build 1.6.6
-//           and uncomment the line "//#define BUILD_166" in the
-//           file Model.h of the ArduTouch library.
-//
-//   *********************************************************************
-// 
 //  ---------------------------------------------------------------------------
 //
 //  Target:   ArduTouch board
@@ -161,7 +153,7 @@
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
 
-about_program( Beatitude, 1.04 )             // specify sketch name & version
+about_program( Beatitude, 1.06 )             // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -310,11 +302,7 @@ void DrumKit::noteOn( key note )
 
    else
 
-      #ifdef BUILD_166
-         o->setSample( wavetable( Snare01 ) );
-      #else
-         o->setSample( wavetable( lofi_Snare01 ) );
-      #endif
+      o->setSample( wavetable( Snare01 ) );
 
    #else  // use full kit
 
@@ -328,11 +316,7 @@ void DrumKit::noteOn( key note )
 
    else if ( pos <= 7 )
 
-      #ifdef BUILD_166
-         o->setSample( wavetable( Snare01 ) );
-      #else
-         o->setSample( wavetable( lofi_Snare01 ) );
-      #endif
+      o->setSample( wavetable( Snare01 ) );
 
    else if ( pos <= 9 )
 
@@ -401,18 +385,16 @@ class Beatitude : public VoxSynth
 
    public:
 
-   Beatitude()
-   {
-      configVoices(2);
-      click = new ClickTrack();
-      presets.load( myPresets );
-   }
-
    void config()
    {
-      super::config();
+      configVoices(2);
+
+      click = new ClickTrack();
+
       keybrd.setTopOct( 2 );         // constrain keyboard to octaves 0-2
       keybrd.setDefOct( 1 );         // start keyboard in octave 1
+
+      presets.load( myPresets );
    }
 
    void welcome()

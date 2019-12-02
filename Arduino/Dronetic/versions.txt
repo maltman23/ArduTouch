@@ -1,5 +1,7 @@
 Versions:
 
+   0.62  edit presets to use byte values <= 128 when setting LFO depths 
+         syncs with library 1.13
    0.61  use the tuning() call-back method to (indirectly) set the master tuning
-         syncs with library 1.12f
+         syncs with library 1.12
    0.60  === FIRST PUBLISHED VERSION ===

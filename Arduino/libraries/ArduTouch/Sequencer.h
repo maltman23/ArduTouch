@@ -291,7 +291,7 @@ class SequencerROM : public Sequencer
 
 class RealTimeSequencer : public SequencerRAM
 {
-   typedef Sequencer super;            // superclass is Sequencer
+   typedef SequencerRAM super;         // superclass is SequencerRAM
 
    using SequencerRAM::SequencerRAM;   // use SequencerRAM constructor
 
@@ -305,6 +305,8 @@ class RealTimeSequencer : public SequencerRAM
    static  const byte recON    = 4;    // recording
 
    byte  recPhase;                     // current phase in the recording process
+
+   byte  token0;                       // token to be inserted when recPhase goes ON 
 
    byte  beatDC;                       // downcounter (in jiffs) to next beat
    byte  transDC;                      // downcounter (in jiffs) to transition phase

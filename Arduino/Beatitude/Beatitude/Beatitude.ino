@@ -71,6 +71,12 @@
 //    left button).
 //
 // 
+//         -----------       Adjusting the Bass Volume        ----------- 
+//
+//
+//    Rotate the top pot to make the bass louder or softer.
+//
+//
 //         -----------         Controlling the Tempo          -----------       
 //
 //    Rotate the bottom pot to slow down or speed up the tempo.
@@ -145,6 +151,8 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
+about_program( Beatitude, 1.10h )            // specify sketch name & version
+
 #ifndef __STNDLONE__
    #error This sketch requires the __STNDLONE__ runtime model (Model.h)
 #endif
@@ -152,8 +160,6 @@
 #ifndef IMPLICIT_SEQUENCER
    #error This sketch requires IMPLICIT_SEQUENCER to be defined (Model.h)
 #endif
-
-about_program( Beatitude, 1.06 )             // specify sketch name & version
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -263,6 +269,11 @@ class DrumKit : public Voice
    
    public:
 
+   // the panning coefficient
+
+   bool  panRight;                  // if true pan to right (else, pan to left) 
+   word  panCoeff;                  // panning coefficient (for opposite channel)
+
    DrumKit()
    {
       useSequencer( new RealTimeSequencer( 120 ) );
@@ -294,38 +305,55 @@ void DrumKit::noteOn( key note )
    SampleOsc *o = (SampleOsc *)osc;
    byte     pos = note.position();
 
+   panCoeff = 128;
+
    #ifdef USE_SERIAL_PORT  // use reduced kit when the console is enabled
 
    if ( pos <= 4 )
-
+   {
       o->setSample( wavetable( lofi_Kick02 ) );
-
+      panRight = false;
+      panCoeff = 154;
+   }
    else
-
+   {
       o->setSample( wavetable( Snare01 ) );
+      panRight = true;
+      panCoeff = 154;
+   }
 
    #else  // use full kit
 
    if ( pos <= 2 )
-
+   {
       o->setSample( wavetable( lofi_Kick02 ) );
-
+      panRight = false;
+      panCoeff = 154;
+   }
    else if ( pos <= 4 )
-
+   {
       o->setSample( wavetable( lofi_Tom02 ) );
-
+      panRight = false;
+      panCoeff = 90;
+   }
    else if ( pos <= 7 )
-
+   {
       o->setSample( wavetable( Snare01 ) );
-
+      panRight = true;
+      panCoeff = 154;
+   }
    else if ( pos <= 9 )
-
+   {
       o->setSample( wavetable( Rim01 ) );
-
+      panRight = true;
+      panCoeff = 120;
+   }
    else
-
+   {
       o->setSample( wavetable( Hat03 ) );
-
+      panRight = true;
+      panCoeff = 85;
+   }
    #endif
 
    trigger();
@@ -379,9 +407,13 @@ class Beatitude : public VoxSynth
    bool cueing;                     // if true, sequencer is cueing to record
    bool liveBass;                   // if true, bass is being played live
 
+   byte scaleBass;                  // scale factor for bass (128 = 50%)
+
    ClickTrack *click;               // ptr to click track
    DrumKit    *drums;               // ptr to drumkit voice
    Bass       *bass;                // ptr to bass voice
+
+   RealTimeSequencer *sqnc;         // synonym for drums->sqnc;
 
    public:
 
@@ -393,6 +425,8 @@ class Beatitude : public VoxSynth
 
       keybrd.setTopOct( 2 );         // constrain keyboard to octaves 0-2
       keybrd.setDefOct( 1 );         // start keyboard in octave 1
+
+      sqnc = (RealTimeSequencer *)drums->sqnc;
 
       presets.load( myPresets );
    }
@@ -461,7 +495,6 @@ bool Beatitude::charEv( char code )
 
       case sqncRECON:                  // sequencer recording switched on
 
-         drums->setMute( false );      // unmute
          setCueing( false );
          blinkLED( 1 );                // blink to indicate recording
          break;
@@ -493,7 +526,7 @@ bool Beatitude::charEv( char code )
             switch ( sqncNum )
             {
                case 0:
-                  drums->sqnc->load( beat0 );
+                  sqnc->load( beat0 );
                   break;
                default: 
                   break;
@@ -502,9 +535,9 @@ bool Beatitude::charEv( char code )
          break;
       }
 
-      case '[':
+      case '[':                        // start the sequencer
 
-         drums->sqnc->start();
+         sqnc->start();
          break;
 
       case '!':                        // perform a reset
@@ -516,9 +549,9 @@ bool Beatitude::charEv( char code )
          setCueing( false );
          liveBass = false;
 
-         drums->keybrd.setMute( false );
+         scaleBass = 68;
 
-         RealTimeSequencer *sqnc = (RealTimeSequencer *)drums->sqnc;
+         drums->keybrd.setMute( false );
          sqnc->ignoreKeyUp = true;
 
          break;
@@ -555,7 +588,8 @@ void Beatitude::dynamics()
  *  Args:  ev               - onboard event
  *
  *  Memb:  clickOn          - if true, click track is playing
- *         drums->sqnc      - ptr to drum kit's sequencer 
+ *        +scaleBass        - scale factor for bass (128 = 50%)
+ *         sqnc             - ptr to drum kit's sequencer 
  *
  *  Rets:  status           - true if the event was handled
  *
@@ -574,10 +608,15 @@ bool Beatitude::evHandler( obEvent ev )
 
       case BUT1_PRESS:                 // record a sequence
 
-         drums->sqnc->record();
+         sqnc->record();
          console.runModeWhile( sqnc, &this->clickOn );
          break;
 
+      case POT0:                       // set balance between bass and drums
+      
+         scaleBass = 32 + ( ev.getPotVal() >> 2 );   // range from 32 to 96 
+         break;
+      
       case BUT0_TPRESS:                // set beats and measures
 
          if ( ! sqnc->recording() && ! sqnc->playing() )
@@ -747,49 +786,80 @@ void Beatitude::noteOff( key note )
  *  Args:  bufL             - ptr to left audio buffer  
  *         bufR             - ptr to right audio buffer  
  *
+ *  Glob:  audioBufSz       - size of system audio buffers
+ *
  *  Memb:  bass             - ptr to bass voice
  *         drums            - ptr to drumkit voice
  *         click            - ptr to click track  
  *         clickOn          - if true, click track is playing
  *         liveBass         - if true, bass is being played live
+ *         scaleBass        - scale factor for bass 
  *
  *----------------------------------------------------------------------------*/      
 
 void Beatitude::output( char *bufL, char *bufR )
 {
+   // create stereo panned output of drums
+
    drums->output( bufL );  
+
+   Int regX;
+
+   for ( byte i = 0; i < audioBufSz; i++ )
+   {
+      regX.val  = bufL[i];
+      regX.val *= drums->panCoeff;
+      if ( drums->panRight )
+      {
+         bufR[i] = bufL[i];
+         bufL[i] = regX._.msb;
+      }
+      else
+         bufR[i] = regX._.msb;
+   }
+
+   // return if not recording or playing bass over drum playback
+
+   if ( (! clickOn) && (! liveBass) ) 
+      return;
+
+   // Overlay click or bass output on drums output (scaling both)
+
+   char bufOver[ audioBufSz ];               // temp buffer for click or bass output
+
+   word scaleDrums;                          // scale factor for drums
+   word scaleOver;                           // scale factor for overlay
 
    if ( clickOn )
    {
-      click->output( bufR );
-
-      Int reg;
-      for ( byte i = 0; i < audioBufSz; i++ )  // right buf 1/2 click 1/2 drums
-      {
-         reg.val = bufR[i] + bufL[i];
-         reg.val >>= 1;
-         bufR[i] = reg._.lsb;
-      }
+      click->output( &bufOver[0] );
+      scaleOver = 64;
    }
-   else if ( liveBass )
+   else
    {
-      bass->output( bufR );
+      bass->output( &bufOver[0] );
+      scaleOver = scaleBass;
+   }
 
-      Int reg;
-      for ( byte i = 0; i < audioBufSz; i++ )  // right buf 3/4 bass 1/4 drums
-      {
-         reg.val  = bufR[i] ;
-         reg.val *= 3;
-         reg.val += bufL[i];
-         reg.val >>= 2;
-         bufR[i] = reg._.lsb;
-      }
-   }
-   else  // copy kit to right channel
+   scaleDrums = 256 - scaleOver;
+
+   for ( byte i = 0; i < audioBufSz; i++ )   
    {
-      for ( byte i = 0; i < audioBufSz; i++ )
-         bufR[i] = bufL[i];
+      char overlay;                          // scaled overlay value
+
+      regX.val  = bufOver[i];
+      regX.val *= scaleOver;
+      overlay   = regX._.msb;
+
+      regX.val  = bufR[i];
+      regX.val *= scaleDrums;
+      bufR[i]   = regX._.msb + overlay;
+
+      regX.val  = bufL[i];
+      regX.val *= scaleDrums;
+      bufL[i]   = regX._.msb + overlay;
    }
+
 }
 
 Beatitude mySynth;

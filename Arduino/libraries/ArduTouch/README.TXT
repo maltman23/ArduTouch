@@ -11,41 +11,21 @@
    you are running synths supplied by Cornfield Electronics.)
    
 
-                     What's New in Version 1.13
+                     What's New in Version 1.14
                      --------------------------
 
-1) LFO internals have been rewritten to use fixed-point 16 bit math instead 
-   of floating point math, significantly reducing the code footprint.
-  
-   There are now four different LFO waveforms available (triangle, square, 
-   rising sawtooth and falling sawtooth) instead of just one (triangle).
+1) Several bug fixes have been made to the RealTimeSequencer class.
 
-   As part of the LFO rewrite, the following method:
+2) A new version of the Beatitude synth has these added features:
 
-      LFO::setDepth( double x ) -- where x is between 0.0 and 1.0
+   1. The drum kit is now panned in stereo.
 
-   has been changed to
+   2. The top pot controls the balance between the drum kit and the bass.
 
-      LFO::setDepth( byte x ) -- where x is between 0 and 128
-
-   So if you've previously written any code that calls this method you will
-   have to convert the argument. Also, if you've created any presets or macros
-   that set the depth via a string (i.e. "d.5\\") those will have to be edited
-   too (i.e. "d.5\\" becomes "d64\\")
- 
-2) Two new example sketches have been added:
-
-      _60_LFO.ino
-      _61_Signed_LFO.ino
-
-3) A bug in the Mantra and Beatitude synths which caused weird instabilities
-   has been fixed.
-
-4) A new version of the Quadrant synth makes use of previously reserved pot 
-   assignments to control the detuning and transposition of lead voice 1 
-   relative to lead voice 0. 
-
-5) All the synths have been revised to sync with changes to the LFO class.
+   3. When recording a sequence with prior versions of Beatitude the 1st 
+      drum hit was often missed if it occured "right before" the 1st beat 
+      of the 1st measure. That no longer happens.
+    
 
 
 

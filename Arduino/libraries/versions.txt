@@ -1,5 +1,11 @@
 Versions:
 
+   1.14  RealTimeSequencer::jiffsToTrans is relaxed to the duration of a sixteenth note (was 1 juff)
+         the following fixes to the RealTimeSequencer class ...
+         bugfix: super was type-defed as Sequencer instead of SequencerRAM!
+         bugfix: multiple key events during transition no longer cause haywire record compilation
+         bugfix: :evHandler() no longer compiles bogus rest records
+         bugfix: when dynamics() concatenated a rest it was not checking for an empty buffer 
    1.13  re-implementation of LFO class:
            1) internally uses 16-bit fixed pt math instead of floating pt math
            2) adds signed/unsigned oscillator ranges

@@ -49,7 +49,7 @@
 
     The ArduTouch library and sample synths were developed using Arduino build
     1.6.6. For large-scale sketches, build 1.6.6 generates smaller executables 
-    than the current hourly build (1.8.9). If you are using build 1.6.6 you  
+    than the current hourly build (1.8.6). If you are using build 1.6.6 you  
     should uncomment the following define.
 
    ------------------------------------------------------------------------ */

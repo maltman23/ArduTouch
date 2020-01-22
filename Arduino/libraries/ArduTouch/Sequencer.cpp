@@ -163,8 +163,7 @@ bool Sequencer::charEv( char code )
             {
                switch ( token )
                {
-                  case tokenRest:
-                  default:                   // interpret record as either keyUp or KeyDn
+                  default:                   // keyUp, KeyDn, Rest
                      sumJiffs += atIdxBump();
                }
                token = atIdxBump();
@@ -226,7 +225,7 @@ void Sequencer::dynamics()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  Sequence::exeRec
+ *  Name:  Sequencer::exeRec
  *
  *  Desc:  Execute the next record in the sequence buffer.
  *
@@ -753,6 +752,7 @@ bool SequencerROM::load( const byte *addr )
  *        +transDC          - downcounter (in jiffs) to transition phase
  *         ticksPerDyna     - # audio ticks per dynamic update 
  *         ticksPerJiff     - # audio ticks per jiff 
+ *        +token0          - token to be inserted when recPhase goes ON 
  *
  *  Rets:  status           - true if character was handled
  *
@@ -770,8 +770,10 @@ bool RealTimeSequencer::charEv( char code )
          msgSynth( sqncCUE );
 
          rewind();                     
+
          fullHouse = false;
          quantized = false;
+         token0    = tokenRest;         // "no key pressed during transition"
 
          // initialize downcounters
 
@@ -890,6 +892,7 @@ void RealTimeSequencer::done()
  *        +sqnc[]           - buffer for compiled sequence records
  *         ticksPerDyna     - # audio ticks per dynamic update 
  *         ticksPerJiff     - # audio ticks per jiff 
+ *         token0           - token to be inserted when recPhase goes ON 
  *        +transDC          - downcounter (in jiffs) to transition phase
  *
  *  Note:  This method is to be called once per system dynamic update.       
@@ -907,10 +910,11 @@ void RealTimeSequencer::dynamics()
          if ( transDC && (--transDC == 0) )
          {
             // transition phase has arrived
-            msgSynth( sqncRECON );              // "I'm recording for real"
+
+            msgSynth( sqncRECON );              // "I'm beginning to recording"
             recPhase = recTRANS;                // set recording phase
          }
-         else
+         else if ( recPhase == recON )
          {
             if ( duration == 254 )              // concatenate a new rest
             {
@@ -933,8 +937,10 @@ void RealTimeSequencer::dynamics()
             {
                if ( recPhase == recTRANS )      // true recording phase has arrived
                {
-                  recPhase = recON;             // set recording phase
+                  recPhase = recON;             // set recording phase to ON
+                  sqnc[ idx++ ] = token0;       // insert token0 
                   duration = 0;                 // reset duration
+
                }
                measureDC = beatsPerMeasure;
                if ( --endDC == 0 )              // end of sqnc has arrived
@@ -970,9 +976,10 @@ void RealTimeSequencer::dynamics()
  *         numMeasures      - # measures in sequence
  *        +quantized        - if true, prior entry was quantized to next jiff
  *         recPhase         - current phase in the recording process
+ *        +sqnc[]           - buffer for compiled sequence records
  *         target           - ptr to instrument being sequenced 
  *         ticksPerHalf     - # ticks per 1/2 jiff
- *        +sqnc[]           - buffer for compiled sequence records
+ *         token0           - token to be inserted when recPhase goes ON 
  *
  *  Rets:  status           - true if the event was handled
  *
@@ -1006,49 +1013,54 @@ bool RealTimeSequencer::evHandler( obEvent ev )
             quantized = true;
          }
 
-         if ( recPhase == recON )
+         // extract key info from event record and encode it in keyval
+
+         byte pos;                           // key position
+         byte oct;                           // key octave
+         byte keyval;                        // encoded key value
+
+         pos = ev.getKey().position();      // get key position 
+         oct = target->keybrd.getOctave();  // get current octave on target
+
+         keyval = pos + (oct<<4);   
+
+         if ( evtype == KEY_UP ) 
+            keyval += 128;
+
+         // if we're in the transition phase and event is a KEY_DOWN, set token0
+
+         if ( recPhase == recTRANS )
          {
-            if ( idx > 1 )             // compile duration for prior note/rest
+            if ( evtype == KEY_DOWN ) 
+               token0 = keyval;
+         }
+
+         // else we are in the true recording phase: append key to sequence buffer
+
+         else  // ( recPhase == recON )
+         {
+            // compile duration field for prior note/rest
+
+            if ( idx > 1 )             
             {
                if ( duration )
                   sqnc[ idx++ ] = duration;
                else                    // cull prior entry on 0 duration
                   --idx;
             }
-            else if ( duration > 0 )   // compile a Rest-duration
+
+            // append key to sequence buffer, space permitting 
+      
+            if ( idx > sqnc[0] - 5 )   // space for ON+duration+OFF+duration+EOS
+               fullHouse = true;
+            else
             {
-               sqnc[ idx++ ] = tokenRest;  
-               sqnc[ idx++ ] = duration;  
+               sqnc[ idx++ ] = keyval; // store 1st byte of new key record
+               duration      = 0;      // set initial duration
             }
          }
 
-         /*  --- Begin the compilation of a new note, space permitting --- */
-      
-         if ( idx > sqnc[0] - 5 )    // space for ON+duration+OFF+duration+EOS
-         {
-            fullHouse = true;
-            break;
-         }
-         else
-         {
-            byte pos;                 // key position
-            byte oct;                 // key octave
-            byte keyval;              // compiled key value
-
-            pos = ev.getKey().position();      // get key position 
-            oct = target->keybrd.getOctave();  // get current octave on target
-
-            // compile a key value
-
-            keyval = pos + (oct<<4);   // compile key value
-            if ( evtype == KEY_UP ) 
-               keyval += 128;
-            
-            sqnc[ idx++ ] = keyval;    // store 1st byte of new key record
-
-            duration      = 0;         // set initial duration
-            break;
-         }
+         break;
       }
 
       case POT1:                       // set Tempo
@@ -1105,7 +1117,7 @@ void RealTimeSequencer::setBeats( byte bpm )
       bpm = 1;
 
    beatsPerMeasure = bpm;
-   jiffsToTrans    = (jiffsPerBeat * beatsPerMeasure) - 1;
+   jiffsToTrans    = (jiffsPerBeat * beatsPerMeasure) - SIXT_;
 }
 
 /*----------------------------------------------------------------------------*

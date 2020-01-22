@@ -1,7 +1,21 @@
 Versions:
 
+   1.10  drums are panned in stereo
+         pot0 controls balance between bass and drums
+         add DrumKit::panCoeff ::panRight
+         add Beatitude::scaleBass
+         remove DEBUG sections
+         [31764] 1.6.6   revB
+         [32206] 1.8.10  revB
+         [32180] 1.8.10  revC
+   1.09  nix redundant unmuting of drums at Beatitude(sqncRECON)
+   1.08  add DEBUG sections
+   1.07  Beatitude::sqnc replaces automatic var in ::charEv()
+         dereferencing of "drums->sqnc->" replaced by "sqnc->"
+         [31566] 1.6.6
    1.06  hifi Snare used for all builds
          remove BUILD_166 conditional compilation sections
+         [31578] 1.6.6
    1.05  bugfix: configVoices() was being called from Beatitude constructor!
    1.04  use presetMenu + event logic to eliminate need for KEYBRD_MENUS
          syncs with library 1.12
@@ -15,6 +29,13 @@ Versions:
          syncs with library 1.10m
          [32058 / 788] __STNDLONE__ 1.10m
    1.01  corrected comments on how-to-use
+         [32180 / 768] __STNDLONE__ 1.10j
+         [32180 / 768] __STNDLONE__ 1.10g
+         [32182 / 770] __STNDLONE__ 1.10e
+         [32192 / 770] __STNDLONE__ 1.10d
+         [32186 / 770] __STNDLONE__ 1.10c
+         [32190 / 770] __STNDLONE__ 1.10b
+         [32174 / 768] __STNDLONE__ 1.10a
    1.00  optimize DrumKit::noteOn() for size
          [32194 / 768] __STNDLONE__ 1.09v
          <FreeRAM 317>

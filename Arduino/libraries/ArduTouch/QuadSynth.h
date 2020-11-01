@@ -34,9 +34,7 @@ class XPanControl : public PanControl
       this->panPos = panPos;
    }
    
-   #ifdef CONSOLE_OUTPUT
-   const char *prompt();                  // return object's prompt string
-   #endif
+   PROMPT_STR( XPan ) 
 
 } ;
 
@@ -51,20 +49,11 @@ class QuadSynth : public VoxSynth
 {
    typedef VoxSynth super;                // VoxSynth is superclass
 
-   protected:
-
-   key   lastNote;                        // last note played
-   byte  deferVoc;                        // call vox[deferVoc-1]->noteOn()
-                                          // at next dynamic update
    public:
 
    void config();                         // configure synth 
 
-   void dynamics();                       // perform a dynamic update
-   Voice *newVox( byte nth );             // create nth voice 
-   void noteOn( key );                    // turn a note on
    void output( char *, char * );         // write stereo output to pair of buffers
-   void reTrigger();                      // retrigger all voices
 
 } ;                                     
 

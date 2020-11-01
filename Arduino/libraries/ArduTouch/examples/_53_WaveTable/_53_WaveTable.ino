@@ -144,6 +144,7 @@ void loop()
 //             Ether
 //             Rood
 //             SynStr
+//             PanFlute
 //
 //  Any of these can be used as arguments to the wave_descrptor() macro.
 //  Please try them -- they are cool sounds!

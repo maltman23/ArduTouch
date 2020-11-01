@@ -1,5 +1,7 @@
 Versions:
 
+   1.11  optimize DrumKit::noteOn() for size 
+         [31744] 1.6.6   revB
    1.10  drums are panned in stereo
          pot0 controls balance between bass and drums
          add DrumKit::panCoeff ::panRight

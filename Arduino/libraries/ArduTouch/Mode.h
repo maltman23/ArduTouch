@@ -33,7 +33,7 @@ class Mode
 
    enum     { ECHO      = 0b00000001,  // echo character input to console
               MENU      = 0b00000010,  // charEv(menu()) pre-empts KEY_DOWN
-              _FUTURE1  = 0b00000100,  // reserved for future expansion
+              UIFRAME   = 0b00000100,  // enable embedded user interface frames
               _RESERVE0 = 0b00001000,  // reserved for use by derived classes
               _RESERVE1 = 0b00010000,  // reserved for use by derived classes
               _RESERVE2 = 0b00100000,  // reserved for use by derived classes
@@ -43,11 +43,11 @@ class Mode
 
    Mode()
    {
-      flags = ECHO;                    
+      flags = ECHO;
    }
 
-   virtual boolean charEv( char );     // handle a character event
-   virtual boolean evHandler(obEvent); // handle an onboard event
+   virtual bool charEv( char );        // handle a character event
+   virtual bool evHandler( obEvent );  // handle an onboard event
 
    #ifdef KEYBRD_MENUS
    virtual char    menu( key );        // given a key, return a character
@@ -58,8 +58,9 @@ class Mode
    #endif
 
    void    brief();                    // display brief object info 
-   void    execute( const char *);     // execute a macro 
-   void    inform();                   // display object info, then new prompt 
+   void    execute( const char * );    // execute a macro 
+   void    inform();                   // display object info, then new prompt
+   bool    potEv( obEvent );           // handle pot event, stripping frame # if necessary
 
 } ;
 

@@ -276,17 +276,11 @@ boolean MixOsc::evHandler( obEvent ev )
          break;
 
       case POT0:                       // set oscillator mix
-      {
-         byte val = ev.getPotVal();
-         if ( val < 255 )
-            val >>= 1;
-         else
-            val = 128;
-         setMix( val );
+      
+         setMix( ev.getPotVal128() );
          break;
-      }
-                                       // select frequency (from spectrum)
-      case POT1:       
+                                       
+      case POT1:                       // select frequency (from spectrum)
 
          freqRatio = getSpecFreq( ev.getPotVal() );
          break;

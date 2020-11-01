@@ -167,10 +167,13 @@ void Voice::calcMultGlide()
  *  Memb:  ampMods          - amplitude modifiers
  *         effects          - effects chain
  *        +glide            - portamento speed 1:255 (0 = off)
+ *         osc;             - ptr to resident oscillator
  *         pitchMods        - pitch modifiers
  *        +vol              - volume level 
  *
  *  Rets:  status           - true if character was handled
+ *
+ *  Note:  Unhandled events are passed to the oscillator.
  *
  *----------------------------------------------------------------------------*/      
 
@@ -244,7 +247,7 @@ boolean Voice::charEv( char code )
       
       #endif     
 
-         setFreq(0.0);
+         squelch();
 
          // fall thru to super 
             
@@ -304,7 +307,7 @@ void Voice::doneGlide()
  *         pendFreq         - pending ideal frequency  
  *         pitchMods        - pitch modifiers
  *        +segVol           - if segue in process, ultimate instVol
- *         vol              - volume level 
+ *        +squelched        - volume is suppressed until voice is triggered
  *
  *----------------------------------------------------------------------------*/      
 
@@ -340,6 +343,7 @@ void Voice::dynamics()
       pitchMods.trigger();
       effects.trigger();
       flags &= ~TRIG;               
+      squelched = false;
    }
    else                             // update components
    {
@@ -351,7 +355,7 @@ void Voice::dynamics()
 
    /* manage instantaneous volume */
 
-   if ( muted() )
+   if ( muted() || squelched )
    {
       segVol.val = 0;
    }
@@ -392,38 +396,24 @@ void Voice::dynamics()
  *
  *----------------------------------------------------------------------------*/      
 
-boolean Voice::evHandler( obEvent ev )
+bool Voice::evHandler( obEvent ev )
 {
-   if ( byte param = getScrollParm( ev ) )
+   switch ( ev.type() )
    {
-      byte val = ev.getPotVal();
-      switch ( param )
-      {
-         case 1:  setVol( val );             break;      
-         case 2:  osc->setDetune( val-128 ); break;      
-         case 3:  setGlide( val );           break;
-      }
+      case POT1_F00:                   // FRAME00 POT1 controls detuning
+
+         osc->setDetune( ev.getPotVal() - 128 );
+         break;
+
+      case POT0_F01:                   // FRAME01 POT0 controls portamento
+
+         setGlide( ev.getPotVal() );
+         break;
+
+      default:
+
+         return super::evHandler(ev);
    }
-   else
-   {
-      switch ( ev.type() )
-      {
-         case BUT0_PRESS:
-
-            scrollUp();
-            break;
-
-         case BUT1_PRESS:
-
-            scrollDn();
-            break;
-
-         default:
-
-            return super::evHandler( ev );
-      }
-   }
-
    return true;
 }
 
@@ -703,6 +693,25 @@ void Voice::setVol( byte x )
 
 /*----------------------------------------------------------------------------*
  *
+ *  Name:  Voice::squelch
+ *
+ *  Desc:  Suppress volume until voice is triggered.
+ *
+ *  Memb: +instVol          - instantaneous volume
+ *        +segVol           - if segue in process, ultimate instVol
+ *        +squelched        - volume is suppressed until voice is triggered
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Voice::squelch()
+{
+   squelched = true;
+   instVol.val = 0;
+   segVol.val = 0;
+}
+
+/*----------------------------------------------------------------------------*
+ *
  *  Name:  Voice::trigger
  *
  *  Desc:  Trigger voice components.
@@ -771,7 +780,7 @@ boolean ADSRVoice::charEv( char code )
 
       default:
 
-         super::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }
@@ -811,7 +820,7 @@ boolean StockVoice::charEv( char code )
 
       default:
 
-         super::charEv( code );
+         return super::charEv( code );
    }
    return true;
 }

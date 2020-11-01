@@ -243,7 +243,7 @@ void WaveOsc::setTable( const desWavTab *d )
  *
  *  Name:  WaveOsc::setTable
  *
- *  Desc:  Set the wavetable.
+ *  Desc:  Set the wavetable + name.
  *
  *  Args:  descriptor       - wavetable descriptor
  *         name             - wavetable name
@@ -253,7 +253,7 @@ void WaveOsc::setTable( const desWavTab *d )
  *  Memb: +coeff            - step = freq * coeff
  *        +idx              - current accumulated idx into table
  *        +length           - # of samples in table 
- *        +name             - wacetable name
+ *        +name             - wavetable name
  *        +table            - ptr to table of samples
  * 
  *----------------------------------------------------------------------------*/      
@@ -287,7 +287,7 @@ void WaveOsc::setTable( const desWavTab *d, const char *n )
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  WaveOsc::setTable
+ *  Name:  WaveOsc::setTableFromBank
  *
  *  Desc:  Set table to a given member of the wavebank.
  *

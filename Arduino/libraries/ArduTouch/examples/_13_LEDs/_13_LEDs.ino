@@ -79,7 +79,7 @@ class LEDSynth : public Synth
       {
          case POT1:                          // bottom pot was moved
          {
-            setBlinkTime( e.getPotVal() );   // set LED blink time
+            setBlinkTime( e.getPotVal() );   // set LED blink time 
             return true;
          }
          case KEY_DOWN:                      // a key has been pressed

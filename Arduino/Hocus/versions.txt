@@ -1,0 +1,6 @@
+Versions:
+
+   1.00  use embedded U/I frames 
+         _Sn2345 not available if CONSOLE_OUTPUT
+         syncs with library 1.16
+   0.99  === FIRST PUBLISHED VERSION ===

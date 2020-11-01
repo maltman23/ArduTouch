@@ -360,7 +360,7 @@
 
 #include "ArduTouch.h"                       
 
-about_program( Quadrant, 1.70 )       
+about_program( Quadrant, 1.73 )       
 
 // If you've got your hacker shoes on and want to alter this sketch, uncommenting
 // the following line will help you move between __FULLHOST__ and __STNDLONE__
@@ -1864,8 +1864,6 @@ class ParmMenu : public Mode           // Runtime parameter menu
 {
    typedef Mode super;                 // superclass is Mode
 
-   LEDFrame priorLEDs;                 // for saving prior LED state  
-
    public:
 
    bool charEv( char code )            // process a character event
@@ -1874,14 +1872,8 @@ class ParmMenu : public Mode           // Runtime parameter menu
       {
          case focusPUSH:
 
-            saveLEDs( &priorLEDs );
             blinkLED(0);               // set up alternating blinking LEDs
             blinkLED(1, true);
-            break;
-
-         case focusPOP:
-
-            restoreLEDs( &priorLEDs );
             break;
 
          default:
@@ -1939,37 +1931,14 @@ class QuadrantSynth : public VoxSynth
 
    double lfoSkew;                  // amount to skew LFO frequencies in stereo
 
-   enum {  // these values enumerate elements of ledState[] 
-
-           LED_OFF   = 0,       
-           LED_ON    = 1,      
-           LED_BLINK = 2
-
-        } ;
-
-   byte ledState[ NumLEDs ];        // display state of each onboard LED
-
-   enum {  // these values enumerate frame 
-
-           FRAME00   = 0,       
-           FRAME10   = 1,      
-           FRAME20   = 2,
-           FRAME01   = 4,
-           FRAME11   = 5,       
-           FRAME21   = 6,      
-           FRAME02   = 8,      
-           FRAME12   = 9,      
-           FRAME22   = 10
-
-        } ;
-
-   byte frame;                      // user interface frame 
    byte envPotSend;                 // controls which envelopes are effected by pots  
 
    void config()
    {
       configVoices(2);
 
+      setFrameDimensions( 2, 2 );   // dimensions of embedded user interface frame
+      
       // configure master envelope to control envelopes of lead voices
 
       env.setNumSlaves(2);
@@ -1995,7 +1964,7 @@ class QuadrantSynth : public VoxSynth
 
    Osc *newOsc( byte nth )                // create nth osc -- NEVER CALLED
    {
-      return new Osc();                   
+      return NULL;                   
    }
       
    Voice *newVox( byte nth )              // create nth voice
@@ -2006,28 +1975,6 @@ class QuadrantSynth : public VoxSynth
          return &leadVox1;
    }
       
-   void bumpLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:  ledState[nth] = LED_ON;    break;
-         case LED_ON:   ledState[nth] = LED_BLINK; break;
-         default:       ledState[nth] = LED_OFF;   break;
-      }
-      dispLED( nth );
-      setFrame();
-   }
-
-   void dispLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:    offLED( nth );   break;
-         case LED_ON:     onLED( nth );    break;
-         case LED_BLINK:  blinkLED( nth ); break;
-      }
-   }
-
    bool charEv( char code )            // process a character event
    {
       switch ( code )
@@ -2054,11 +2001,6 @@ class QuadrantSynth : public VoxSynth
          case 'E':                     // push Echotron
 
             console.pushMode( &echo );
-            break;
-
-         case 'F':                     // set frame
-
-            console.getByte( CONSTR("Frame"), &frame );
             break;
 
          case 'M':                     // push master envelope
@@ -2098,7 +2040,6 @@ class QuadrantSynth : public VoxSynth
             env.brief();
             console.infoByte( CONSTR("sendEnv"), envPotSend );
             console.newlntab();
-            console.infoByte( CONSTR("Frame"), frame );
             console.infoByte( CONSTR("balance"), balance );
             console.infoDouble( CONSTR("lfoSkew"), lfoSkew );
             break;
@@ -2111,6 +2052,8 @@ class QuadrantSynth : public VoxSynth
 
             flags &= ~RSTMUTE;
 
+            enableFrame();             // use embedded user-interface frame
+            
             envPotSend = ENVPOT_LEAD + ENVPOT_ECHO;
 
             echo.reset();
@@ -2145,16 +2088,6 @@ class QuadrantSynth : public VoxSynth
 
       switch ( e.type() )
       {     
-         case BUT0_PRESS:                    // bump frame prefix 
-
-            bumpLED(0);
-            break;
-
-         case BUT1_PRESS:                    // bump frame suffix
-
-            bumpLED(1);
-            break;
-
          case BUT0_DTAP:                     // push parameter menu
 
             console.pushMode( &parmMenu );
@@ -2175,67 +2108,85 @@ class QuadrantSynth : public VoxSynth
 
    bool handlePots( obEvent ev )             // handle pot events
    {
-      bool pot0 = false;
+      if ( ! ev.amPot() )                    // return false if not a pot event
+         return false;                       
 
-      if ( ev.type() == POT0 )
-         pot0 = true;
-      else if ( ev.type() != POT1 )
-         return false;                       // event is neither POT0 or POT1
+      byte potVal = ev.getPotVal();          // cache pot value
 
-      byte potVal = ev.getPotVal();
-            
-      switch ( frame )
+      switch ( ev.type() )                   // execute case by pot#_frame#
       {
          #ifdef AUDIT_ECHO
 
-         case FRAME00:                       // warp - delay
+         /*             FRAME 00             */
 
-            if ( pot0 )                      // set warp
-               echo.setWarpViaPot(potVal);
-            else                             // set delay
-               echo.setDelayViaPot(potVal);
+         case POT0_F00:                      // set warp 
+
+            echo.setWarpViaPot(potVal);
             break;
 
-         case FRAME10:                       // feedback - balance
+         case POT1_F00:                      // set delay
 
-            if ( pot0 )                      // set feedback
-               echo.setFeedbackViaPot(potVal);
-            else                             // set balance
-               setBalance(potVal);
+            echo.setDelayViaPot(potVal);
             break;
 
-         case FRAME20:                       // pan freq - pan depth
+         /*             FRAME 10             */
 
-            panControl.evHandler(ev);
+         case POT0_F10:                      // set feedback 
+
+            echo.setFeedbackViaPot(potVal);
             break;
 
-         case FRAME01:                       // autowah freq -- autowah depth
+         case POT1_F10:                      // set balance 
 
-            echo.side[0]->autowah->lfo.evHandler(ev);
-            if ( pot0 )
-               echo.side[1]->autowah->lfo.setFreq( echo.side[0]->autowah->lfo.getFreq() * lfoSkew );
-            else
-               echo.side[1]->autowah->lfo.evHandler(ev);
+            setBalance(potVal);
             break;
 
-         case FRAME11:                       // autowah cutoff -- echotron PW
+         /*             FRAME 20             */
 
-            if ( pot0 )
-               for ( byte i = 0; i <= 1; i++ )
-               {
-                  echo.side[i]->autowah->setCutoff( potVal );
-               }
-            else
-               echo.setPwViaPot( potVal );
+         case POT0_F20:                      // pan freq 
+         case POT1_F20:                      // pan depth 
+
+            panControl.potEv(ev);
+            break;
+
+         /*             FRAME 01             */
+
+         case POT0_F01:                      // autowah freq 
+
+            echo.side[0]->autowah->lfo.potEv(ev);
+            echo.side[1]->autowah->lfo.setFreq( echo.side[0]->autowah->lfo.getFreq() * lfoSkew );
+            break;
+
+         case POT1_F01:                      // autowah depth  
+
+            echo.side[0]->autowah->lfo.potEv(ev);
+            echo.side[1]->autowah->lfo.potEv(ev);
+            break;
+
+         /*             FRAME 11             */
+
+         case POT0_F11:                      // autowah cutoff
+
+            for ( byte i = 0; i <= 1; i++ )
+               echo.side[i]->autowah->setCutoff( potVal );
+            break;
+
+         case POT1_F11:                      // echotron pulse width 
+
+            echo.setPwViaPot( potVal );
             break;
 
          #endif // ifdef AUDI_ECHO
 
-         case FRAME21:                       // leadVox1 detune -- transpose
+         /*             FRAME 21             */
 
-            if ( pot0 )
-               leadVox1.osc->setDetune( potVal - 128 );
-            else
+         case POT0_F21:                      // leadVox1 detune
+
+            leadVox1.osc->setDetune( potVal - 128 );
+            break;
+
+         case POT1_F21:                      // leadVox1 transpose
+
             {
                // transpose lead 1 by between -24 and 24 semitones
 
@@ -2249,65 +2200,71 @@ class QuadrantSynth : public VoxSynth
             }
             break;
 
-         case FRAME02:                       // attack/decay for envelopes
+         /*             FRAME 02             */
+
+         case POT0_F02:                      // set attack for envelopes
 
             if ( envPotSend & ENVPOT_LEAD )
-            {
-               if ( pot0 )
-                  env.setAttack( potVal );
-               else
-                  env.setDecay( potVal );
-            }
+               env.setAttack( potVal );
 
             #ifdef AUDIT_ECHO
-
             if ( envPotSend & ENVPOT_ECHO )
-            {
-               if ( pot0 )
-                  echo.env.setAttack( potVal );
-               else
-                  echo.env.setDecay( potVal );
-            }
+               echo.env.setAttack( potVal );
+            #endif
 
+            break;
+                                             // set decay for envelopes
+         case POT1_F02:                       
+
+            if ( envPotSend & ENVPOT_LEAD )
+               env.setDecay( potVal );
+
+            #ifdef AUDIT_ECHO
+            if ( envPotSend & ENVPOT_ECHO )
+               echo.env.setDecay( potVal );
             #endif
 
             break;
 
-         case FRAME12:                       // sustain/release for envelopes
+         /*             FRAME 12             */
+
+         case POT0_F12:                      // set sustain for envelopes
 
             if ( envPotSend & ENVPOT_LEAD )
-            {
-               if ( pot0 )
-                  env.setSustain( potVal );
-               else
-                  env.setRelease( potVal );
-            }
+               env.setSustain( potVal );
 
             #ifdef AUDIT_ECHO
-
             if ( envPotSend & ENVPOT_ECHO )
-            {
-               if ( pot0 )
-                  echo.env.setSustain( potVal );
-               else
-                  echo.env.setRelease( potVal );
-            }
+               echo.env.setSustain( potVal );
+            #endif
 
+            break;
+                                             // set release for envelopes
+         case POT1_F12:                       
+
+            if ( envPotSend & ENVPOT_LEAD )
+               env.setRelease( potVal );
+
+            #ifdef AUDIT_ECHO
+            if ( envPotSend & ENVPOT_ECHO )
+               echo.env.setRelease( potVal );
             #endif
 
             break;
 
-         case FRAME22:                       //  echo sustime / lead portamento
+         /*             FRAME 22             */
 
-            if ( pot0 )
+         case POT0_F22:                      // set sustime  
+
             #ifdef AUDIT_ECHO
-               echo.env.setSusTime( potVal );
-            #else
-               ;
+            echo.env.setSusTime( potVal );
             #endif
-            else
-               leadVox0.setGlide( potVal );
-               leadVox1.setGlide( potVal );
+            break; 
+
+         case POT1_F22:                      // set lead portamento  
+
+            leadVox0.setGlide( potVal );
+            leadVox1.setGlide( potVal );
             break; 
 
       }
@@ -2374,19 +2331,6 @@ class QuadrantSynth : public VoxSynth
       scaleLead = coeff;
    }
 
-   void setFrame()                           // set the U/I frame
-   {
-      // compute frame from ledState[] entries
-
-      frame = 0;
-      byte factor = 1;
-      for ( byte i = 0; i <= NumLEDs; i++ )
-      {
-         frame += ledState[i] * factor;
-         factor <<= 2;
-      }
-   }
-
    void toggleLead()                         // toggle lead voices (mute/unmute)
    {
       bool status = !vox[0]->muted();
@@ -2402,14 +2346,6 @@ class QuadrantSynth : public VoxSynth
 
       // runPreset( (const char *)presets.dataPtr( 0 ) ); 
 
-      // initialize LEDS and frame (to 00)
-
-      for ( byte i = 0; i <= NumLEDs; i++ )
-      {
-         ledState[i] = LED_OFF;
-         dispLED( i );
-      }
-      setFrame();
    }
 
 } mySynth;

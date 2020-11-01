@@ -42,8 +42,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( ZapShot, 1.32 )               // specify sketch name & version
-
+about_program( ZapShot, 1.34 )               // specify sketch name & version
   
 /*----------------------------------------------------------------------------*
  *                              ZapVox macros
@@ -519,16 +518,12 @@ class MasterZapOsc : public ZapOsc
    SweepOsc *slave;                 // ptr to slave oscillator
    bool      latched;               // if true, slave osc sweeps are latched
 
-   byte      statusLED;             // display run-time status to this LED #
-
    MasterZapOsc()
    {
       slave     = NULL;             // no slave oscillator specified
-      statusLED = NULL_LED;         // by default there is no assigned LED
    }
 
    bool charEv( char code );        // process a character event
-   void refreshLED();               // do a visual refresh of dedicated LED 
    void startSweep();               // initiate a new sweep from begin to end
 
    PROMPT_STR( mastZap )
@@ -556,12 +551,6 @@ bool MasterZapOsc::charEv( char code )
                                           
      #endif // INTERN_CONSOLE
 
-     case 'a':                            // set autotrig on/off
-
-         super::charEv( code );
-         refreshLED();
-         break;
-
      case 'L':                            // set latched status 
 
          console.getBool( CONSTR("Latched"), &latched );
@@ -584,7 +573,6 @@ bool MasterZapOsc::charEv( char code )
 
          super::charEv( code );
          latched = false;
-         refreshLED();
          break;
 
       default:
@@ -611,14 +599,6 @@ void MasterZapOsc::startSweep()
       // console.print( '.' );
       // console.romprint( slave->prompt() );
    }
-}
-
-void MasterZapOsc::refreshLED()
-{
-   if ( autotrig )
-      blinkLED( statusLED );
-   else
-      offLED( statusLED );
 }
 
 /******************************************************************************
@@ -883,6 +863,7 @@ class YPots : public VirtualPotDemux
  *                                                                            
  ******************************************************************************/
 
+#define statusLED 1                 // display autotrig status to this LED #
 
 class FreqPan  : public PotSend { public: PROMPT_STR( FreqPan ) } ;
 class DepthPan : public PotSend { public: PROMPT_STR( DepthPan ) } ;
@@ -926,11 +907,10 @@ class ZapShotSynth : public TwoVoxPanSynth
       depthPan = new DepthPan();
       freqPan  = new FreqPan();
 
-      // assign slave oscillator and statusLED to master oscillator  
+      // assign slave oscillator to master oscillator  
 
       masterOsc            = (MasterZapOsc *)zapVox[0]->zapOsc;
       masterOsc->slave     = zapVox[1]->zapOsc;
-      masterOsc->statusLED = BLUE_LED; 
 
       presets.load( myPresets );      // load bank of presets
       macroBank.load( macros );       // load bank of macros
@@ -1035,6 +1015,8 @@ class ZapShotSynth : public TwoVoxPanSynth
             setDelay(0.0);
             delayDC = 0;
 
+            offLED( statusLED );
+            
             break;
 
          default:
@@ -1075,32 +1057,31 @@ class ZapShotSynth : public TwoVoxPanSynth
             {
                for ( byte i = 0; i <= lastToToggle; i++ )
                   vox[i]->execute( PSTR("Oaf\\") );
+               offLED( statusLED );
             }
             else
             {
                for ( byte i = 0; i <= lastToToggle; i++ )
                   vox[i]->execute( PSTR("Oat\\") );
+               blinkLED( statusLED );
             }
             break;
          }
 
-         case BUT1_DTAP:                     // override "one-shot menu" 
+         case BUT1_DTAP:                     // load a preset 
 
             presetMenu.waitKey();
             execute( (const char *)presets.dataPtr( presetMenu.value ) );
+            if ( masterOsc->autoTrigEnabled() )
+               blinkLED( statusLED );
+            else
+               offLED( statusLED );
             break;
 
          default:
             return super::evHandler(ev);
       }
       return true;
-   }
-
-
-   void forEach( const char *macStr )
-   {
-      for ( byte i = 0; i < numVox; i++ )
-         vox[i]->execute( macStr );
    }
 
    void noteOn( key note )                    // turn a note on

@@ -126,9 +126,13 @@
 
 class Console
 {
+   public:
+
    static const int MAX_MODE = 8;      // max nesting level of console modes
 
-   Mode   *_modeStk[ MAX_MODE+1 ];     // obj ptrs of nested console modes
+   private:
+
+   Mode   *_modeStk[ MAX_MODE+1 ];     // stack of ptrs to nested console modes
    signed char modeSP;                 // stackptr for _modeStk[]
 
    const char *atMacro;                // ptr into macro string being executed
@@ -179,7 +183,8 @@ class Console
    void  infoDouble( const char*, double );   // print a double value (with label)
    void  infoInt( const char*, int );         // print an int value (with label)
    void  infoIntBits( const char*, int );     // print an int as a bit string (with label)
-   void  infoStr( const char*, const char* ); // print a str value (with label)
+   void  infoStr( const char*, const char* ); // print a string located in ROM (with label)
+   void  infoRAMStr( const char*, char* );    // print a string located in RAM (with label)
    void  infoULong( const char*, unsigned long ); // print an unsigned long (with label)
    void  init( Mode *mode, void (*)() );
    bool  inMode( Mode* );              // returns true if arg is current mode

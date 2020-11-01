@@ -23,6 +23,19 @@
 
 #include "Arduino.h"
 
+enum frameNum                          // enumerates all possible frame #'s
+{
+   FRAME00 =  0,                       // LED0 off    LED1 off
+   FRAME01 =  2,                       // LED0 off    LED1 on
+   FRAME02 =  4,                       // LED0 off    LED1 blink
+   FRAME10 =  8,                       // LED0 on     LED1 off
+   FRAME11 = 10,                       // LED0 on     LED1 on
+   FRAME12 = 12,                       // LED0 on     LED1 blink
+   FRAME20 = 16,                       // LED0 blink  LED1 off
+   FRAME21 = 18,                       // LED0 blink  LED1 on
+   FRAME22 = 20                        // LED0 blink  LED1 blink
+} ;
+
 /* --------------------------------------------------------------------------
 
       Onboard events are grouped into 3 genuses: 
@@ -60,7 +73,29 @@ typedef byte evType ; enum
    BUT1_DTAP,        // right button is double-tapped
    BUT1_TPRESS,      // right button is tapped-then-pressed
    POT0,             // top pot is moved
-   POT1              // bot pot is moved
+   POT1,             // bot pot is moved
+
+   // "extended" pot events: pots are moved while in a particular frame 
+
+   POT0_F00 = FRAME00+POT0,
+   POT1_F00 = FRAME00+POT1,
+   POT0_F01 = FRAME01+POT0,
+   POT1_F01 = FRAME01+POT1,
+   POT0_F02 = FRAME02+POT0,
+   POT1_F02 = FRAME02+POT1,
+   POT0_F10 = FRAME10+POT0,
+   POT1_F10 = FRAME10+POT1,
+   POT0_F11 = FRAME11+POT0,
+   POT1_F11 = FRAME11+POT1,
+   POT0_F12 = FRAME12+POT0,
+   POT1_F12 = FRAME12+POT1,
+   POT0_F20 = FRAME20+POT0,
+   POT1_F20 = FRAME20+POT1,
+   POT0_F21 = FRAME21+POT0,
+   POT1_F21 = FRAME21+POT1,
+   POT0_F22 = FRAME22+POT0,
+   POT1_F22 = FRAME22+POT1
+
 } ;
 
 /* --------------------------------------------------------------------------
@@ -84,13 +119,15 @@ typedef byte butAction ; enum
 
    -------------------------------------------------------------------------- */
 
+#define NULL_KEY 255
+
 struct key                             
 {
    byte val;
 
    key()
    {
-      val = 0;
+      reset();
    }
 
    key( byte v )
@@ -112,6 +149,11 @@ struct key
    {
       return (val == other.val);
    }
+
+   boolean null()
+   {
+      return (val == NULL_KEY);
+   }
    
    byte octave()
    {
@@ -121,7 +163,7 @@ struct key
    byte physkey()                   // return physical key #
    {
       // on the ArduTouch, physKey() == position()
-      // if this code is ported to a board with more than 1 pjysical octave
+      // if this code is ported to a board with more than 1 physical octave
       // the key struct will have to be expanded to include physical key field
       return val & 0b00001111;      
    }
@@ -129,6 +171,11 @@ struct key
    byte position()
    {
       return val & 0b00001111;
+   }
+
+   void reset()
+   {
+      val = NULL_KEY;
    }
 
    void set( byte p, byte o )
@@ -150,9 +197,9 @@ struct key
 
       The obEvent struct denotes an onboard event. 
 
-      It contains a type field in the upper nibble of the high byte.
+      It contains a type field in the lower 5 bits of the high byte.
 
-      Type-specific data is stored in the low byte and in the low nibble 
+      Type-specific data is stored in the low byte and in the upper 3 bits 
       of the high byte.
 
    -------------------------------------------------------------------------- */
@@ -162,19 +209,25 @@ struct obEvent
    byte lo;
    byte hi;
 
-   #define OB_OCTAVE 0b00010000    // if hi.OB_OCTAVE set, key has octave info
+   #define OB_OCTAVE 0b00100000    // if hi.OB_OCTAVE set, key has octave info
 
    evGenus genus()
    {
       evType t = type();
-      if ( t >= KEY_DOWN && t <= KEY_UP )
+      if ( t <= KEY_UP )
          return evKEY;
-      else if ( t >= BUT0_PRESS && t <= BUT1_TPRESS )
+      else if ( t <= BUT1_TPRESS )
          return evBUT;
-      else if ( t >= POT0 && t <= POT1 )
+      else if ( t <= POT1_F22 )
          return evPOT;
       else
          return evUNDEF;
+   }
+
+   bool amPot()
+   {
+      evType t = type();
+      return ( t >= POT0_F00 && t <= POT1_F22 );
    }
 
    void clean()
@@ -187,9 +240,15 @@ struct obEvent
       return lo;
    }
 
-   byte getPotVal()
+   byte getPotVal()             // returns a value between 0 and 255
    {
       return lo;
+   }
+
+   byte getPotVal128()          // returns a value between 0 and 128
+   {
+      word result = lo + 1;
+      return result>>1;
    }
 
    key getKey()
@@ -237,13 +296,18 @@ struct obEvent
 
    void setType( evType t )
    {
-      hi &= 0b11110000;
+      hi &= 0b11100000;
       hi |= (byte )t;
+   }
+
+   void stripFrame()
+   {
+      setType( POT0 + ( type() & 0b01 ) );
    }
 
    evType type()
    {
-      return hi & 0b00001111;
+      return hi & 0b00011111;
    }
 
    #undef OB_OCTAVE

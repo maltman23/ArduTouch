@@ -1,6 +1,38 @@
 Versions:
 
-   1.14  RealTimeSequencer::jiffsToTrans is relaxed to the duration of a sixteenth note (was 1 juff)
+   1.16  Embedded User Interface Frames
+         re-implementation of ADSR class uses 16-bit fixed pt math internally 
+         improved Voice squelching eliminates audio glitch on initial note after reset
+         remove Scroller module 
+         add compound pot_frame events
+         type field in obEvent extended to lower 5 bits of hi byte
+         add obEvent::amPot() ::getPotVal128() ::stripFrame()
+         add Mode::potEv()
+         add Control::frame ::enableFrame() ::setFrameDimensions() ::getPotNum()
+         add pushDisplay() popDisplay() resetDisplay()
+         add _ledsStk[]
+         add get/setLEDs()
+         Console::pushMode() ::popMode automatically save and restore display state of LEDs
+         Console:exeIn() calls resetDisplay()
+         add USE_LEDS symbolic constant
+         bottom 4 bits of blinkTime are always 0
+         rework Voice, ADSR, and AutoADSR::evHandler() to handle frame-extended pot events
+         bugfix: Stock/ADSRVoice::charEv() were not returning result of super::charEv()
+   1.15  add 47 sinusoidal wave tables (named "Sn...") 
+         add PanFlute wave table 
+         add VoxSynth::forEach()
+         nix QuadSynth::noteOn()
+         nix QuadSynth::deferVoc ::dynamics()
+         move ::lastNote and ::reTrigger() from QuadSynth to VoxSynth
+         VoxSynth(!) resets ::lastNote
+         private Voice members now scoped as protected
+         add BankOsc256 class
+         nix Bank::Max (Max is now implicitly 255)
+         Bank::numMem() renamed ::numMembers()
+         Bank(s) selects member by index #
+         add key::reset(), key::null(), NULL_KEY
+         add Console::infoRAMStr()
+   1.14  RealTimeSequencer::jiffsToTrans is relaxed to the duration of a sixteenth note (was 1 jiff)
          the following fixes to the RealTimeSequencer class ...
          bugfix: super was type-defed as Sequencer instead of SequencerRAM!
          bugfix: multiple key events during transition no longer cause haywire record compilation

@@ -32,7 +32,6 @@
 
 #include "Console_.h"
 #include "Control.h"
-#include "Scroller.h"
 
 /******************************************************************************
  *
@@ -40,7 +39,7 @@
  *
  ******************************************************************************/
 
-class ADSR : public Factor, public Scroller
+class ADSR : public Factor
 {
    typedef Factor super;         // superclass is Factor
 
@@ -48,44 +47,46 @@ class ADSR : public Factor, public Scroller
 
    ADSR()
    {
-      setScrollable(4);
       shortcut = 'e';
+      frame.dim1 = 1;            // makes use of frames 00 and 01
    }
 
-   boolean charEv( char );       // process a character event
-   void    dynamics();           // update object dynamics
-   boolean evHandler( obEvent ); // handle an onboard event
-   void    finish();             // set phase to final ("done")
+   bool   charEv( char );        // process a character event
+   void   dynamics();            // update object dynamics
+   bool   evHandler( obEvent );  // handle an onboard event
+   void   finish();              // set phase to final ("done")
 
-   byte    getAttack()  { return attack; }   // get attack time
-   byte    getDecay()   { return decay; }    // get decay time
-   byte    getSustain() { return sustain; }  // get sustain level
-   byte    getRelease() { return relTime; }  // get release time
+   byte   getAttack()  { return attack; }   // get attack time
+   byte   getDecay()   { return decay; }    // get decay time
+   byte   getSustain() { return sustain; }  // get sustain level
+   byte   getRelease() { return relTime; }  // get release time
 
-   void    setAttack( byte );    // set attack time
-   void    setDecay( byte );     // set decay time
-   void    setSustain( byte );   // set sustain level
-   void    setRelease( byte );   // set release time
+   void   setAttack( byte );     // set attack time
+   void   setDecay( byte );      // set decay time
+   void   setSustain( byte );    // set sustain level
+   void   setRelease( byte );    // set release time
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );          // given a key, return a character 
+   char   menu( key );           // given a key, return a character 
    #endif
 
    PROMPT_STR( envADSR ) 
 
    protected:
 
-   byte    attack;               // attack time
-   byte    decay;                // decay time
-   byte    sustain;              // sustain level
-   byte    relTime;              // release time
+   word   curLevel;              // current envelope level ( 0x8000 = "1.0" )
 
-   double  attStep;              // change in attack per dynamic update
-   double  decStep;              // change in decay per dynamic update
-   double  susLevel;             // sustain level
-   double  relStep;              // change in release per dynamic update
+   byte   attack;                // attack time
+   byte   decay;                 // decay time
+   byte   sustain;               // sustain level (U/I accessible: 0-255)
+   byte   relTime;               // release time
 
-   byte    phase;                // current phase of envelope
+   word   attStep;               // change in attack per dynamic update
+   word   decStep;               // change in decay per dynamic update
+   word   susLevel;              // sustain level (0-0x8000)
+   word   relStep;               // change in release per dynamic update
+
+   byte   phase;                 // current phase of envelope
                                  // enumerated values for phase:
 
    static const byte attPhase = 4;  
@@ -94,9 +95,10 @@ class ADSR : public Factor, public Scroller
    static const byte relPhase = 1;
    static const byte finPhase = 0;
 
-   word    exptime( byte );      // expand time to # of dynamic updates
+   word   exptime( byte );       // expand time to # of dynamic updates
 
 } ;
+
 
 /******************************************************************************
  *
@@ -112,7 +114,7 @@ class AutoADSR : public ADSR     // ADSR with sustain time, automatic release
 
    AutoADSR()
    {
-      setScrollable(5);
+      frame.dim1 = 2;            // makes use of frames 00, 01, and 02
    }
 
    bool  charEv( char );         // process a character event

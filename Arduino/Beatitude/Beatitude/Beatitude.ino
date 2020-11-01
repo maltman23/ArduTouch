@@ -151,7 +151,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Beatitude, 1.10h )            // specify sketch name & version
+about_program( Beatitude, 1.11 )             // specify sketch name & version
 
 #ifndef __STNDLONE__
    #error This sketch requires the __STNDLONE__ runtime model (Model.h)
@@ -292,6 +292,8 @@ class DrumKit : public Voice
  *  Args:  note             - note to turn on  
  *
  *  Memb:  osc              - ptr to raw oscillator
+ *        +panRight         - if true pan to right (else, pan to left) 
+ *        +panCoeff         - panning coefficient (for opposite channel)
  *
  *  Note:  If you want to use the __FULLHOST__ runtime model, comment out
  *         the "#error" statement after #ifndef __STNDLONE__ near the top of 
@@ -302,59 +304,60 @@ class DrumKit : public Voice
 
 void DrumKit::noteOn( key note )
 {
-   SampleOsc *o = (SampleOsc *)osc;
-   byte     pos = note.position();
+   byte pos = note.position();   // position of note within octave 
 
-   panCoeff = 128;
+   // set panning defaults 
 
-   #ifdef USE_SERIAL_PORT  // use reduced kit when the console is enabled
+   panCoeff = 154;
+   panRight = true;
+
+   // set wavetable and panning coefficients based on note position
+
+   const desWavTab *drumTable;   // ptr to wavetable descriptor 
+
+   #ifdef USE_SERIAL_PORT        // use reduced kit when the console is enabled
 
    if ( pos <= 4 )
    {
-      o->setSample( wavetable( lofi_Kick02 ) );
+      drumTable = wavetable( lofi_Kick02 );
       panRight = false;
-      panCoeff = 154;
    }
    else
    {
-      o->setSample( wavetable( Snare01 ) );
-      panRight = true;
-      panCoeff = 154;
+      drumTable = wavetable( Snare01 );
    }
 
    #else  // use full kit
 
    if ( pos <= 2 )
    {
-      o->setSample( wavetable( lofi_Kick02 ) );
+      drumTable = wavetable( lofi_Kick02 );
       panRight = false;
-      panCoeff = 154;
    }
    else if ( pos <= 4 )
    {
-      o->setSample( wavetable( lofi_Tom02 ) );
+      drumTable = wavetable( lofi_Tom02 );
       panRight = false;
       panCoeff = 90;
    }
    else if ( pos <= 7 )
    {
-      o->setSample( wavetable( Snare01 ) );
-      panRight = true;
-      panCoeff = 154;
+      drumTable = wavetable( Snare01 );
    }
    else if ( pos <= 9 )
    {
-      o->setSample( wavetable( Rim01 ) );
-      panRight = true;
+      drumTable = wavetable( Rim01 );
       panCoeff = 120;
    }
    else
    {
-      o->setSample( wavetable( Hat03 ) );
-      panRight = true;
+      drumTable = wavetable( Hat03 );
       panCoeff = 85;
    }
    #endif
+
+   SampleOsc *o = (SampleOsc *)osc;    // typecast generic osc pointer
+   o->setSample( drumTable );
 
    trigger();
 }

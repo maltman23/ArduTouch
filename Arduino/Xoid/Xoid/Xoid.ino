@@ -101,7 +101,7 @@
 
 #endif
 
-about_program( Xoid, 0.97 )
+about_program( Xoid, 0.98 )
 
 /*----------------------------------------------------------------------------*
  *                                 presets
@@ -285,39 +285,10 @@ class XoidSynth : public OneVoxSynth
    XorOsc *pair1;                   // a (potentially XORed) pair of oscillators
    XorOsc *root;                    // pair0 + pair1 (potentially XORed)
 
-   #define NUMLEDS 2                // number of onboard LEDs
-
-   enum {  // these values enumerate elements of ledState[] 
-
-           LED_OFF   = 0,       
-           LED_ON    = 1,      
-           LED_BLINK = 2
-
-        } ;
-
-   byte ledState[ NUMLEDS ];        // display state of each onboard LED
-
-   enum {  // these values enumerate frame 
-
-           FRAME00   = 0,       
-           FRAME10   = 1,      
-           FRAME20   = 2,
-           FRAME01   = 4,
-           FRAME11   = 5,       
-           FRAME21   = 6,      
-           FRAME02   = 8,      
-           FRAME12   = 9,      
-           FRAME22   = 10
-
-        } ;
-
-   byte frame;                      // user interface frame 
-
-   Control *sendControl;            // send pot/button events to this control
-
    void config() 
    { 
       super::config();
+      setFrameDimensions( 2, 2 );   // U/I frame has 3 states (ON/OFF/BLINK) per LED
       presets.load( myPresets );    // load bank of presets
    }
 
@@ -332,14 +303,6 @@ class XoidSynth : public OneVoxSynth
             root  = new RootPair( pair0, pair1 );
             return root;
          }
-         /*
-         case 1:
-         {
-            FastWaveOsc *o = new FastWaveOsc();
-            o->setTable( wavetable_named( Ether ) );
-            return o;
-         }
-        */
       }
    }
 
@@ -364,12 +327,9 @@ class XoidSynth : public OneVoxSynth
 
             super::charEv( code );
 
-            for ( byte i = 0; i <= NUMLEDS; i++ )
-            {
-               ledState[i] = LED_OFF;
-               dispLED( i );
-            }
-            setFrame();
+            enableFrame();                   // enable U/I frame
+
+            // configure default synth parameters
 
             execute( PSTR( "0er32\\" ) );
             execute( PSTR( "0V<d.09\\t5\\f4.5\\" ) );
@@ -377,6 +337,7 @@ class XoidSynth : public OneVoxSynth
             execute( PSTR( "0O0m32\\r4.0\\`" ) );
             execute( PSTR( "0O1m32\\r1.76\\`" ) );
             execute( PSTR( "0Ea<ld0\\" ) );
+
             break;
 
          #ifdef CONSOLE_OUTPUT
@@ -397,15 +358,6 @@ class XoidSynth : public OneVoxSynth
             break;
          }
 
-         case chrInfo:
-         {
-            super::charEv( code );
-            char *frameStr = "{frame:   }";
-            frameStr[8] = '0' + ledState[0];
-            frameStr[9] = '0' + ledState[1];
-            console.print( frameStr );
-            break;
-         }
          #endif
 
          default:
@@ -414,45 +366,12 @@ class XoidSynth : public OneVoxSynth
       return true;
    }
 
-   void bumpLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:  ledState[nth] = LED_ON;    break;
-         case LED_ON:   ledState[nth] = LED_BLINK; break;
-         default:       ledState[nth] = LED_OFF;   break;
-      }
-      dispLED( nth );
-      setFrame();
-   }
-
-   void dispLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:    offLED( nth );   break;
-         case LED_ON:     onLED( nth );    break;
-         case LED_BLINK:  blinkLED( nth ); break;
-      }
-   }
-
    bool evHandler( obEvent ev )              // handle an onboard event
    {
-
       if ( handlePots(ev) ) return true;  
 
       switch ( ev.type() )
       {
-         case BUT0_PRESS:                    // 
-
-            bumpLED(0);
-            break;
-
-         case BUT1_PRESS:                    //
-
-            bumpLED(1);
-            break;
-
          case BUT0_DTAP:                     // intercept "pop-mode"
 
             break;
@@ -463,15 +382,27 @@ class XoidSynth : public OneVoxSynth
             runPreset( (const char *)presets.dataPtr( presetMenu.value ) );
             break;
 
+         // send Tap-Press events to appropriate oscillator pair, depending on frame
+
          case BUT0_TPRESS:                    
-         case BUT1_TPRESS:                   
-         {
-            switch ( frame )
+         case BUT1_TPRESS:                    
+         {                                    
+            switch ( frame.Num() )
             {
                case FRAME00:  
+
+                  root->evHandler(ev);
+                  break;  
+
                case FRAME10:  
+
+                  pair0->evHandler(ev);
+                  break;  
+
                case FRAME20:  
-                  sendControl->evHandler(ev);  
+
+                  pair1->evHandler(ev);
+                  break;  
             }
             break;
          } 
@@ -485,93 +416,103 @@ class XoidSynth : public OneVoxSynth
 
    bool handlePots( obEvent ev )             // handle pot events
    {
-      bool pot0 = false;
+      if ( ! ev.amPot() )                    // return false if not a pot event
+         return false;                       
 
-      if ( ev.type() == POT0 )
-         pot0 = true;
-      else if ( ev.type() != POT1 )
-         return false;                       // event is neither POT0 or POT1
+      byte potVal = ev.getPotVal();          // cache pot value
 
-      byte potVal = ev.getPotVal();
-            
-      switch ( frame )
+      switch ( ev.type() )                   // execute case by pot#_frame#
       {
-         case FRAME00:  
-         case FRAME10:  
-         case FRAME20:  
+         /*             FRAME 00             */
 
-            sendControl->evHandler(ev);
+         case POT0_F00:                      // pass pot events to root pair
+         case POT1_F00:                      // 
+
+            root->potEv(ev);
             break;
 
-         case FRAME01:
-         {
-            if ( pot0 )
-               voice->envAmp.setAttack( potVal );
-            else
-               voice->envAmp.setDecay( potVal );
+         /*             FRAME 10             */
+
+         case POT0_F10:                      // pass pot events to pair 0
+         case POT1_F10:                      // 
+
+            pair0->potEv(ev);
             break;
-         }
 
-         case FRAME11:
-         {
-            if ( pot0 )
-               voice->envAmp.setSustain( potVal );
-            else
-               voice->envAmp.setRelease( potVal );
+         /*             FRAME 20             */
+
+         case POT0_F20:                      // pass pot events to pair 1
+         case POT1_F20:                      // 
+
+            pair1->potEv(ev);
             break;
-         }
 
-         case FRAME21:
+         /*             FRAME 01             */
 
-            voice->vibrato.evHandler(ev);
+         case POT0_F01:                      // set envelope attack
+
+            voice->envAmp.setAttack( potVal );
+            break;
+
+         case POT1_F01:                      // set envelope decay
+
+            voice->envAmp.setDecay( potVal );
+            break;
+
+
+         /*             FRAME 11             */
+
+         case POT0_F11:                      // set envelope sustain
+
+            voice->envAmp.setSustain( potVal );
+            break;
+
+         case POT1_F11:                      // set envelope release
+
+            voice->envAmp.setRelease( potVal );
+            break;
+
+         /*             FRAME 21             */
+
+         case POT0_F21:                      // set vibrato freq
+         case POT1_F21:                      // set vibrato depth
+
+            voice->vibrato.potEv(ev);
+            break;
+
+         /*             FRAME 02             */
+
+         case POT0_F02:                      // set autowah freq
+         case POT1_F02:                      // set autowah depth 
+
+            voice->wah.lfo.potEv(ev);
+            break;
+
+         /*             FRAME 12             */
+
+          case POT0_F12:                     // turn autowah on/off
+
+            voice->wah.setMute( potVal < 127 ? true : false );
+            break;
+                                             
+          case POT1_F12:                     // set autowah cutoff
+
+            voice->wah.setCutoff( potVal );
+            break;
+
+         /*             FRAME 22             */
+
+         case POT0_F22:                      // set gain
+
+            voice->gain.potEv(ev);
             break; 
 
-         case FRAME02:
+         case POT1_F22:                      // set portamento
 
-            voice->wah.lfo.evHandler(ev);
+            voice->setGlide( potVal );
             break; 
-
-         case FRAME12:                     // autowah pot0 On/Off; pot1 cutoff
-         {
-            if ( pot0 )
-               voice->wah.setMute( potVal < 127 ? true : false );
-            else
-               voice->wah.setCutoff( potVal );
-            break;
-         }
-
-         case FRAME22:
-
-            if ( pot0 )
-               voice->gain.evHandler(ev);
-            else
-               voice->setGlide( potVal );
-            break; 
-
       }
       return true;
-   }
-
-   void setFrame()                           // set the U/I frame
-   {
-      // compute frame from ledState[] entries
-
-      frame = 0;
-      byte factor = 1;
-      for ( byte i = 0; i <= NUMLEDS; i++ )
-      {
-         frame += ledState[i] * factor;
-         factor <<= 2;
-      }
-
-      // set sendControl
-
-      switch ( frame )
-      {
-         case FRAME00:  sendControl = root;   break;
-         case FRAME10:  sendControl = pair0;  break;
-         case FRAME20:  sendControl = pair1;  break;
-      }
    }
 
    void objectInfo( Mode *m )

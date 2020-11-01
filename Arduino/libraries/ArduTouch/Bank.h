@@ -60,16 +60,22 @@ class Bank : public Mode
       flags |= MENU;                   // persistent keybrd menu
    }
    
-   boolean choose();                   // wait for user to choose a member
+   bool    choose();                   // wait for user to choose a member
                                        // (return false if no member chosen)
    byte    choice();                   // returns index of chosen member
 
    const void* dataPtr();              // return addr of chosen member's data
    const void* dataPtr( byte );        // return addr of nth member's data
 
-   boolean charEv( char );             // handle a character event
+   bool    charEv( char );             // handle a character event
    void    load( const bankmem *p );   // load a list of members
    const char* name( byte );           // return name of nth member
+
+   byte    numMembers()                // returns number of members in bank
+   { 
+      return num; 
+   }   
+
    virtual void onChoice() {};         // execute this when member is chosen
 
    bool    select( byte );             // select nth member of bank
@@ -80,7 +86,6 @@ class Bank : public Mode
 
    protected:
 
-   static  const byte Max = 10;        // max permitted # of members
    byte    num;                        // # of members in bank
 
    private:
@@ -88,7 +93,7 @@ class Bank : public Mode
    const byte*  base;                  // pts to 1st byte of member list
 
    byte    idx;                        // idx # of chosen member
-   boolean chosen;                     // if true, a member was chosen
+   bool    chosen;                     // if true, a member was chosen
 
 } ;
 

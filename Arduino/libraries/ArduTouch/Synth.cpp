@@ -55,6 +55,15 @@ boolean Synth::charEv( char code )
 
       #endif
 
+      #ifdef USE_LEDS
+
+      case frameLED0:               // enable frame LEDs by default for synth
+      case frameLED1:
+
+         break;
+
+      #endif
+
       case '!':                     // reset
 
          super::charEv('!');
@@ -206,7 +215,8 @@ Tuning *Synth::tuning()
  *
  *  Args:  code             - character to process
  *
- *  Memb:  numVox           - number of member voices
+ *  Memb:  lastNote         - last note played
+ *         numVox           - number of member voices
  *         vox[]            - array of member voices
  *
  *  Rets:  status           - true if character was handled
@@ -242,8 +252,11 @@ boolean VoxSynth::charEv( char code )
       case '!':
 
          super::charEv( code );
+
          for ( byte i = 0; i < numVox; i++ )
             vox[i]->reset();
+
+         lastNote.reset();                   // "no last note played"
          break;
 
       case '.':                              // mute
@@ -278,6 +291,25 @@ void VoxSynth::dynamics()
    super::dynamics();
    for ( byte i = 0; i < numVox; i++ )
       vox[i]->dynamics();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  VoxSynth::forEach
+ *
+ *  Desc:  Execute a macro string for each voice.
+ *
+ *  Args:  macStr           - ptr to string in ROM
+ *
+ *  Memb:  numVox           - number of member voices
+ *         vox[]            - ptrs to member voices
+ *
+ *----------------------------------------------------------------------------*/
+
+void VoxSynth::forEach( const char *macStr )
+{
+   for ( byte i = 0; i < numVox; i++ )
+      vox[i]->execute( macStr );
 }
 
 #ifdef KEYBRD_MENUS
@@ -337,7 +369,8 @@ char VoxSynth::menu( key k )
  *
  *  Args:  note             - note to turn on  
  *
- *  Memb:  numVox           - number of member voices
+ *  Memb: +lastNote         - last note played
+ *         numVox           - number of member voices
  *         vox[]            - ptrs to member voices
  *         xpose            - transpose notes by this many intervals
  *
@@ -348,7 +381,10 @@ char VoxSynth::menu( key k )
 
 void VoxSynth::noteOn( key note )
 {
+   lastNote = note;                       // update "last note played"
+
    note.transpose( xpose ); 
+
    for ( byte i = 0; i < numVox; i++ )    // propagate to all controlled voices
       if ( vox[i]->keybrd.muted() )
          vox[i]->noteOn( note );
@@ -485,6 +521,25 @@ void VoxSynth::configVoices( byte numVox )
       vox[i]->num = i;
    }
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  VoxSynth::reTrigger
+ *
+ *  Desc:  Retrigger all voices. 
+ *
+ *  Memb:  lastNote         - last note played
+ *
+ *----------------------------------------------------------------------------*/
+
+void VoxSynth::reTrigger()                          
+{
+   if ( ! lastNote.null() ) 
+   {
+      VoxSynth::noteOff( lastNote );
+      VoxSynth::noteOn( lastNote );
+   }
+}  
 
 /*----------------------------------------------------------------------------*
  *

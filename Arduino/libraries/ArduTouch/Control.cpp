@@ -18,6 +18,7 @@
    ---------------------------------------------------------------------------
 */
 
+#include "System.h"
 #include "Control.h"
 #include "Console_.h"
 
@@ -39,6 +40,7 @@
  *
  *  Memb: +flags.MUTE       - if set, control is currently muted 
  *         flags.RSTMUTE    - if set, control will be muted upon reset
+ *        +frame            - embedded user interface frame
  *
  *----------------------------------------------------------------------------*/      
 
@@ -58,30 +60,155 @@ boolean Control::charEv( char code )
 
       case '!':                  // reset control
 
-         setMute( flags&RSTMUTE );    
+         setMute( flags&RSTMUTE );
+
+         frame.led0 = 0;         // clear frame state
+         frame.led1 = 0;
+
+         break;
+
+      case focusPUSH:            // display Frame LEDs on push
+
+         displayLED(0);
+         displayLED(1);
          break;
 
       #ifdef CONSOLE_OUTPUT
+
+      case 'F':                  // set Frame via character string input
+      {
+         char *frameStr;
+         if ( console.getStr( CONSTR("Frame"), &frameStr ) )
+         {
+            if ( frameStr[0] >= '0' && frameStr[0] <= '0'+frame.dim0 )
+               frame.led0 = frameStr[0]-'0';
+            else
+               break;
+
+            if ( frameStr[1] >= '0' && frameStr[1] <= '0'+frame.dim1 )
+               frame.led1 = frameStr[1]-'0';
+            else
+               break;
+         }
+         break;
+      }
+
       case chrBrief:             // display control brief to console
 
          super::charEv( chrBrief );
          console.space();
          console.print( (char)(muted() ? '.' : '<') );
          break;
-      #endif
 
-      #ifdef CONSOLE_OUTPUT
       case chrInfo:              // display control info to console
 
          console.rtab();
          console.print( (char)(muted() ? '.' : '<') );
          console.space();
+         if ( flags & UIFRAME )
+         {
+            char frameStr[3];
+
+                 frameStr[0] = '0' + frame.led0;
+                 frameStr[1] = '0' + frame.led1;
+                 frameStr[2] =  0;
+
+            console.infoRAMStr( CONSTR("Frame"), &frameStr[0] );
+            console.newlntab();
+         }
          break;
+
       #endif
 
       default:
 
          return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Control::displayLED
+ *
+ *  Desc:  Display a frame LED.
+ *
+ *  Args:  nth              - LED #
+ *
+ *  Memb:  flags.UIFRAME    - if set, frame is enabled
+ *         frame            - embedded user interface frame
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Control::displayLED(byte nth)
+{
+   #ifdef USE_LEDS
+
+   if ( ! (flags & UIFRAME) )          // do nothing if frame is not enabled
+      return;
+
+   byte stateLED;
+   
+   if ( nth )                          // display LED1
+   {
+      stateLED = frame.led1;
+      if ( ! charEv( frameLED1 ) )     // do nothing if LED1 is not enabled 
+         return;
+   }
+   else                                // display LED0
+   {
+      stateLED = frame.led0;
+      if ( ! charEv( frameLED0 ) )     // do nothing if LED0 is not enabled 
+         return;
+   }
+
+   switch ( stateLED )
+   {
+      case 0:    offLED( nth );  break;
+      case 1:     onLED( nth );  break;
+      case 2:  blinkLED( nth );  break;
+   }
+
+   #endif
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Control::evHandler
+ *
+ *  Desc:  Handle an onboard event.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Memb:  -- none -- 
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool Control::evHandler( obEvent ev )
+{
+   switch ( ev.type() )
+   {
+      case BUT0_PRESS:                 // bump column 0 of frame
+
+         ++frame.led0;
+         if ( frame.led0 > frame.dim0 )
+            frame.led0 = 0;
+         displayLED(0);
+         break;
+
+      case BUT1_PRESS:                 // bump column 1 of frame
+
+         ++frame.led1;
+         if ( frame.led1 > frame.dim1 )
+            frame.led1 = 0;
+         displayLED(1);
+         break;
+
+      default:
+
+         return super::evHandler(ev);
    }
    return true;
 }

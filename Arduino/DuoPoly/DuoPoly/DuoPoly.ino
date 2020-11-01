@@ -33,7 +33,7 @@
 
 #include "ArduTouch.h"                    // ArduTouch library declarations
 
-about_program( DuoPoly, 2.51 )            // specify program name & version
+about_program( DuoPoly, 2.52 )            // specify program name & version
 
 #ifndef INTERN_CONSOLE
    #error This sketch requires __STNDLONE__ runtime model or higher (Model.h)
@@ -281,6 +281,9 @@ boolean Chnl::charEv( char code )
          arithmetic = false;
          propFreq   = false;
          propTrig   = false;
+
+         enableFrame();             // enable scrolling of voice pots 
+         envAmp.enableFrame();      // enable scrolling of envelope pots
 
          ((WaveOsc *)osc)->setTableFromBank( 0 );
 

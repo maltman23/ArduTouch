@@ -159,6 +159,81 @@ void TabOsc256::setTable( const desWavTab *d )
 
 /******************************************************************************
  *
+ *                                BankOsc256 
+ *
+ ******************************************************************************/
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  BankOsc256::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb:  name             - wavetable name
+ *  
+ *  Glob:  wavebank         - bank of wave tables.
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *----------------------------------------------------------------------------*/      
+
+boolean BankOsc256::charEv( char code )
+{
+   switch ( code )
+   {
+      #ifdef INTERN_CONSOLE
+
+      case 'w':                  // select a waveform
+
+         if ( wavebank.choose() )
+            setTableFromBank( wavebank.choice() );
+         break;
+
+      #endif
+
+      #ifdef CONSOLE_OUTPUT
+
+      case chrInfo:              // display object info to console
+      case chrInLnfo:            // display object info inline to console
+
+         super::charEv( code );
+         if ( name )
+            console.infoStr( CONSTR("waveform"), name );
+         break;
+
+      #endif
+
+      default:
+
+         return super::charEv( code );
+   }
+   return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  BankOsc256::setTableFromBank
+ *
+ *  Desc:  Set table to a given member of the wavebank.
+ *
+ *  Args:  nth              - index of wavebank member
+ *
+ *  Glob:  wavebank         - bank of wave tables.
+ *
+ *  Memb: +name             - wavetable name
+ *
+ *----------------------------------------------------------------------------*/      
+
+void BankOsc256::setTableFromBank( byte i ) 
+{
+   setTable( (const desWavTab* )wavebank.dataPtr(i) );
+   name = wavebank.name(i);
+}
+
+/******************************************************************************
+ *
  *                                SawTooth 
  *
  ******************************************************************************/
@@ -294,22 +369,20 @@ boolean Square::evHandler( obEvent ev )
    switch ( ev.type() )
    {
       case POT0:                          // top pot controls pulse width (0-128)
-      {
-         word width = ev.getPotVal();     // 0 <= width <= 255
-         ++width;                         // 1 <= width <= 256
-         width >>= 1;                     // 0 <= width <= 128
-         setPW( width );
+      
+         setPW( ev.getPotVal128() );
          break;
-      }
+      
       case POT1:                          // bottom pot controls filter cutoff
 
          setCutoff( ev.getPotVal() );
-         return true;                     
+         break;
 
       default:
 
          return super::evHandler(ev);
    }
+   return true;
 }
 
 /*----------------------------------------------------------------------------*

@@ -48,93 +48,6 @@ void QuadSynth::config()
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  QuadSynth::dynamics
- *
- *  Desc:  Perform a dynamic update:
- *
- *         1) execute a noteOn for the next defered voice, if any.
- *         2) decrement the index for next defered voice
- *         3) call each voice's dynamic update method.
- *
- *  Memb: +deferVoc         - if nonzero, execute noteOn for vox[deferVoc-1] 
- *         lastNote         - last note played
- *         vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void QuadSynth::dynamics()  
-{  
-   if ( deferVoc )         // execute noteOn for next defered voice
-   {
-      --deferVoc;
-      vox[ deferVoc ]->noteOn( lastNote );
-   }
-   super::dynamics();    
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  VoxSynth::newVox
- *
- *  Desc:  Return a pointer to the nth voice to be used by the synth.
- *
- *  Args:  nth              - voice # (0-based)
- *
- *  Rets:  ptrVox           - pointer to voice object.
- *
- *  Note:  This method is automatically called once per voice by configVoices(). 
- *         It is not meant to be called from anywhere else!
- *
- *         By overriding this method you can customize which kind of
- *         voices are used by the synth.
- *
- *         The return type of this method is Voice*, meaning that it can 
- *         return a ptr to an object of any type which has Voice as a base 
- *         class.
- *
- *         If not overridden, this method creates a standard Voice object.
- *
- *----------------------------------------------------------------------------*/      
-
-Voice *QuadSynth::newVox( byte nth )
-{
-   // this empty definition necessary to avoid audio glitch at startup -- why?
-
-   class QuadVoice : public StockVoice          
-   {
-   } ;
-
-   return new QuadVoice();
-}
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  QuadSynth::noteOn
- *
- *  Desc:  Propagate a noteOn to each of the synth's voices. 
- *
- *  Memb: +deferVoc         - next dynamics() will call vox[deferVoc-1]->noteOn()
- *                            (if deferVoc != 0)
- *        +lastNote         - last note played
- *         xpose            - transpose notes by this many intervals
- *
- *  Note:  The actual note played by each voice depends on the input note plus
- *         the synth's transposition value plus the voice's transposition value.
- *
- *         QuadSynth uses an incremental algorithm for performing noteOns by
- *         distributing their execution across the next 4 dynamic updates.
- *
- *----------------------------------------------------------------------------*/
-
-void QuadSynth::noteOn( key newNote )
-{
-   deferVoc = numVox;                        // set for defered noteOns
-   lastNote = newNote;
-   lastNote.transpose( xpose ); 
-}
-
-/*----------------------------------------------------------------------------*
- *
  *  Name:  QuadSynth::output
  *
  *  Desc:  Write (stereo) output to a pair of audio buffers.
@@ -174,27 +87,6 @@ void QuadSynth::output( char *bufL, char *bufR )
       bufR[i] = sum >> 1;
    }
 }
-
-/*----------------------------------------------------------------------------*
- *
- *  Name:  QuadSynth::reTrigger
- *
- *  Desc:  Retrigger all voices. 
- *
- *  Memb: +deferVoc         - next dynamics() will call vox[deferVoc-1]->noteOn()
- *                            (if deferVoc != 0)
- *         vox[]            - component voices
- *
- *----------------------------------------------------------------------------*/
-
-void QuadSynth::reTrigger()                          
-{
-   noteOff(0);
-
-   // set deferVoc so that noteOn()s will be called in subsequent dynamics() 
-
-   deferVoc = numVox;                        
-}  
 
 /******************************************************************************
  *
@@ -748,18 +640,4 @@ void QuadDualPanSynth::setXPanPos( byte xpanPos )
 {
    xpanControl->setRestPos( xpanPos );
 }
-
-/******************************************************************************
- *       
- *                                XPanControl
- *
- ******************************************************************************/
-
-   
-#ifdef CONSOLE_OUTPUT
-const char *XPanControl::prompt()        
-{
-   return CONSTR("XPan");
-}
-#endif
 

@@ -27,7 +27,6 @@
 #include "Osc.h"
 #include "Control.h"
 #include "Envelope.h"
-#include "Scroller.h"
 #include "Vibrato.h"
 
 /******************************************************************************
@@ -59,7 +58,7 @@ class PitchMods : public Factors    // chain of pitch modifiers
  *                                                                            
  ******************************************************************************/
 
-class Voice : public Instrument, public Scroller
+class Voice : public Instrument
 {
    typedef Instrument super;        // superclass is Instrument
 
@@ -82,9 +81,9 @@ class Voice : public Instrument, public Scroller
 
    Voice()
    {
-      setScrollable(3);             // scrollable pots: vol, detune, glide
       osc = NULL;
       num = 0;
+      frame.dim1 = 1;               // makes use of frames 00 and 01
    }
 
    void    addAmpMod( Factor* );    // add an amplitude modifier  
@@ -101,6 +100,7 @@ class Voice : public Instrument, public Scroller
    void    setGlide( byte );        // set portamento speed
    void    setGlobVol( byte );      // set the global volume level
    void    setVol( byte );          // set the volume level
+   void    squelch();               // suppress volume until triggered
    void    trigger();               // trigger components
    void    useOsc( Osc* );          // specify oscillator to use
 
@@ -121,9 +121,9 @@ class Voice : public Instrument, public Scroller
                                     //                       lsb: fractional part)
    Int     segVol;                  // if segue in process, ultimate instVol 
 
-   double  pendFreq;                // set this frequency at next dynamic update
+   bool    squelched;               // volume is suppressed until triggered
 
-   private:
+   double  pendFreq;                // set this frequency at next dynamic update
 
    byte    glide;                   // portamento speed (0 = off)
    char    dirGlide;                // portamento direction +/-/0

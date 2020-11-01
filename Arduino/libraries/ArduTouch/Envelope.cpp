@@ -35,6 +35,8 @@
  *
  ******************************************************************************/
 
+#define LEVEL_ONE 0x8000         // "1.0"
+
 /*----------------------------------------------------------------------------*
  *
  *  Name:  ADSR::charEv
@@ -64,18 +66,19 @@ boolean ADSR::charEv( char key )
          flags &= ~DONE;
          phase = attPhase;
          if ( attack )
-            value = 0.0;
+            curLevel = 0;
          else
          {
             --phase;
             if ( decay )
-               value = 1.0;
+               curLevel = LEVEL_ONE;
             else
             {
                --phase;
-               value = susLevel;
+               curLevel = susLevel;
             }
          }
+         value = (double )curLevel * 0.000030517578125;
          break;
 
       case chrRelease:                 // release the envelope
@@ -174,27 +177,39 @@ void ADSR::dynamics()
 
       case attPhase:
 
-         value += attStep;
-         if ( value > 1.0 )
+         curLevel += attStep;
+
+         if ( curLevel <= LEVEL_ONE )
          {
-            --phase;
-            if ( decay )
-               value = 1.0 - decStep;
-            else
-            {
+            if ( curLevel == LEVEL_ONE )
                --phase;
-               value = susLevel;
-            }
+            break;
          }
-         break;
+
+         // attack phase is over
+
+         --phase;
+
+         if (! decay)
+         {
+            // move to sustain phase
+            
+            --phase;
+            curLevel = susLevel;
+            break;
+         }
+
+         // fall thru to decay phase
+
+         curLevel = LEVEL_ONE;
 
       case decPhase:
 
-         value -= decStep;
-         if ( value < susLevel )
+         curLevel -= decStep;
+         if ( curLevel < susLevel || curLevel >= LEVEL_ONE )
          {
             --phase;
-            value = susLevel;
+            curLevel = susLevel;
          }
          break;
 
@@ -202,15 +217,17 @@ void ADSR::dynamics()
 
          if ( relTime )
          {
-            value -= relStep;
-            if ( value < 0.0 )
-               value = 0.0;
+            curLevel -= relStep;
+            if ( curLevel >= LEVEL_ONE )  // curLevel has wrapped "below 0"
+               curLevel = 0;
             else
                break;
          }
          finish();
    }
+   value = (double )curLevel * 0.000030517578125;
 }
+
 
 /*----------------------------------------------------------------------------*
  *
@@ -226,37 +243,35 @@ void ADSR::dynamics()
  *
  *----------------------------------------------------------------------------*/      
 
-boolean ADSR::evHandler( obEvent ev )
+bool ADSR::evHandler( obEvent ev )
 {
-   if ( byte param = getScrollParm( ev ) )
-   {
-      byte val = ev.getPotVal();
-      switch ( param )
-      {
-         case 1:  setAttack( val );   break;
-         case 2:  setDecay( val );    break;
-         case 3:  setSustain( val );  break;
-         case 4:  setRelease( val );  break;
-      }
-     return true;
-   }
-
    switch ( ev.type() )
    {
-      case BUT0_PRESS:
+      case POT0_F00:                   // FRAME00 POT0 controls attack
 
-         scrollUp();
-         return true;
+         setAttack( ev.getPotVal() );
+         break;
 
-      case BUT1_PRESS:
+      case POT1_F00:                   // FRAME00 POT1 controls decay
 
-         scrollDn();
-         return true;
+         setDecay( ev.getPotVal() );
+         break;
+
+      case POT0_F01:                   // FRAME01 POT0 controls sustain
+
+         setSustain( ev.getPotVal() );
+         break;
+
+      case POT1_F01:                   // FRAME01 POT1 controls release
+
+         setRelease( ev.getPotVal() );
+         break;
 
       default:
 
          return super::evHandler(ev);
    }
+   return true;
 }
 
 /*----------------------------------------------------------------------------*
@@ -364,36 +379,47 @@ void ADSR::setAttack( byte val )
 {
    attack = val;
    if ( val )
-      attStep = 1.0 / exptime( val );
+      attStep = LEVEL_ONE / exptime( val );
 }
 
 void ADSR::setDecay( byte val )
 {
    decay = val;
    if ( val )
-      decStep = (1.0 - susLevel) / exptime( val );
+      decStep = (LEVEL_ONE - susLevel) / exptime( val );
 }
 
 void ADSR::setRelease( byte val )
 {
    relTime = val;
    if ( val )
-      relStep = 1.0 / exptime( val );
+      relStep = LEVEL_ONE / exptime( val );
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  ADSR::setSustain
+ *
+ *  Desc:  Set the sustain level.
+ *
+ *  Args:  val              - sustain level (0-255)
+ *
+ *  Memb: +sustain          - sustain level (0-255) 
+ *        +susLevel         - sustain level (0-0x8000)  
+ *
+ *----------------------------------------------------------------------------*/
 
 void ADSR::setSustain( byte val )
 {
-   #define ONE_256TH  .00390625
+   sustain  = val;
+   susLevel = (word )val << 7;
 
-   sustain = val;
    if ( val == 255 )
-      susLevel = 1.0;
-   else
-      susLevel = (double )val * ONE_256TH;
-   setDecay( decay );
+      susLevel = LEVEL_ONE;
 
-   #undef ONE_256TH
+   setDecay( decay );
 }
+
 
 /******************************************************************************
  *
@@ -516,11 +542,8 @@ void AutoADSR::dynamics()
 
 bool AutoADSR::evHandler( obEvent ev )
 {
-   if ( getScrollParm(ev) == 5 )
-   {
+   
       setSusTime( ev.getPotVal() );  
-      return true;
-   }
 
    return super::evHandler(ev);
 }

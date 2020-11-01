@@ -43,7 +43,6 @@
 #include "Phonic.h"
 #include "QuadSynth.h"
 #include "QuantumOsc.h"
-#include "Scroller.h"
 #include "Sequencer.h"
 #include "StdEffects.h"
 #include "Synth.h"

@@ -75,7 +75,6 @@
 
 /* ----------------------    private functions    -------------------------- */
 
-
 void  audio_setup() __attribute__((always_inline));
 bool  readKey( byte keyNum );
 bool  render_audio();
@@ -117,7 +116,18 @@ byte  potPin[] = { 1, 0 };             // associated pin # per pot
 word  potVal[ NumPots ];               // last value read per pot
 byte  nextPot;                         // next pot # to scan
 
-#ifndef USE_SERIAL_PORT
+#ifdef USE_LEDS
+
+struct LEDs                            // display state of LEDs
+{ 
+
+   byte led0state : 2;
+   byte led1state : 2;
+   byte blinktime : 4;
+
+} _ledsStk[ Console::MAX_MODE+1 ];
+
+byte ledsSP = 0;                       // stack ptr for _ledsStk[]
 
 // LED state bits:
 
@@ -183,7 +193,7 @@ void ardutouch_setup( Synth *x )
          potVal[i] = 1023 - analogRead( potPin[i] );
       #endif
 
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
       /* initialize LEDs */
                      
@@ -645,6 +655,41 @@ void writeMetrics( word addrNVS )
  *
  ******************************************************************************/
 
+
+void pushDisplay()
+{
+   #ifdef USE_LEDS
+
+   extern LEDs getLEDs();             // returns current display state of LEDs
+
+   _ledsStk[ ledsSP++ ] = getLEDs();
+
+   #endif
+}
+
+void popDisplay()
+{
+   #ifdef USE_LEDS
+
+   extern void setLEDs( LEDs );       // set the current display state of LEDs  
+
+   setLEDs( _ledsStk[ --ledsSP ] );
+
+   #endif
+}
+
+void resetDisplay( byte stkPtr )
+{
+   #ifdef USE_LEDS
+
+   extern void setLEDs( LEDs );       // set the current display state of LEDs
+
+   ledsSP = stkPtr;
+   setLEDs( _ledsStk[ ledsSP ] );
+
+   #endif
+}
+
 /*----------------------------------------------------------------------------*
  *
  *  Name:  blinkLED
@@ -662,7 +707,7 @@ void writeMetrics( word addrNVS )
 
 void blinkLED( byte nth, bool invert )
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
    if ( nth < NumLEDs )
    {
@@ -690,7 +735,7 @@ void blinkLED( byte nth, bool invert )
 
 void onLED( byte nth )
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
    if ( nth < NumLEDs )
    {
@@ -716,7 +761,7 @@ void onLED( byte nth )
 
 void offLED( byte nth )
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
    if ( nth < NumLEDs )
    {
@@ -743,7 +788,7 @@ void offLED( byte nth )
 
 void syncLED( byte nth )
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
    byte signal = blinkEdge ? LED_ON : LED_OFF;
    if ( LEDState[nth] & LED_INVERT )
@@ -770,7 +815,7 @@ void syncLED( byte nth )
 
 byte getBlinkTime()
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
       return blinkTime;
    #else
       return 0;
@@ -796,74 +841,86 @@ byte getBlinkTime()
 
 void setBlinkTime( byte time )
 {
-   #ifndef USE_SERIAL_PORT
+   #ifdef USE_LEDS
 
-   if ( time ) 
+   time &= 0b11110000;
+   if ( time > 0 ) 
       blinkTime = time;
 
    #endif
 }
 
-/*----------------------------------------------------------------------------*
- *
- *  Name:  restoreLEDs
- *
- *  Desc:  Restore runtime state of LEDs from an LEDFrame.
- *
- *  Args:  frame            - ptr to the LEDFrame
- *
- *  Glob: +blinkDC          - downcounter to next blink transition
- *        +blinkEdge        - if true, blinking LEDs are ON
- *        +blinkTime        - LED blink time (in dynamic updates)
- *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
- *  
- *----------------------------------------------------------------------------*/      
-
-void restoreLEDs( LEDFrame *frame )
-{
-   #ifndef USE_SERIAL_PORT
-
-   blinkTime = frame->blinkTime;
-   blinkDC   = blinkTime;
-   blinkEdge = true;
-
-   for ( byte i = 0; i < NumLEDs; i++ )
-   {
-      LEDState[i] = frame->LEDState[i];
-      if ( LEDState[i] & LED_BLINK )
-         syncLED(i);
-      else if ( (LEDState[i] & LED_ONOFF) == LED_ON ) 
-         onLED(i);
-      else
-         offLED(i);
-   }
-
-   #endif
-}
+#ifdef USE_LEDS
 
 /*----------------------------------------------------------------------------*
  *
- *  Name:  saveLEDs
+ *  Name:  getLEDs
  *
- *  Desc:  Save runtime state of the LEDs to an LEDFrame.
+ *  Desc:  Returns the current display state of the LEDs.
  *
- *  Args:  frame            - ptr to the LEDFrame
+ *  Rets:  leds             - LED display state
  *
  *  Glob:  blinkTime        - LED blink time (in dynamic updates)
  *         LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
  *  
+ *----------------------------------------------------------------------------*/
+
+   byte _getLED( byte nth )
+   {
+      byte state;
+      
+      if ( LEDState[nth] & LED_BLINK )
+         state = ( LEDState[nth] & LED_INVERT ) ? 3 : 2;
+      else
+         state = LEDState[nth] & LED_ONOFF;
+
+      return state;
+   }
+
+LEDs getLEDs()
+{
+   LEDs retVal;
+
+   retVal.blinktime = blinkTime >> 4;
+   retVal.led0state = _getLED(0);
+   retVal.led1state = _getLED(1);
+
+   return retVal;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  setLEDs
+ *
+ *  Desc:  Set the current display state of the LEDs.
+ *
+ *  Args:  leds             - LED display state
+ *
+ *  Glob: +blinkTime        - LED blink time (in dynamic updates)
+ *        +LEDState[]       - state per LED { LED_ONOFF/BLINK/INVERT }
+ *  
  *----------------------------------------------------------------------------*/      
 
-void saveLEDs( LEDFrame *frame )
+   LEDs _setLED( byte nth, byte state )
+   {
+      if ( state == LED_OFF )
+         offLED( nth );
+      else if ( state == LED_ON )
+         onLED( nth );
+      else
+         blinkLED( nth, state == 3 );
+   }
+
+void setLEDs( LEDs leds )
 {
-   #ifndef USE_SERIAL_PORT
+   _setLED( 0, leds.led0state );
+   _setLED( 1, leds.led1state );
 
-   for ( byte i = 0; i < NumLEDs; i++ )
-      frame->LEDState[i] = LEDState[i];
-   frame->blinkTime = blinkTime;
-
-   #endif
+   blinkTime = leds.blinktime << 4;
 }
+
+#endif // USE_LEDs
+
 
 /******************************************************************************
  *
@@ -1027,7 +1084,7 @@ boolean render_audio()
    {
       synth->dynamics();               // perform a dynamic update
 
-      #ifndef USE_SERIAL_PORT       
+      #ifdef USE_LEDS       
       if ( --blinkDC == 0 )            // update any LEDState LEDs 
       {
          blinkDC   = blinkTime;        // reload downcounter

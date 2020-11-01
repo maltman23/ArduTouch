@@ -80,6 +80,32 @@ class TabOsc256 : public WavGen256           // wave length specified by a table
 
 /******************************************************************************
  *
+ *                               BankOsc256 
+ *
+ ******************************************************************************/
+
+class BankOsc256 : public TabOsc256          // 256-sample ROM table within a bank
+                                             
+{
+   typedef TabOsc256 super;                  // superclass is TabOsc256
+
+   public:
+
+   bool   charEv( char );                    // process a character event
+   void   setTableFromBank( byte );          // set table to nth member of wavebank
+
+   PROMPT_STR( bankosc )
+
+   protected:
+
+   const char* name;                         // wavetable name 
+
+} ;
+
+
+
+/******************************************************************************
+ *
  *                                  Sine 
  *
  ******************************************************************************/

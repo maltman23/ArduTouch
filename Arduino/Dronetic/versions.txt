@@ -1,5 +1,9 @@
 Versions:
 
+   0.64  use embedded U/I frames 
+         do not requre IMPLICIT_SEQUENCER to be undefined when running as DEVELOPER
+         syncs with library 1.16
+   0.63  lead oscillators statically allocated to avoid noise with Ardunio 1.8.10+
    0.62  edit presets to use byte values <= 128 when setting LFO depths 
          syncs with library 1.13
    0.61  use the tuning() call-back method to (indirectly) set the master tuning

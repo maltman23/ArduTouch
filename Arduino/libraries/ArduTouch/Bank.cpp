@@ -58,14 +58,54 @@ const void* Bank::dataPtr( byte nth )
 
 #ifdef INTERN_CONSOLE
 
-boolean Bank::charEv( char code )
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Bank::charEv
+ *
+ *  Desc:  Process a character event.
+ *
+ *  Args:  code             - character to process
+ *
+ *  Memb: +chosen           - if true, a valid member has been chosen
+ *        +idx              - idx # of chosen member
+ *         num              - number of members in bank
+ *
+ *  Rets:  status           - true if character was handled
+ *
+ *  Note:  The characters '0'..'9' select the 1st 10 members of the bank.
+ *         The character 's' initiates a dialog to select a member by index #.
+ *         Upon a member selection attempt the mode is automatically popped.
+ *
+ *----------------------------------------------------------------------------*/      
+
+bool Bank::charEv( char code )
 {
-   if ( code >= '0' && code < '0' + Max )
+   // select member via characters '0' thru '9'
+
+   if ( code >= '0' && code <= '9' )
    {
-      idx    = code - '0';
-      chosen = idx < num;
+      byte digit = code - '0';
+      if ( digit < num )
+      {
+         idx    = digit; 
+         chosen = true;
+      }
       console.popMode();
    }
+
+   // select member via index # dialog
+
+   else if ( code == 's' )
+   {
+      byte val;
+      if ( console.getByte( CONSTR("select"), &val ) && val < num )
+      {
+         idx = val;
+         chosen = true;
+      }
+      console.popMode();
+   }
+
    #ifdef CONSOLE_OUTPUT
    else if ( code == chrInfo )
    {
@@ -74,21 +114,23 @@ boolean Bank::charEv( char code )
          if ( i > 0 )
             console.newline();
          console.rtab();
-         console.print( (char )('0' + i) );   
+         console.print( (int ) i );   
          console.romprint( CONSTR(": ") );
          console.romprint( name(i) );
       }
    }
    #endif      
+
    else
       return Mode::charEv( code );
 
    return true;
+
 }
 
 #else
 
-boolean Bank::charEv( char code )
+bool Bank::charEv( char code )
 {
    return Mode::charEv( code );
 }
@@ -108,7 +150,7 @@ void Bank::load( const bankmem *p )
    slot._.msb  = pgm_read_byte_near( cur++ ); 
 
    num = 0;
-   while ( num < Max && slot.val )           // loop till null data ptr, or Max
+   while ( num < 255 && slot.val )           // loop till null data ptr, or Max
    {
       num++;                                 // bump num
 

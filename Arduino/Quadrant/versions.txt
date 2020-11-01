@@ -1,5 +1,10 @@
 Versions:
 
+   1.73  use embedded U/I frames 
+         syncs with library 1.16
+   1.72  bugfix: upper bound condition in LED iteration corrected to "< NUMLEDs" from "<= NumLEDs"
+         [31722] _STNDLONE_ lib 1.15 Build 1.6.6
+   1.71  newOsc() returns NULL (instead of new Osc())
    1.70  nix BUILD_166 conditional compilation sections
    1.69  add FRAME21 pots to control lead 1 detune and transpose
          [31742] _STNDLONE_ BUILD_166

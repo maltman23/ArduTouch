@@ -250,9 +250,6 @@
  #ifdef KEYBRD_MENUS
    #error Comment out KEYBRD_MENUS in Model.h to run the Developers version
  #endif
- #ifdef IMPLICIT_SEQUENCER
-   #error Comment out IMPLICIT_SEQUENCER in Model.h to run the Developers version 
- #endif
 #endif
 
 #ifndef __STNDLONE__
@@ -261,7 +258,7 @@
  #endif
 #endif
 
-about_program( Dronetic, 0.62 )       
+about_program( Dronetic, 0.64 )       
 
 /******************************************************************************
  *
@@ -742,6 +739,14 @@ class DroneVox : public Voice
 
 } ;
 
+// Note: the ambient and caustic oscillators are statically allocated here instead 
+//       of dynamically allocated off the heap within LeadVox() to avoid an emergent
+//       issue in Arduino 1.8.10+ where noise occurs if Beatitude synth is uploaded 
+//       first, then Dronetic. In the absence of a (real) debugger it is unclear
+//       why this should be.
+
+FastWaveOsc staticAmbient;                // default "nice" oscillator
+FastWaveOsc staticCaustic;                // "not-nice" oscillator
 
 /******************************************************************************
  *
@@ -762,13 +767,13 @@ class LeadVox : public ADSRVoice
    {
       // allocate ambient oscillator
 
-      ambient = new FastWaveOsc();
+      ambient = &staticAmbient;
       ambient->setTable( wavetable_named( Ether ) );
       useAmbient();
 
       // allocate caustic oscillator
 
-      FastWaveOsc *waveOsc = new FastWaveOsc();
+      FastWaveOsc *waveOsc = &staticCaustic;
       waveOsc->setTable( wavetable_named( Ether ) );
       caustic = new XorOsc( waveOsc, new PureSquare() );
    }
@@ -847,34 +852,6 @@ class DroneSynth : public TwoVoxPanSynth
    DroneVox *drone[2];              // ptr to drone voices (same as vox[0..1])
    LeadVox  *lead;                  // ptr to lead voice (same as vox[2])
 
-   #define NUMLEDS 2                // number of onboard LEDs
-
-   enum {  // these values enumerate elements of ledState[] 
-
-           LED_OFF   = 0,       
-           LED_ON    = 1,      
-           LED_BLINK = 2
-
-        } ;
-
-   byte ledState[ NUMLEDS ];        // display state of each onboard LED
-
-   enum {  // these values enumerate frame 
-
-           FRAME00   = 0,       
-           FRAME10   = 1,      
-           FRAME20   = 2,
-           FRAME01   = 4,
-           FRAME11   = 5,       
-           FRAME21   = 6,      
-           FRAME02   = 8,      
-           FRAME12   = 9,      
-           FRAME22   = 10
-
-        } ;
-
-   byte frame;                      // user interface frame 
-
    Control *sendControl;            // send pot events to this control
 
    bool autoplay;                   // if false, ignore 'S' commands in presets
@@ -883,6 +860,7 @@ class DroneSynth : public TwoVoxPanSynth
    {
       configVoices(3);
       panControl = new PanControl( &this->panPos );
+      setFrameDimensions( 2, 2 );
    }
 
    Tuning *tuning()
@@ -921,33 +899,11 @@ class DroneSynth : public TwoVoxPanSynth
       }
    }
       
-   void bumpLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:  ledState[nth] = LED_ON;    break;
-         case LED_ON:   ledState[nth] = LED_BLINK; break;
-         default:       ledState[nth] = LED_OFF;   break;
-      }
-      dispLED( nth );
-      setFrame();
-   }
-
-   void dispLED( byte nth )
-   {
-      switch ( ledState[nth] )
-      {
-         case LED_OFF:    offLED( nth );   break;
-         case LED_ON:     onLED( nth );    break;
-         case LED_BLINK:  blinkLED( nth ); break;
-      }
-   }
-
-   bool charEv( char code )               // process a character event
+   bool charEv( char code )                  // process a character event
    {
       switch ( code )
       {
-         #ifdef INTERN_CONSOLE         // compile cases needed by macros
+         #ifdef INTERN_CONSOLE               // compile cases needed by macros
 
          case 'S':
 
@@ -959,31 +915,17 @@ class DroneSynth : public TwoVoxPanSynth
             stop();
             break;
 
-         case 'F':                     // set frame
-
-            console.getByte( CONSTR("Frame"), &frame );
-            break;
-
          #endif
 
-         #ifdef CONSOLE_OUTPUT
-
-         case chrInfo:
-
-            super::charEv( code );
-            console.newlntab();
-            console.infoByte( CONSTR("Frame"), frame );
-            break;
-
-         #endif
-
-         case '!':                        // perform a reset
+         case '!':                           // perform a reset
 
             super::charEv( code );
 
             playStatus = STOPPED;
             setVol(0);
             flags &= ~RSTMUTE;
+
+            enableFrame();                   // use embedded user-interface frame
 
             keybrd.setOctave(2);
             keybrd.setTopOct(3);
@@ -1025,16 +967,6 @@ class DroneSynth : public TwoVoxPanSynth
 
       switch ( e.type() )
       {     
-         case BUT0_PRESS:                    // bump frame prefix 
-
-            bumpLED(0);
-            break;
-
-         case BUT1_PRESS:                    // bump frame suffix
-
-            bumpLED(1);
-            break;
-
          case BUT0_DTAP:                     // toggle drone on/off
 
             if ( playStatus == STOPPED || playStatus == FADE_OUT )
@@ -1068,82 +1000,108 @@ class DroneSynth : public TwoVoxPanSynth
 
          default:       
 
-            return Synth::evHandler(e);      // pass other events through
+            return super::evHandler(e);      // pass other events through
       }
       return true;
    }
 
    bool handlePots( obEvent ev )             // handle pot events
    {
-      bool pot0 = false;
+      if ( ! ev.amPot() )                    // return false if not a pot event
+         return false;                       
 
-      if ( ev.type() == POT0 )
-         pot0 = true;
-      else if ( ev.type() != POT1 )
-         return false;                       // event is neither POT0 or POT1
+      byte potVal = ev.getPotVal();          // cache pot value
+      byte potNum = getPotNum( ev );         // cache pot # (sans frame #)
 
-      byte potVal = ev.getPotVal();
-            
-      switch ( frame )
+      switch ( ev.type() )                   // execute case by pot#_frame#
       {
-         case FRAME00:                       // autowah 0
-         case FRAME10:                       // autowah 1
-         case FRAME20:                       // panControl
+         /*             FRAME 00             */
 
-            sendControl->evHandler(ev);
+         case POT0_F00:                      // autowah 0 LFO freq 
+         case POT1_F00:                      // autowah 0 LFO depth 
+
+            drone[0]->autoWah->lfo.potEv(ev);
             break;
 
-         case FRAME01:                       // autowah 0/1 cutoff freq
+         /*             FRAME 10             */
 
-            if ( pot0 )
-               drone[0]->autoWah->setCutoff( potVal );
-            else
-               drone[1]->autoWah->setCutoff( potVal );
+         case POT0_F10:                      // autowah 1 LFO freq 
+         case POT1_F10:                      // autowah 1 LFO depth 
+
+            drone[1]->autoWah->lfo.potEv(ev);
             break;
-         
-         case FRAME11:                       // drone 0/1 pulse width
+
+         /*             FRAME 20             */
+
+         case POT0_F20:                      // panning LFO freq 
+         case POT1_F20:                      // panning LFO depth 
+
+            panControl->potEv(ev);
+            break;
+
+         /*             FRAME 01             */
+
+         case POT0_F01:                      // autowah 0 cutoff freq 
+         case POT1_F01:                      // autowah 1 cutoff freq  
+
+            drone[potNum]->autoWah->setCutoff( potVal );
+            break;
+
+         /*             FRAME 11             */
+
+         case POT0_F11:                      // drone 0 pulse width
+         case POT1_F11:                      // drone 1 pulse width 
 
             potVal >>= 1;                    // pulse widths range from 0 to 128 (50%)
-            if ( pot0 )
-               drone[0]->oscSect->setPW( potVal );
-            else
-               drone[1]->oscSect->setPW( potVal );
+
+            drone[potNum]->oscSect->setPW( potVal );
             break;
 
-         case FRAME21:                       // transpose current osc of drone 0/1
-         {
-            // map pot range to interval [-12 .. 12]
+         /*             FRAME 21             */
 
+         case POT0_F21:                      // transpose current osc of drone 0 
+         case POT1_F21:                      // transpose current osc of drone 1 
+         {
             double calcXpose = -12.0 + (double )potVal * (24.0/255.0);
-            if ( pot0 )
-               drone[0]->xpose = calcXpose;
-            else
-               drone[1]->xpose = calcXpose;
+            drone[potNum]->xpose = calcXpose;
             break;
          }
 
-         case FRAME02:                       // set lead ADSR attack/decay
+         /*             FRAME 02             */
 
-            if ( pot0 )
-               lead->envAmp.setAttack( potVal );
-            else
-               lead->envAmp.setDecay( potVal );
+         case POT0_F02:                      // set lead ADSR attack
+
+            lead->envAmp.setAttack( potVal );
+            break;
+                                             // set lead ADSR decay
+         case POT1_F02:                       
+
+            lead->envAmp.setDecay( potVal );
             break;
 
-         case FRAME12:                       // set lead ADSR sustain/release
+         /*             FRAME 12             */
 
-            if ( pot0 )
-               lead->envAmp.setSustain( potVal );
-            else
-               lead->envAmp.setRelease( potVal );
+          case POT0_F12:                     // set lead ADSR sustain
+
+            lead->envAmp.setSustain( potVal );
+            break;
+                                             
+          case POT1_F12:                     // set lead ADSR release
+
+            lead->envAmp.setRelease( potVal );
+            break;
+                                             // set lead ADSR decay
+
+         /*             FRAME 22             */
+
+         case POT0_F22:                      // set freqDiff  
+
+            lead->caustic->freqDiff = potVal;
             break; 
 
-         case FRAME22:                       // POT0 sets freqDiff; POT1 portamento
+         case POT1_F22:                      // set portamento  
 
-            if ( pot0 )
-               lead->caustic->freqDiff = potVal;
-            else
-               lead->setGlide( potVal );
+            lead->setGlide( potVal );
             break; 
 
       }
@@ -1182,28 +1140,6 @@ class DroneSynth : public TwoVoxPanSynth
 
    }
 
-   void setFrame()                           // set the U/I frame
-   {
-      // compute frame from ledState[] entries
-
-      frame = 0;
-      byte factor = 1;
-      for ( byte i = 0; i <= NUMLEDS; i++ )
-      {
-         frame += ledState[i] * factor;
-         factor <<= 2;
-      }
-
-      // set sendControl
-
-      switch ( frame )
-      {
-         case FRAME00:  sendControl = &(drone[0]->autoWah->lfo);  break;
-         case FRAME10:  sendControl = &(drone[1]->autoWah->lfo);  break;
-         case FRAME20:  sendControl = panControl;                 break;
-      }
-   }
-
    void start()
    {
       if ( playStatus != PLAYING )
@@ -1225,16 +1161,6 @@ class DroneSynth : public TwoVoxPanSynth
       autoplay = false;             
       runPreset( (const char *)presets.dataPtr( 0 ) ); 
       autoplay = true;
-
-      // initialize LEDS and frame (to 00)
-
-      for ( byte i = 0; i <= NUMLEDS; i++ )
-      {
-         ledState[i] = LED_OFF;
-         dispLED( i );
-      }
-      setFrame();
-
    }
 
 } mySynth;

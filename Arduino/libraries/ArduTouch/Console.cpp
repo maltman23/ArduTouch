@@ -36,6 +36,12 @@ Console  console;
 
 char buf[ STR_BUFSZ ];                 // buffer for conversions to string
 
+/* ----------------------    external functions   -------------------------- */
+
+extern void pushDisplay();             // push display state
+extern void popDisplay();              // pop display state
+extern void resetDisplay( byte );      // reset display stackptr and state
+
 /* ----------------------     public functions    -------------------------- */
 
 void console_setup( Mode *iniMode )
@@ -545,6 +551,7 @@ void Console::exeIn( const char *m, Mode *exeMode )
    exe(m);
 
    modeSP = saveSP;
+   resetDisplay( modeSP );
 }
 
 /*----------------------------------------------------------------------------*
@@ -1163,10 +1170,10 @@ void Console::infoDouble( const char* label, double val )
  *
  *  Name:  Console::infoStr
  *
- *  Desc:  Display a string value (preceded by a label).
+ *  Desc:  Display a string value located in ROM (preceded by a label).
  *
  *  Args:  label            - ptr to label str
- *         value            - strinf value
+ *         value            - ptr to string in ROM
  *
  *  Note:  This method is one of a group of "info" methods which display  
  *         a label/value pair to the console as follows:
@@ -1179,6 +1186,29 @@ void Console::infoStr( const char* label, const char* val )
 {
    begInfo( label );
    romprint( val );
+   endInfo();
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::infoRAMStr
+ *
+ *  Desc:  Display a string value located in RAM (preceded by a label).
+ *
+ *  Args:  label            - ptr to label str
+ *         value            - strinf value
+ *
+ *  Note:  This method is one of a group of "info" methods which display  
+ *         a label/value pair to the console as follows:
+ *
+ *                           {label value}
+ *
+ *----------------------------------------------------------------------------*/
+
+void Console::infoRAMStr( const char* label, char* val )
+{
+   begInfo( label );
+   print( val );
    endInfo();
 }
 
@@ -1333,6 +1363,18 @@ void Console::newlntab()
    rtab();
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::newprompt
+ *
+ *  Desc:  Move to the next line on the console and print the prompt string 
+ *         for the top mode on the mode stack.
+ *
+ *  Memb:  modeSP           - stackptr for _modeStk[]
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::newprompt()
 {
 #ifdef CONSOLE_OUTPUT
@@ -1359,6 +1401,44 @@ void Console::oneShotMenu()
 {
    oneShot = true;
 }
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::pushMode
+ *
+ *  Desc:  Push a mode onto the mode stack.  
+ *
+ *  Memb:  _ledsStk[]       - stack of nested led states
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *        +modeSP           - stackptr for _modeStk[]
+ *        +oneShot          - interpret next key event as a menu selection
+ *
+ *----------------------------------------------------------------------------*/      
+
+void Console::pushMode( Mode *x )
+{
+   if ( modeSP < MAX_MODE-1 ) 
+   {
+      oneShot = false;
+      pushDisplay();
+      ++modeSP;
+      x->charEv( focusPUSH );
+      setMode( x );
+   }
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::popMode
+ *
+ *  Desc:  Pop the top mode off the mode stack, restoring the prior mode and
+ *         display state of LEDs.  
+ *
+ *  Memb:  _ledsStk[]       - stack of nested led states
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *        +modeSP           - stackptr for _modeStk[]
+ *        +oneShot          - interpret next key event as a menu selection
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::popMode()
 {
@@ -1368,11 +1448,27 @@ void Console::popMode()
    {
       --modeSP;
       _modeStk[ modeSP ]->charEv( focusRESTORE ); 
+      popDisplay();
       setMode( _modeStk[ modeSP ] );
    }
    else
       exit_sketch();
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::postBut
+ *
+ *  Desc:  Post a pot event to the top mode on the mode stack.  
+ *
+ *  Args:  num              - button number 
+ *         action           - button action
+ *
+ *  Memb: +oneShot          - interpret next key event as a menu selection
+ *         modeSP           - stackptr for _modeStk[]
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::postBut( byte num, butAction action )  
 {
@@ -1387,6 +1483,22 @@ void Console::postBut( byte num, butAction action )
    else
       _modeStk[ modeSP ]->evHandler( o ); 
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::postKeyDn
+ *
+ *  Desc:  Post a key-down event to the mode stack.  
+ *
+ *  Args:  pos              - key position within the octave 
+ *         oct              - octave
+ *
+ *  Memb: +oneShot          - interpret next key event as a menu selection
+ *        +menuKeyDn        - last key down was a menu selection
+ *         modeSP           - stackptr for _modeStk[]
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::postKeyDn( byte pos, byte oct )  
 {
@@ -1424,6 +1536,19 @@ void Console::postKeyDn( byte pos, byte oct )
    }
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::postKeyUp
+ *
+ *  Desc:  Post a key-up event to the mode stack.  
+ *
+ *  Args:  pos              - key position within the octave 
+ *         oct              - octave
+ *
+ *  Memb: +menuKeyDn        - last key down was a menu selection
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::postKeyUp( byte pos, byte oct )  
 {
    key k( pos, oct );
@@ -1443,15 +1568,55 @@ void Console::postKeyUp( byte pos, byte oct )
    }
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::postPot
+ *
+ *  Desc:  Post a pot event to the top mode on the mode stack.  
+ *
+ *  Args:  num              - pot number 
+ *         val              - pot value
+ *
+ *  Memb: +oneShot          - interpret next key event as a menu selection.
+ *         modeSP           - stackptr for _modeStk[]
+ *         _modeStk[]       - stack of ptrs to nested Mode objects
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::postPot( byte num, byte val )  
 {
    obEvent o;
+   byte    type;
 
    oneShot = false;
+
+   type    = POT0 + num;
+
+   // If top mode has an enabled frame then add its current frame number 
+   // to the basic pot event type to create an extended pot event.
+
+   if ( _modeStk[ modeSP ]->flags&Mode::UIFRAME )     
+   {
+      type += ((Control *)_modeStk[ modeSP ])->frame.Num();
+   }
+
+   o.setType( type );
    o.setPotVal( val );
-   o.setType( POT0 + num );   
+
    _modeStk[ modeSP ]->evHandler( o ); 
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::print
+ *
+ *  Desc:  Print a character.  
+ *
+ *  Args:  c                - character 
+ *
+ *  Memb:  output           - if true, console output is enabled
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::print( char c )
 {
@@ -1461,6 +1626,18 @@ void Console::print( char c )
 #endif
 }
 
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::print
+ *
+ *  Desc:  Print a string.  
+ *
+ *  Args:  s                - string 
+ *
+ *  Memb:  output           - if true, console output is enabled
+ *
+ *----------------------------------------------------------------------------*/      
+
 void Console::print( char *str )
 {
 #ifdef CONSOLE_OUTPUT
@@ -1468,6 +1645,18 @@ void Console::print( char *str )
       Serial.print( str );
 #endif
 }
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Console::print
+ *
+ *  Desc:  Print an integer.  
+ *
+ *  Args:  i                - integer 
+ *
+ *  Memb:  output           - if true, console output is enabled
+ *
+ *----------------------------------------------------------------------------*/      
 
 void Console::print( int i )
 {
@@ -1497,17 +1686,6 @@ void Console::ongoing()
 {
    input();
    if ( idle ) idle();
-}
-
-void Console::pushMode( Mode *x )
-{
-   if ( modeSP < MAX_MODE-1 ) 
-   {
-      oneShot = false;
-      ++modeSP;
-      x->charEv( focusPUSH );
-      setMode( x );
-   }
 }
 
 void Console::romprint( const char *str )

@@ -26,7 +26,7 @@
 #include "Synth.h"
 #include "Model.h"
 
-#define LIBRARY_VERSION "1.14"
+#define LIBRARY_VERSION "1.16"
 
 /* ------------------------------------------------------------------------- */
 
@@ -38,24 +38,10 @@
 
 /* ------------------------------------------------------------------------- */
 
-#define RED_LED   0                    // red LED  #
-#define BLUE_LED  1                    // blue LED #
-
-#define LEFT_LED  0                    // left LED #
-#define RIGHT_LED 1                    // right LED #
-
-#define NULL_LED  255                  // null LED # 
-
 #define NumButs   2                    // number of onboard buttons 
 #define NumPots   2                    // number of onboard pots 
 #define NumLEDs   2                    // number of onboard LEDs 
 #define NumKeys  12                    // # of onboard keys
-
-struct LEDFrame                        // for saving and restoring LED frames
-{
-   byte LEDState[NumLEDs];             // state per LED { LED_ONOFF/BLINK/INVERT }
-   byte blinkTime;                     // LED blink time (in dynamic updates)
-} ;
 
 /* ------------------------      public vars      -------------------------- */
 
@@ -73,19 +59,28 @@ void ardutouch_setup( Synth * );       // initialize ardutouch resources
 void device_io();                      // manage device I/O
 byte readPot( byte );                  // read and return a pot's value
 
-extern void onLED( byte );             // turn an LED on
-extern void offLED( byte );            // turn an LED off
-extern void blinkLED( byte, bool invert = false ); // blink an LED 
-extern byte getBlinkTime();            // return LED blink time
-extern void setBlinkTime( byte );      // set LED blink time
-extern void restoreLEDs( LEDFrame* );  // restore runtime LED state from an LED Frame
-extern void saveLEDs( LEDFrame* );     // save runtime LED state to an LED Frame
-
 extern void bufStats();                // prints audio buffer stats
 extern int  freeRam();                 // returns space between heap & stack
 
 extern void readMetrics( word addrNVS = AUTO_METRICS_ADDR );  // read metrics from NVS
 extern void writeMetrics( word addrNVS = AUTO_METRICS_ADDR ); // write metrics to NVS
+
+                  // LEDs
+
+#define RED_LED   0                    // red LED  #
+#define BLUE_LED  1                    // blue LED #
+
+#define LEFT_LED  0                    // left LED #
+#define RIGHT_LED 1                    // right LED #
+
+#define NULL_LED  255                  // null LED # 
+
+extern void onLED( byte );             // turn an LED on
+extern void offLED( byte );            // turn an LED off
+extern void blinkLED( byte, bool invert = false ); // blink an LED 
+extern byte getBlinkTime();            // return LED blink time
+extern void setBlinkTime( byte );      // set LED blink time
+
 
                   // Non-Volatile Storage (EEPROM) routines
 

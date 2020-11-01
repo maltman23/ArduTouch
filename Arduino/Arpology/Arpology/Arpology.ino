@@ -56,6 +56,15 @@
 //       uncommenting the "#define __STNDLONE__" statement in Model.h of the 
 //       ArduTouch library. 
 //
+//    2) In version 1.16 of the ArduTouch library an embedded U/I frame was 
+//       added to the ArduTouch Control class (a base class for virtually all
+//       the objects that make up a synth -- including the synth itself.) The 
+//       Arpology synth was written years before version 1.16 of the library
+//       was released, and its Envelope and Arpeggiator frames should not be
+//       confused with embedded U/I frames, which are disabled by default and 
+//       not used in this synth.
+//
+//
 //  Target:   ArduTouch board
 // 
 //  ---------------------------------------------------------------------------
@@ -74,7 +83,7 @@
 
 #include "ArduTouch.h"                       // use the ArduTouch library 
 
-about_program( Arpology, 1.13 )              // specify sketch name & version
+about_program( Arpology, 1.16 )              // specify sketch name & version
 
 // Specify whether the voices of Arpology can be panned in stereo by 
 // uncommenting the following defines
@@ -692,6 +701,13 @@ PROGMEM const byte* const patterns[] =
    #define ARP_BASE_CLASS  QuadSynth         // use QuadSynth as superclass
 #endif
 
+// Note: arpOsc[] are statically allocated here instead of dynamically allocated off the
+//       heap within ArpSynth::newOsc() to avoid an emergent issue in Arduino 1.8.10+ 
+//       where noise occurs in vox[0] if Hocus synth is uploaded 1st, then Arpology. 
+//       This is a difficult problem to understand without a (real) debugger!
+
+FastWaveOsc arpOsc[4];                       // oscillators
+
 class ArpSynth : public ARP_BASE_CLASS
 {
    typedef ARP_BASE_CLASS super;             // superclass is ARP_BASE_CLASS
@@ -818,9 +834,6 @@ class ArpSynth : public ARP_BASE_CLASS
 
          case '!':                     // reset
 
-            for ( byte i = 0; i < numVox; i++ )
-               vox[i]->setFreq( 0.0 );
-
             super::charEv( code );
 
             pendingPatNum = 1;
@@ -891,7 +904,7 @@ class ArpSynth : public ARP_BASE_CLASS
       super::dynamics();
 
       arpegCue.dynamics();
-      if ( arpegCue.pending() && ! deferVoc )
+      if ( arpegCue.pending() )
       {
          if ( pendingPatNum > 0 && arpegIdx == 1 ) 
          {
@@ -1049,7 +1062,7 @@ class ArpSynth : public ARP_BASE_CLASS
 
    Osc *newOsc( byte nth )
    {
-      FastWaveOsc *o = new FastWaveOsc();
+      FastWaveOsc *o = &arpOsc[nth];
       o->setTable( wavetable_named( Ether ) ); 
       return o;
    }

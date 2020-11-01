@@ -249,37 +249,25 @@ void LFO::evaluate()
 
 boolean LFO::evHandler( obEvent ev )
 {
-   switch ( ev.genus() )
+   switch ( ev.type() )
    {
-      case evPOT:
+      case POT0:       
       {
-         byte val = ev.getPotVal();
-
-         switch ( ev.type() )
-         {
-            case POT0:       
-            {
-               word expVal = val * val;
-               setFreq( expVal * .000333 );      // logarithmic 0 - 21.65 Hz
-               break;
-            }
-            
-            case POT1:       
-            {
-               word depth128 = val+1;
-               depth128 >>= 1;
-               setDepth( depth128 );
-               break;
-            }
-         }
-
-         return true;
+         byte val    = ev.getPotVal();
+         word expVal = val * val;
+         setFreq( expVal * .000333 );      // logarithmic 0 - 21.65 Hz
          break;
       }
+      case POT1:       
+
+         setDepth( ev.getPotVal128() );
+         break;
+
       default:
 
          return super::evHandler(ev);
    }
+   return true;
 }
 
 /*----------------------------------------------------------------------------*

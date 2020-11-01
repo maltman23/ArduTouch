@@ -28,9 +28,6 @@
  *                                                                            
  ******************************************************************************/
 
-#define RATIO_SEMITONE   1.059463   // frequency ratio between adjacent pitches
-#define INVERT_SEMITONE   .943874   // 1 / RATIO_SEMITONE
-
 /*----------------------------------------------------------------------------*
  *
  *  Name:  Vibrato::charEv

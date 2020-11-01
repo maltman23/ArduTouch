@@ -102,6 +102,8 @@ class VoxSynth : public Synth          // synthesizer with voices
    byte  numVox;                       // number of voices
    Voice *vox[ MaxVox ];               // array of voices
 
+   key   lastNote;                     // last note played
+
    public:
 
    VoxSynth()
@@ -115,8 +117,10 @@ class VoxSynth : public Synth          // synthesizer with voices
    bool charEv( char );                // process a character event 
    void configVoices( byte numVox );   // sets up vox[] via newVox()/newOsc()
    void dynamics();                    // perform a dynamic update
+   void forEach( const char *macStr ); // execute a macro string for each voice
    void noteOn( key );                 // turn a note on
    void noteOff( key );                // turn a note off
+   void reTrigger();                   // retrigger all voices
    void setVoicing( char* v );         // set transposition interval per voice
    void setVol( byte );                // set volume level of synth
 

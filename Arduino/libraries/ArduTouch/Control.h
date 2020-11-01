@@ -36,6 +36,8 @@
 //    to "unmute" a control means to "turn it on"
 //
 
+#define MAX_FRAME_DIM 2
+
 class Control : public Mode            // a mode that can be reset/muted/unmuted
 {
    typedef Mode super;                 // superclass is Mode
@@ -49,19 +51,55 @@ class Control : public Mode            // a mode that can be reset/muted/unmuted
 
         } ;
 
+   struct                              // embedded user interface frame
+   {
+      byte dim0 : 2;                   // limit for column 0
+      byte dim1 : 2;                   // limit for column 1
+      byte led0 : 2;                   // LED0 current state ( 0=off, 1=on, 2=blink )
+      byte led1 : 2;                   // LED1 current state ( 0=off, 1=on, 2=blink )
+
+      frameNum Num()                   // returns frame #
+      {
+         return (frameNum )( ((led0 << 2) + led1) << 1 ); 
+      }
+
+   } frame;                 
+
+   void enableFrame()                  // enable the embedded user interface frame
+   {
+      flags |= UIFRAME;   
+   }
+
+   byte getPotNum( obEvent e )         // return pot # for a (pot) event in the current frame
+   {
+      e.stripFrame();
+      return e.type() - POT0;
+   }
+
+   void setFrameDimensions( byte d0, byte d1 )  
+   {
+      if ( d0 <= MAX_FRAME_DIM ) frame.dim0 = d0;
+      if ( d1 <= MAX_FRAME_DIM ) frame.dim1 = d1;
+   }
+
    Control()
    {
       flags |= RSTMUTE;                // by default, control is muted on reset
+
+      frame.dim0 = 0;                  // by default, no frames other than 00
+      frame.dim1 = 0;
    }
 
-   inline boolean muted()              // return mute status
+   inline bool muted()                 // return mute status
    {
       return flags & MUTE;
    }
 
-   boolean charEv( char );             // process a character event
-   void    reset();                    // reset the control
-   void    setMute( boolean );         // mute (or unmute) the control
+   bool   charEv( char );              // process a character event
+   void   displayLED( byte );          // display a frame LED
+   bool   evHandler( obEvent );        // handle an onboard event
+   void   reset();                     // reset the control
+   void   setMute( boolean );          // mute (or unmute) the control
 
    #ifdef KEYBRD_MENUS
    char    menu( key );                // given a key, return a character  
@@ -114,12 +152,12 @@ class TControl : public DynaControl    // a triggerable, chainable, dynamic cont
       shortcut = 31;                   // "None" (nonprintable char before SPACE)
    };
 
-   boolean charEv( char );             // process a character event
-   void    release();                  // release the control trigger
-   void    trigger();                  // trigger the control
+   bool   charEv( char );              // process a character event
+   void   release();                   // release the control trigger
+   void   trigger();                   // trigger the control
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );                // given a key, return a character  
+   char   menu( key );                 // given a key, return a character  
    #endif
 
 } ;
@@ -178,20 +216,20 @@ class ControlChain : public Mode       // a chain of controls of type TControl
       chain = NULL; 
    };
 
-   void    add( TControl* );           // add a control to the chain
-   boolean charEv( char );             // process a character event 
-   void    clear();                    // remove all controls from the chain
-   void    dynamics();                 // perform a dynamic update on all controls
-   void    release();                  // release the trigger for all controls
-   void    reset();                    // reset all controls
-   void    trigger();                  // trigger all controls
+   void   add( TControl* );            // add a control to the chain
+   bool   charEv( char );              // process a character event 
+   void   clear();                     // remove all controls from the chain
+   void   dynamics();                  // perform a dynamic update on all controls
+   void   release();                   // release the trigger for all controls
+   void   reset();                     // reset all controls
+   void   trigger();                   // trigger all controls
 
    #ifdef KEYBRD_MENUS
-   char    menu( key );                // map key event to character 
+   char   menu( key );                 // map key event to character 
    #endif
 
    #ifdef CONSOLE_OUTPUT
-   const   char* prompt();             // return object's prompt string
+   const  char* prompt();              // return object's prompt string
    #endif
 
 } ;

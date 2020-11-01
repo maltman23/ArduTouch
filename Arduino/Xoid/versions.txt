@@ -1,5 +1,7 @@
 Versions:
 
+   0.98  use embedded U/I frames 
+         syncs with library 1.16
    0.97  edit presets to use byte values <= 128 when setting LFO depths 
          syncs with library 1.13
    0.96  quiet preset loading

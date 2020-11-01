@@ -1,5 +1,10 @@
 Versions:
 
+   1.16  nix explict squelching of voices at reset 
+         syncs with 1.16
+   1.15  oscillators statically allocated to avoid noise in vox[0] with Ardunio 1.8.10+
+   1.14  dynamics() no longer dereferences deferVoc 
+         syncs with 1.15
    1.13  edit presets to use byte values <= 128 when setting LFO depths 
          rework PeriodicCue
          syncs with 1.13

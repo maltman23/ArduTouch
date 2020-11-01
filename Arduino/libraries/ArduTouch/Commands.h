@@ -58,4 +58,9 @@
 #define sqncDNBEAT      -17            // sequencer is at a downbeat
 #define sqncUPBEAT      -18            // sequencer is at an upbeat 
 
+// if a Control returns true for the following cmds then the associated frame LED is enabled
+
+#define frameLED0       -19            // is frame LED0 enabled?
+#define frameLED1       -20            // is frame LED1 enabled?
+
 #endif   // ifndef COMMANDS_H_INCLUDED

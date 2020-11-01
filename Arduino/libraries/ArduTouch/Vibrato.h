@@ -23,6 +23,9 @@
 
 #include "LFO.h"
 
+#define RATIO_SEMITONE   1.059463   // frequency ratio between semi-tones
+#define INVERT_SEMITONE   .943874   // 1 / RATIO_SEMITONE
+
 /******************************************************************************
  *
  *                               Vibrato 

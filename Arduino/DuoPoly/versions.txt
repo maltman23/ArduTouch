@@ -1,5 +1,7 @@
 Versions:
 
+   2.52  enable embedded frame for voice and ADSR controls
+         syncs with 1.16
    2.51  edit presets to use byte values <= 128 when setting LFO depths 
          syncs with 1.13
    2.50  add note in header regarding the deprecation of KEYBRD_MENUS

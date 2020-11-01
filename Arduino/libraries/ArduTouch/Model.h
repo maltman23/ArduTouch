@@ -218,4 +218,8 @@
    #undef KEYBRD_MENUS                 
 #endif
 
+#ifndef USE_SERIAL_PORT
+   #define USE_LEDS
+#endif
+
 #endif   // ifndef MODEL_H_INCLUDED

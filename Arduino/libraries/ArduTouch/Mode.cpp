@@ -40,7 +40,7 @@
  *
  *----------------------------------------------------------------------------*/
 
-boolean Mode::charEv( char code )
+bool Mode::charEv( char code )
 {
    switch ( code )
    {
@@ -82,7 +82,7 @@ boolean Mode::charEv( char code )
  *
  *----------------------------------------------------------------------------*/      
 
-boolean Mode::evHandler( obEvent ev )
+bool Mode::evHandler( obEvent ev )
 {
    switch ( ev.type() )
    {
@@ -105,6 +105,29 @@ boolean Mode::evHandler( obEvent ev )
          return false;              // "event not handled"
    }
    return true;
+}
+
+/*----------------------------------------------------------------------------*
+ *
+ *  Name:  Mode::potEv
+ *
+ *  Desc:  Handle a pot event, stripping out the frame # if necessary.
+ *
+ *  Args:  ev               - onboard event
+ *
+ *  Rets:  status           - true if the event was handled
+ *
+ *----------------------------------------------------------------------------*/
+
+bool Mode::potEv( obEvent ev )
+{
+   if ( ! ev.amPot() )
+      return false;
+
+   if ( ! (flags & UIFRAME) )
+      ev.stripFrame();
+
+   return evHandler( ev );
 }
 
 void Mode::brief()
